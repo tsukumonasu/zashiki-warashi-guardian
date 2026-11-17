@@ -1,21 +1,40 @@
-"""Smoke tests that confirm the scaffold is importable and pytest + Hypothesis work.
+"""Smoke tests for the scaffold: the package imports without hardware.
 
-These tests contain no hardware dependencies and must pass with `make test`
-on any laptop. Real feature tests live alongside the modules they cover and
-are added during each spec's implementation phase.
+Feature tests are added by the device-core-loop spec.
 """
 
-from hypothesis import given, settings
+import importlib
+import tomllib
+from pathlib import Path
+
+import pytest
+from hypothesis import given
 from hypothesis import strategies as st
 
+MODULES = [
+    "warashi_agent",
+    "warashi_agent.state_machine",
+    "warashi_agent.messages",
+    "warashi_agent.config",
+    "warashi_agent.adapters.fakes",
+]
 
-def test_placeholder_passes() -> None:
-    """Confirm pytest itself is running."""
-    assert True
+VOICE_LINES = Path(__file__).parent.parent / "warashi_agent" / "voice" / "lines.toml"
+
+
+@pytest.mark.parametrize("name", MODULES)
+def test_module_imports_without_hardware(name: str) -> None:
+    importlib.import_module(name)
+
+
+def test_voice_lines_have_id_japanese_and_subtitle() -> None:
+    lines = tomllib.loads(VOICE_LINES.read_text(encoding="utf-8"))["lines"]
+    ids = [line["id"] for line in lines]
+    assert len(ids) == len(set(ids)), "line ids must be unique"
+    for line in lines:
+        assert line["ja"].strip() and line["en"].strip()
 
 
 @given(st.integers())
-@settings(max_examples=50)
-def test_hypothesis_runs(n: int) -> None:
-    """Confirm Hypothesis is wired up correctly."""
+def test_hypothesis_is_configured(n: int) -> None:
     assert isinstance(n, int)

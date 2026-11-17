@@ -1,31 +1,26 @@
-# Makefile — Zashiki-Warashi Guardian
+# Zashiki-Warashi Guardian
 #
-# Targets added here as specs are implemented:
-#   test  — device (now) | cloud, dashboard (added by later specs)
-#   lint  — device (now) | cloud, dashboard (added by later specs)
+# make setup   create device/.venv with Python 3.13 and the dev tools
+# make test    unit and property tests (device now; cloud and dashboard added by later specs)
+# make lint    ruff check + format check (device now; eslint and tsc added later)
 #
-# Prerequisites on a development laptop:
-#   cd device && python3.13 -m venv .venv && .venv/bin/pip install -e ".[dev]"
+# Override the interpreter, for example in CI:  make test DEVICE_PY=python3
 
-DEVICE_PY := device/.venv/bin/python
+PYTHON    ?= python3.13
+DEVICE_PY ?= .venv/bin/python
 
-.PHONY: test lint test-device lint-device
+.PHONY: setup test lint test-device lint-device
 
-# ---------------------------------------------------------------------------
-# Default targets
-# ---------------------------------------------------------------------------
+setup:
+	cd device && $(PYTHON) -m venv .venv && .venv/bin/pip install -e ".[dev]"
 
 test: test-device
 
 lint: lint-device
 
-# ---------------------------------------------------------------------------
-# Device
-# ---------------------------------------------------------------------------
-
 test-device:
-	cd device && ../${DEVICE_PY} -m pytest
+	cd device && $(DEVICE_PY) -m pytest
 
 lint-device:
-	cd device && ../${DEVICE_PY} -m ruff check warashi_agent tests tools
-	cd device && ../${DEVICE_PY} -m ruff format --check warashi_agent tests tools
+	cd device && $(DEVICE_PY) -m ruff check .
+	cd device && $(DEVICE_PY) -m ruff format --check .

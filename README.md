@@ -12,9 +12,20 @@
 
 ## Try it now (no hardware, no account needed)
 
+> Not deployed yet. The dashboard and its simulation mode are built by the
+> `dashboard-simulation` spec; this section will list the exact steps.
+
 1. Open the dashboard URL above.
 2. Click **Simulation mode**.
-3. Follow the on-screen prompts — the full encounter flow runs in your browser.
+3. Follow the on-screen prompts. The full encounter flow runs in your browser.
+
+## Development
+
+```
+make setup   # creates device/.venv (Python 3.13) with pytest, Hypothesis and ruff
+make test
+make lint
+```
 
 ---
 

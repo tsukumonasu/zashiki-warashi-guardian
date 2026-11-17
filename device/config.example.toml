@@ -1,35 +1,29 @@
-# config.example.toml — copy to config.toml and edit before first run.
-# config.toml is excluded from git (see .gitignore).
+# DRAFT. The real keys are decided in the device-core-loop design and enforced by config.py.
+# Copy to config.toml on the Pi. config.toml is git-ignored and must never be committed.
 
 [device]
-id = "warashi-01"             # must match the IoT Core thing name
+id = "warashi-01"
 
 [motion]
-# Set to true only after servos are verified and calibrated on the real doll.
-# When false, all servo actions are logged but not executed.
+# Servo actions are only logged while this is false. Turn it on only after the
+# servos are verified as 180-degree positional servos and calibrated on the real doll.
 motion_enabled = false
 
 [servo]
-# Calibrated center offsets (degrees). Adjust until the doll faces straight ahead.
-pan_center_offset  = 0
-tilt_center_offset = 0
-
-# Safe travel limits from center. The config loader rejects values beyond
-# pan ±60° / tilt ±30° (cable protection — see hardware.md).
-pan_limit  = 30
+# Calibrated center per axis, in degrees (find it with tools/warashi_calib.py).
+pan_center = 0
+tilt_center = 0
+# Allowed travel from the center. The loader rejects pan > 60 and tilt > 30
+# (camera ribbon and servo leads run through the neck).
+pan_limit = 30
 tilt_limit = 20
-
-# Flip direction if the servo is mounted in reverse.
-pan_invert  = false
+# Flip the direction if a servo is mounted the other way round.
+pan_invert = false
 tilt_invert = false
 
 [aws]
-# IoT Core endpoint — found in the AWS console under IoT Core > Settings.
-# Do not commit real values.
-iot_endpoint = "xxxxxxxxxxxxxxx-ats.iot.ap-northeast-1.amazonaws.com"
-iot_port     = 8883
-
-# Paths to the device certificate and private key (on the Pi, not in the repo).
-cert_path = "/home/pi/certs/device.crt"
-key_path  = "/home/pi/certs/device.key"
-ca_path   = "/home/pi/certs/AmazonRootCA1.pem"
+# Placeholders only. Real values stay on the Pi.
+iot_endpoint = "<your-endpoint>-ats.iot.ap-northeast-1.amazonaws.com"
+cert_path = "/path/to/device.crt"
+key_path = "/path/to/device.key"
+ca_path = "/path/to/AmazonRootCA1.pem"

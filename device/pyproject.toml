@@ -5,15 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "warashi-agent"
 version = "0.1.0"
-description = "Zashiki-Warashi Guardian — device agent for Raspberry Pi Zero W"
+description = "Zashiki-Warashi Guardian: device agent for a Raspberry Pi Zero W"
+license = "MIT"
+# Raspberry Pi OS on the doll ships Python 3.13.5.
 requires-python = ">=3.13"
-dependencies = [
-    # Installed via apt on the Pi:
-    #   python3-gpiozero  python3-lgpio  python3-paho-mqtt
-    # Listed here for documentation; use apt, not pip, on armv6l.
-    "gpiozero",
-    "paho-mqtt",
-]
+# No runtime dependencies are installed by pip. On the Pi they come from apt
+# (python3-gpiozero, python3-lgpio, python3-paho-mqtt); see .kiro/steering/tech.md.
+# Laptop tests use the fakes in warashi_agent/adapters/fakes.py instead.
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
@@ -27,24 +26,12 @@ dev = [
 where = ["."]
 include = ["warashi_agent*"]
 
-# ---------------------------------------------------------------------------
-# pytest
-# ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-timeout = 30          # seconds — no test should block on hardware
+# A test that waits on hardware or the network fails instead of hanging CI.
+timeout = 30
 addopts = "--tb=short -q"
 
-# ---------------------------------------------------------------------------
-# Hypothesis
-# ---------------------------------------------------------------------------
-[tool.hypothesis]
-# Keep the default database inside device/ so it is not shared with other parts.
-database = ".hypothesis"
-
-# ---------------------------------------------------------------------------
-# ruff
-# ---------------------------------------------------------------------------
 [tool.ruff]
 target-version = "py313"
 line-length = 99
@@ -60,13 +47,6 @@ select = [
     "N",   # pep8-naming
     "SIM", # flake8-simplify
 ]
-ignore = [
-    "E501", # line length is handled by the formatter, not the linter
-]
 
 [tool.ruff.lint.isort]
 known-first-party = ["warashi_agent"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"

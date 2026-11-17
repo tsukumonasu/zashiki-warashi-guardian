@@ -1,73 +1,71 @@
-# device/tools — bring-up scripts
+# device/tools: bring-up scripts
 
-These three scripts are meant to be run directly on the Raspberry Pi Zero W,
-not imported as a library and not part of the automated test suite.
-They require gpiozero, lgpio, and the physical hardware.
+Scripts written while wiring the real doll. Run them on the Raspberry Pi Zero W with
+`python3 <script>`. They need gpiozero, lgpio and the hardware, so they are not part of
+`make test`.
 
----
+These scripts drive the GPIO pins directly. **They ignore `config.toml`, including
+`motion_enabled` and the calibrated limits.** Only the agent (`warashi_agent`) enforces those.
 
-## warashi_test.py — individual component smoke test
+Suggested order on a new build: `warashi_test.py` → fit the servo horns at center →
+`warashi_calib.py` → assemble → `warashi_check.py`.
 
-Tests one peripheral at a time. Use this during initial wiring, before the
-doll is assembled.
-
-```
-python3 warashi_test.py pir     # PIR sensor — no battery needed
-python3 warashi_test.py servo   # Both servos — connect battery first
-python3 warashi_test.py led     # Lantern LED — connect battery first
-```
-
-**Safety notes**
-- **Connect the battery before running `servo` or `led`.** Servos and the LED
-  run from a separate 4.8 V NiMH battery rail, not the Pi's 5 V pin.
-- **Positional servos only.** If a 360° continuous-rotation servo is fitted
-  by mistake, `servo` mode will make it spin continuously. The script assumes
-  180° positional servos (SG90 / MG90S class). Stop immediately with Ctrl+C
-  if any servo does not stop at the commanded angle.
-- The PIR sensor takes **30–60 seconds to stabilise** after power-on.
-  Wait before testing or you will get false triggers.
-
----
-
-## warashi_calib.py — servo centre and travel-limit finder
-
-Finds the calibrated centre and the safe travel range for each axis. Run this
-*before* fitting the servo horns and before setting values in `config.toml`.
+## warashi_test.py: one component at a time
 
 ```
-python3 warashi_calib.py pan     # left / right axis
-python3 warashi_calib.py tilt    # up / down axis
+python3 warashi_test.py pir     # PIR sensor (battery not needed)
+python3 warashi_test.py servo   # both servos (battery on)
+python3 warashi_test.py led     # lantern LED (battery on)
 ```
 
-Results are appended to `~/warashi_limits.txt`.
+- `pir` prints every High/Low change of the PIR output. Wait 30–60 s after power-on first.
+- `servo` centers each servo, then sweeps it to +30°, -30° and back to 0°, 2° per 30 ms,
+  then detaches it. Fit the servo horns at this center position.
+- `led` fades the lantern in and out three times. Check that R1 (5.6 Ω) does not get too hot.
 
-**Safety notes**
-- Increase angles in small steps (5–10°) and watch the camera ribbon cable
-  and servo leads inside the neck. Stop before they pull taut.
-- The script clamps input to ±90°, but `config.toml` enforces tighter limits
-  at runtime: **pan ±60° / tilt ±30° maximum** (beyond that the cables are at risk).
-- The recommended defaults until calibrated are **pan ±30° / tilt ±20°**.
-- On quit the servo detaches immediately without sweeping back to centre, to
-  avoid tangling cables during exit.
-
----
-
-## warashi_check.py — post-assembly full check and encounter demo
-
-Run after the doll is fully assembled. Steps through all six peripherals in
-sequence and records a pass/fail result for each one.
+## warashi_calib.py: center and travel limits
 
 ```
-python3 warashi_check.py          # interactive step-by-step check
-python3 warashi_check.py demo     # continuous encounter demo loop
+python3 warashi_calib.py pan
+python3 warashi_calib.py tilt
 ```
 
-**Safety notes**
-- Plug the AT-CSP1 USB speakerphone into the **USB** port and the power
-  supply into the **PWR** port. Swapping them makes USB devices invisible.
-- Switch the battery on before starting. If servos and the LED do nothing
-  while the Pi is running, the battery rail is the first thing to suspect.
-- The head moves to **pan ±30° / tilt ±20°** during the check — the same
-  default limits used at runtime. Do not hold the head during the sweep.
-- In demo mode the head returns to centre and detaches after each encounter.
-  Press Ctrl+C to stop; the script turns the lantern off on exit.
+Type an angle and the servo glides there at 1° per 40 ms. `c` records the current angle as
+the center, `y` after a move records it as a limit, `q` quits. Results are appended to
+`~/warashi_limits.txt`; copy them into `config.toml` by hand.
+
+Input is clamped to ±90°, which is wider than the agent allows (pan ±60°, tilt ±30°).
+Go up in steps of 5–10° and stop before the camera ribbon or the servo leads pull tight.
+
+## warashi_check.py: full check after assembly
+
+```
+python3 warashi_check.py        # PIR, servos, LED, speaker, microphone, camera
+python3 warashi_check.py demo   # presence → lantern → turn → snapshot → test sound, in a loop
+```
+
+- The step-by-step check asks y/n after each item and prints a summary. One failing item
+  does not stop the rest.
+- Servos sweep pan ±30° and tilt ±20°. Speaker and microphone use
+  `plughw:CARD=Device,DEV=0` (AT-CSP1, selected by name).
+- Photos (`check_*.jpg`, `demo_*.jpg`) are saved in the current directory and are
+  git-ignored because they may show faces.
+
+## Safety notes (from `.kiro/steering/hardware.md`)
+
+- **180° positional servos only.** A 360° continuous-rotation servo does not stop at an
+  angle and will wind the cables around the neck. Press Ctrl+C at once if a servo keeps turning.
+- **Battery rail first.** Servos and LED run from the 4.8 V NiMH pack, not the Pi's 5 V pin.
+  If they do nothing while the Pi runs, check that the pack has not come loose.
+- **USB ports.** AT-CSP1 in the Pi's `USB` port, power in `PWR`. Swapped, the audio device
+  is invisible.
+- **Each servo jumps to 0° when the script creates it.** gpiozero's `AngularServo` defaults
+  to `initial_angle=0.0`, so the first move is not a slow glide, even in `warashi_calib.py`
+  (which detaches immediately afterwards). Center the head by hand before you start.
+- **`warashi_test.py servo` tilts to ±30°,** beyond the default tilt limit of ±20° and at the
+  hard maximum. Do not run it after assembly unless calibration showed ±30° is safe.
+- On Ctrl+C the scripts stop without sweeping back to center. `demo` mode switches the lantern off.
+
+These scripts are kept as they were written on the bench (only the language changed). The
+agent must not copy their startup behavior. It should create servos with `initial_angle=None`
+(no pulse until the first command) and glide slowly to center on the first event.

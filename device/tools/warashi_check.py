@@ -136,7 +136,8 @@ def check_camera():
         ["rpicam-still", "-n", "-t", "1000", "--width", "1296", "--height", "972", "-o", name]
     )
     if ok:
-        print(f"  Copy to Mac to review:  scp pi@<pi-hostname>.local:~/{name} ~/Desktop/")
+        # The original hint contained the owner's user and host name; replaced by placeholders.
+        print(f"  Copy it to your Mac:  scp <user>@<pi-host>.local:~/{name} ~/Desktop/")
     return ok
 
 

@@ -75,15 +75,13 @@ def test_servo():
         s.detach()  # Stop the PWM pulse — prevents jitter and saves battery.
         s.close()
         sleep(1)
-    print(
-        "Servo test done.  If the horns are not yet attached, fit them now at this centre position."
-    )
+    print("Servo test done.  If the horns are not attached yet, fit them at this centre position.")
 
 
 def test_led():
     print("LED test: switch the battery on before running this.")
     led = PWMLED(PIN_LED)
-    print("Fading in and out 3 times — check the 5.6 Ω resistor does not overheat.")
+    print("Fading in and out 3 times — check that R1 (5.6 Ω) does not get too hot.")
     for _ in range(3):
         for i in range(0, 101, 2):
             led.value = i / 100

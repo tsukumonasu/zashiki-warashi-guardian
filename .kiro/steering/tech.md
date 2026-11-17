@@ -7,7 +7,7 @@ inclusion: always
 ## Stack at a glance
 | Part | Stack |
 |---|---|
-| `/device` | Python 3 (the system Python of Raspberry Pi OS) on a Pi Zero W: armv6l, 512 MB RAM, one core. gpiozero (lgpio backend), `rpicam-still`, ALSA `aplay` / `arecord`, paho-mqtt. Tests: pytest + Hypothesis. |
+| `/device` | Python 3 (the system Python of Raspberry Pi OS, 3.13.5 on the doll; code targets `>=3.13`) on a Pi Zero W: armv6l, 512 MB RAM, one core. gpiozero (lgpio backend), `rpicam-still`, ALSA `aplay` / `arecord`, paho-mqtt. Tests: pytest + Hypothesis, plus pytest-timeout (dev only) so a test that blocks on a fake fails instead of hanging CI. |
 | `/cloud` | AWS CDK v2 in TypeScript. IoT Core, Lambda (current Node.js LTS runtime), S3, Rekognition, Bedrock, Polly, DynamoDB, SNS, API Gateway, Cognito, CloudFront. Tests: vitest + fast-check. |
 | `/dashboard` | React + Vite + TypeScript. Tests: vitest + Testing Library + fast-check. |
 | Contract | `docs/schema.md` — every event and command exchanged between the three parts. |

@@ -1,71 +1,42 @@
-# .kiro/ is intentionally NOT ignored — it must be committed.
-# See the Kiroween submission rules.
+# .kiro/ is intentionally NOT ignored: the Kiroween rules require it at the repository root.
+# Note: gitignore has no trailing comments. A "#" after a pattern becomes part of the pattern.
 
 # ----- Python -----
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-.Python
 *.egg-info/
-dist/
 build/
-.eggs/
-*.egg
 .venv/
-venv/
-env/
-.env
-
-# pytest / coverage
 .pytest_cache/
+.hypothesis/
+.ruff_cache/
 .coverage
 htmlcov/
-.hypothesis/
 
-# ruff
-.ruff_cache/
-
-# ----- Node / TypeScript -----
+# ----- Node / TypeScript / CDK -----
 node_modules/
 dist/
-.vite/
 *.tsbuildinfo
+cdk.out/
 
-# ----- CDK -----
-cloud/cdk.out/
-
-# ----- macOS -----
+# ----- OS and editors -----
 .DS_Store
-.AppleDouble
-
-# ----- Editor -----
-.vscode/
 .idea/
 *.swp
-*.swo
 
-# ----- Secrets and device-specific files -----
-# Certificates, keys, and Wi-Fi credentials
+# ----- Secrets and device-specific files (never commit) -----
+# Real device config. Commit config.example.toml instead.
+config.toml
+.env
+.env.*
+!.env.example
 *.pem
 *.key
 *.crt
 *.p12
 *.pfx
-config.toml          # real device config — use config.example.toml as the template
-*.env
-.env.*
-!.env.example
 
-# Raspberry Pi bring-up artefacts
+# ----- Captures from the bring-up tools (may contain faces) -----
+check_*.jpg
+demo_*.jpg
 warashi_limits.txt
-/device/tools/check_*.jpg
-/device/tools/demo_*.jpg
-
-# Audio generated locally
-/device/warashi_agent/voice/*.wav
-/device/warashi_agent/voice/*.mp3
-# (lines.toml IS committed — only the generated audio files are excluded)
-
-# Temporary snapshots
-/tmp/

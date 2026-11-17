@@ -9,7 +9,7 @@ Enter an angle to glide slowly to that position.
   Example: start at 0, then try 10, 20 … until the cable starts to pull,
            then repeat on the negative side (-10, -20 …).
   c   = record the current angle as the centre reference
-  q   = quit (detach servo — no return sweep, to avoid tangling cables)
+  q   = quit (stop the signal and let the servo go limp)
 
 Results are appended to ~/warashi_limits.txt.
 """
@@ -56,7 +56,7 @@ def main():
             if cmd == "q":
                 break
             if cmd == "c":
-                msg = f"{axis}: centre is {cur:+d}°  (use CENTER={cur} in config.toml)"
+                msg = f"{axis}: centre is {cur:+d}°  (use CENTER={cur} in the program)"
                 print(msg)
                 log.open("a").write(msg + "\n")
                 continue
