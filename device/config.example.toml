@@ -1,29 +1,72 @@
-# DRAFT. The real keys are decided in the device-core-loop design and enforced by config.py.
-# Copy to config.toml on the Pi. config.toml is git-ignored and must never be committed.
+# Copy to config.toml on the Pi (config.toml is git-ignored and must never be committed).
+# Every key is optional; a missing key takes the default shown here. Unknown keys outside
+# [aws] are rejected. Keep Wi-Fi details, host names and certificates out of this file.
 
 [device]
-id = "warashi-01"
+id = "warashi-01"                 # deviceId in every envelope: 1-64 chars of a-z, 0-9, -
+
+[pins]                            # BCM numbers 2-27, all different
+pir_pin = 17                      # PIR sensor OUT (physical pin 11)
+pan_pin = 18                      # pan servo signal (physical pin 12)
+tilt_pin = 13                     # tilt servo signal (physical pin 33)
+lantern_pin = 23                  # lantern LED through the N-MOSFET gate (physical pin 16)
 
 [motion]
-# Servo actions are only logged while this is false. Turn it on only after the
-# servos are verified as 180-degree positional servos and calibrated on the real doll.
+# Servo actions are only logged while this is false. Turn it on only after the servos are
+# verified as 180-degree positional servos and calibrated on the real doll.
 motion_enabled = false
 
 [servo]
-# Calibrated center per axis, in degrees (find it with tools/warashi_calib.py).
-pan_center = 0
-tilt_center = 0
-# Allowed travel from the center. The loader rejects pan > 60 and tilt > 30
-# (camera ribbon and servo leads run through the neck).
-pan_limit = 30
-tilt_limit = 20
-# Flip the direction if a servo is mounted the other way round.
-pan_invert = false
-tilt_invert = false
+pan_center_offset = 0             # calibrated center (degrees); abs(offset) + limit <= 90
+tilt_center_offset = 0
+pan_limit = 30                    # travel from center: 0 < pan_limit <= 60 (larger is rejected)
+tilt_limit = 20                   # 0 < tilt_limit <= 30 (camera ribbon and leads run through the neck)
+pan_invert = false                # set per mounting: flips the sign if the servo is mounted the other way
+tilt_invert = false               # set per mounting
+glide_step_deg = 2                # largest step between commanded angles: 0 < value <= 2
+glide_interval_ms = 30            # smallest time between steps: 30-1000 (slow turning avoids voltage dips)
+servo_settle_ms = 300             # detach this long after a glide: 0 < value <= 2000
+nod_deg = 8                       # greeting nod depth: 0 < value <= tilt_limit
+pose_file = "last_pose.json"      # last commanded angles, kept across restarts (git-ignored)
 
-[aws]
-# Placeholders only. Real values stay on the Pi.
-iot_endpoint = "<your-endpoint>-ats.iot.ap-northeast-1.amazonaws.com"
-cert_path = "/path/to/device.crt"
-key_path = "/path/to/device.key"
-ca_path = "/path/to/AmazonRootCA1.pem"
+[lantern]
+lantern_wake_level = 0.8          # brightness when the doll wakes: 0 < value <= 1
+lantern_fade_in_ms = 1500         # 0 < value <= 10000
+lantern_fade_out_ms = 2000        # 0 < value <= 10000
+
+[camera]
+camera_hfov_deg = 54              # horizontal field of view, degrees: 0 < value <= 180
+camera_vfov_deg = 41.8            # 2 * atan(tan(54 deg / 2) * 3/4) for the 4:3 image
+jpeg_max_bytes = 90000            # raw JPEG limit before base64: 10000-90000 (MQTT message limit)
+scan_pan_positions_deg = [-15, 15, 0]   # extra pan angles tried when no face is seen
+scan_attempts_max = 3             # 0 <= value <= length of scan_pan_positions_deg
+
+[judgement]
+family_confidence_min = 0.80      # lowest accepted family confidence: 0 < value <= 1
+stranger_confidence_min = 0.80    # lowest accepted stranger confidence: 0 < value <= 1
+
+[timing]
+tick_interval_ms = 100            # clock event period, milliseconds: 10-1000
+pir_warmup_s = 60                 # PIR is ignored this long after start, seconds: 0-120
+waking_timeout_s = 3              # seconds
+verdict_timeout_s = 8             # seconds to wait for a verdict
+glide_timeout_s = 3               # seconds to wait for a head movement
+stare_s = 2                       # silent stare before the stranger line, seconds
+audio_timeout_s = 12              # seconds before playback is given up
+camera_timeout_s = 5              # seconds; must be < verdict_timeout_s
+download_timeout_s = 5            # seconds for an audioUrl download
+probe_timeout_s = 5               # seconds for the startup audio and camera probes
+cooldown_s = 20                   # must be >= glide_timeout_s + lantern_fade_out_ms / 1000
+status_interval_s = 60            # seconds between status.report messages
+
+[audio]
+audio_device = "plughw:CARD=Device,DEV=0"   # select the card by name (CARD=...), not by number
+
+[messages]
+dedup_window_size = 256           # remembered command ids: 16-4096
+
+[privacy]
+blocked_words = []                # words no voice line may contain; put family names in the local config.toml only
+
+# [aws]
+# Reserved for the cloud-judgement spec. Placeholders only; real values stay on the Pi.

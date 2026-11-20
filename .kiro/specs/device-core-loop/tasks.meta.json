@@ -1,0 +1,2062 @@
+{
+  "pbtResults": {
+    "3.3 Write property test for the Glide_Planner (owner property)": {
+      "status": "passed",
+      "lastRunTimestamp": 1795103753463
+    },
+    "4.3 Write property test for the Config_Loader": {
+      "status": "passed",
+      "lastRunTimestamp": 1795105304654
+    },
+    "5.4 Write property test for the Manifest_Loader": {
+      "status": "passed",
+      "lastRunTimestamp": 1795105046285
+    },
+    "6.7 Write property test for the Deduplicator": {
+      "status": "passed",
+      "lastRunTimestamp": 1795105693676
+    },
+    "3.6 Write property test for the Head_Tracker": {
+      "status": "passed",
+      "lastRunTimestamp": 1795105492662
+    },
+    "6.6 Write property test for the codec and the inbound pipeline (owner property)": {
+      "status": "passed",
+      "lastRunTimestamp": 1795172562963
+    },
+    "12.3 Write property test for line choice": {
+      "status": "passed",
+      "lastRunTimestamp": 1795172386950
+    },
+    "14.4 Write property test for liveness (owner property)": {
+      "status": "passed",
+      "lastRunTimestamp": 1795173611754
+    },
+    "14.3 Write property test for the offline reaction (owner property)": {
+      "status": "passed",
+      "lastRunTimestamp": 1795173618306
+    },
+    "15.3 Write property test for PIR debounce": {
+      "status": "passed",
+      "lastRunTimestamp": 1795174521851
+    },
+    "16.3 Write property test for command rejection": {
+      "status": "passed",
+      "lastRunTimestamp": 1795175480945
+    },
+    "16.4 Write property test for stranger-warning safety (owner property)": {
+      "status": "passed",
+      "lastRunTimestamp": 1795175588896
+    },
+    "16.5 Extend the servo safety property with the `step()` clause (owner property)": {
+      "status": "passed",
+      "lastRunTimestamp": 1795175719674
+    },
+    "17.5 Write property test for identifier freshness": {
+      "status": "passed",
+      "lastRunTimestamp": 1795176297892
+    },
+    "17.4 Write property test for determinism": {
+      "status": "passed",
+      "lastRunTimestamp": 1795176421476
+    },
+    "17.3 Write property test for state-change announcements": {
+      "status": "passed",
+      "lastRunTimestamp": 1795176756054
+    },
+    "22.2 Write property test for lantern fades": {
+      "status": "passed",
+      "lastRunTimestamp": 1795181919304
+    },
+    "21.3 Write property test for disabled motion": {
+      "status": "passed",
+      "lastRunTimestamp": 1795180322616
+    },
+    "21.4 Write property test for glide arrival time": {
+      "status": "passed",
+      "lastRunTimestamp": 1795180384186
+    },
+    "24.2 Write property test for the JPEG size parser": {
+      "status": "passed",
+      "lastRunTimestamp": 1795181880068
+    },
+    "24.5 Write property test for camera results": {
+      "status": "passed",
+      "lastRunTimestamp": 1795182474449
+    },
+    "25.3 Write property test for audio results": {
+      "status": "passed",
+      "lastRunTimestamp": 1795182689139
+    },
+    "26.3 Write property test for privacy at Dispatcher level": {
+      "status": "passed",
+      "lastRunTimestamp": 1795183108192
+    },
+    "27.2 Write property test for the keyboard parser": {
+      "status": "passed",
+      "lastRunTimestamp": 1795183456937
+    }
+  },
+  "executionHistory": {
+    "1. Update `docs/schema.md` before any message code (contract first)": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102447839
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102459615
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102670702
+      }
+    ],
+    "2.1 Create `device/warashi_agent/model.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102447910
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102675882
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102777228
+      }
+    ],
+    "2.2 Add the Config dataclasses to `device/warashi_agent/config.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102447954
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102676113
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102777901
+      }
+    ],
+    "2.3 Write unit tests for the model and the Config defaults": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448012
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102790251
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103143281
+      }
+    ],
+    "2.4 Create the shared Hypothesis strategies in `device/tests/strategies.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448044
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102791038
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103143363
+      }
+    ],
+    "3.1 Create `device/warashi_agent/glide.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448066
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102792636
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103143465
+      }
+    ],
+    "3.2 Write unit tests for the Glide_Planner in `device/tests/test_glide.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448095
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103525371
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104285466
+      }
+    ],
+    "3.3 Write property test for the Glide_Planner (owner property)": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448135
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103525447
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104286145
+      }
+    ],
+    "3.4 Create `device/warashi_agent/head_tracker.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448163
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103525853
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104287166
+      }
+    ],
+    "3.5 Write unit tests for the Head_Tracker in `device/tests/test_head_tracker.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448194
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105366517
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105925421
+      }
+    ],
+    "3.6 Write property test for the Head_Tracker": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448222
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105367150
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105926196
+      }
+    ],
+    "4.1 Implement loading and validation in `device/warashi_agent/config.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448251
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103157896
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103516647
+      }
+    ],
+    "4.2 Write unit tests for the Config_Loader in `device/tests/test_config.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448277
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103527359
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104288119
+      }
+    ],
+    "4.3 Write property test for the Config_Loader": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448300
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104300437
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105360203
+      }
+    ],
+    "5.1 Create `device/warashi_agent/voice.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448331
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102793104
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103144134
+      }
+    ],
+    "5.2 Add `line_sets()` to `device/tests/strategies.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448360
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105199567
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105360703
+      }
+    ],
+    "5.3 Write unit tests for the Manifest_Loader in `device/tests/test_voice.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448394
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104301196
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105076897
+      }
+    ],
+    "5.4 Write property test for the Manifest_Loader": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448426
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104302248
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105077621
+      }
+    ],
+    "6.1 Implement the Message_Codec in `device/warashi_agent/messages.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448453
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102793934
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103144717
+      }
+    ],
+    "6.2 Write the schema table test in `device/tests/test_schema_tables.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448484
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104303638
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105076781
+      }
+    ],
+    "6.3 Write unit tests for the Message_Codec in `device/tests/test_messages.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448511
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104304069
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105076820
+      }
+    ],
+    "6.4 Create `device/warashi_agent/inbound.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448543
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103527672
+      },
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795104288783
+      }
+    ],
+    "6.5 Write unit tests for the inbound pipeline in `device/tests/test_inbound.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448566
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105368687
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105927056
+      }
+    ],
+    "6.6 Write property test for the codec and the inbound pipeline (owner property)": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448593
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105369718
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105928140
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172432932
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172654200
+      }
+    ],
+    "6.7 Write property test for the Deduplicator": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448619
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105369888
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105928745
+      }
+    ],
+    "7. Checkpoint - pure core": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448644
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105935738
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795106087986
+      }
+    ],
+    "8.1 Create the State_Machine skeleton in `device/warashi_agent/state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448668
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795106092023
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795106296085
+      }
+    ],
+    "8.2 Write unit tests for the skeleton in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448696
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795106303314
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795106516831
+      }
+    ],
+    "8.3 Create the reactive harness in `device/tests/harness.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448755
+      },
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795106303941
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128033687
+      }
+    ],
+    "9.1 Implement waking and the first snapshot attempt in `state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448783
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128040703
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128301240
+      }
+    ],
+    "9.2 Write unit tests for waking and seeking in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448808
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128305873
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128545155
+      }
+    ],
+    "10.1 Implement Verdict handling and `gazing` in `state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448832
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128550401
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128938370
+      }
+    ],
+    "10.2 Write unit tests for Verdict handling in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448859
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128943268
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795129839035
+      }
+    ],
+    "11.1 Implement scan moves in `state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448887
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795129846108
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795130044810
+      }
+    ],
+    "11.2 Write unit tests for scanning in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448915
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795130049309
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795130259993
+      }
+    ],
+    "12.1 Implement the Reaction states in `state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448941
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795130265578
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795130760435
+      }
+    ],
+    "12.2 Write unit tests for the Reactions in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448963
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795130765723
+      },
+      {
+        "executionId": "a676a4ac-b62c-4658-b7db-cccdab080e99",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795171900743
+      },
+      {
+        "executionId": "a676a4ac-b62c-4658-b7db-cccdab080e99",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172125612
+      }
+    ],
+    "12.3 Write property test for line choice": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102448992
+      },
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795130766560
+      },
+      {
+        "executionId": "a676a4ac-b62c-4658-b7db-cccdab080e99",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795171901008
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172426266
+      }
+    ],
+    "13.1 Complete `cooldown` and `enter_sleeping` in `state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449020
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172432887
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172654099
+      }
+    ],
+    "13.2 Write unit tests for cooldown in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449049
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172659118
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172838398
+      }
+    ],
+    "14.1 Implement the Offline_Reactions in `state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449077
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172843351
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173163910
+      }
+    ],
+    "14.2 Write unit tests for offline paths in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449101
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173168783
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173662398
+      }
+    ],
+    "14.3 Write property test for the offline reaction (owner property)": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449127
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173170065
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173662960
+      }
+    ],
+    "14.4 Write property test for liveness (owner property)": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449161
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173170351
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173663606
+      }
+    ],
+    "15.1 Implement the debounce rules in `state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449187
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173668052
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173847930
+      }
+    ],
+    "15.2 Write unit tests for debounce in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449216
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173853095
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795174191039
+      }
+    ],
+    "15.3 Write property test for PIR debounce": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449243
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173853550
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795174554323
+      }
+    ],
+    "16.1 Implement the command handlers in `state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449266
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795174565972
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795174971161
+      }
+    ],
+    "16.2 Write unit tests for commands in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449291
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795174977333
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795175757189
+      }
+    ],
+    "16.3 Write property test for command rejection": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449319
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795174978246
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795175757774
+      }
+    ],
+    "16.4 Write property test for stranger-warning safety (owner property)": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449344
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795174979779
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795175758664
+      }
+    ],
+    "16.5 Extend the servo safety property with the `step()` clause (owner property)": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449365
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795174980251
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795175759464
+      }
+    ],
+    "17.1 Complete `finalize()` in `state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449393
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795175764234
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176042784
+      }
+    ],
+    "17.2 Write unit tests for status reports in `device/tests/test_state_machine.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449419
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176052296
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176798020
+      }
+    ],
+    "17.3 Write property test for state-change announcements": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449450
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176053830
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176798107
+      }
+    ],
+    "17.4 Write property test for determinism": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449477
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176054726
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176798865
+      }
+    ],
+    "17.5 Write property test for identifier freshness": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449501
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176054799
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176799234
+      }
+    ],
+    "18. Checkpoint - State_Machine complete": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449528
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176805318
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177713644
+      }
+    ],
+    "19.1 Create `device/warashi_agent/timebase.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449566
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177719248
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177946864
+      }
+    ],
+    "19.2 Create `device/warashi_agent/adapters/ports.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449603
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177720704
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177947711
+      }
+    ],
+    "19.3 Implement the fakes in `device/warashi_agent/adapters/fakes.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449655
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177953871
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795178479276
+      }
+    ],
+    "19.4 Write unit tests for the time base in `device/tests/test_timebase.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449681
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177954865
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795178479656
+      }
+    ],
+    "19.5 Write unit tests for the fakes in `device/tests/test_fakes.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449708
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795178486293
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795178955333
+      }
+    ],
+    "20.1 Create `device/warashi_agent/redact.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449734
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177721340
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177948637
+      }
+    ],
+    "20.2 Write unit tests for redaction in `device/tests/test_redact.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449762
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795177955659
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795178480310
+      }
+    ],
+    "20.3 Create `device/warashi_agent/dispatcher.py` and the `CloudLink` protocol": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449790
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795178487182
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795178955802
+      }
+    ],
+    "20.4 Write unit tests for the Dispatcher in `device/tests/test_dispatcher.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449816
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795178962611
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795179531042
+      }
+    ],
+    "21.1 Implement `device/warashi_agent/adapters/servo.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449841
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795179537390
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180108881
+      }
+    ],
+    "21.2 Write unit tests in `device/tests/test_servo_adapter.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449863
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180120709
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180481681
+      }
+    ],
+    "21.3 Write property test for disabled motion": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449892
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180122525
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180481763
+      }
+    ],
+    "21.4 Write property test for glide arrival time": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449919
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180122694
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180482649
+      }
+    ],
+    "22.1 Implement `device/warashi_agent/adapters/lantern.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449944
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795179539135
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180109628
+      }
+    ],
+    "22.2 Write property test for lantern fades": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102449977
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180124338
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182056706
+      }
+    ],
+    "22.3 Write unit tests in `device/tests/test_lantern_adapter.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450001
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180124998
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180518786
+      }
+    ],
+    "23.1 Implement `device/warashi_agent/adapters/pir.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450026
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795179540388
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180110364
+      }
+    ],
+    "23.2 Write unit tests in `device/tests/test_pir_adapter.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450053
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795181821439
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182057280
+      }
+    ],
+    "24.1 Add the pure `jpeg_size(data)` parser to `device/warashi_agent/adapters/camera.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450077
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795179541594
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180111889
+      }
+    ],
+    "24.2 Write property test for the JPEG size parser": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450098
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795181822098
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182057932
+      }
+    ],
+    "24.3 Implement the Camera_Adapter in `device/warashi_agent/adapters/camera.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450122
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795181822857
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182058407
+      }
+    ],
+    "24.4 Write unit tests in `device/tests/test_camera_adapter.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450152
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182063745
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182362706
+      }
+    ],
+    "24.5 Write property test for camera results": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450177
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182370634
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182559355
+      }
+    ],
+    "25.1 Implement `device/warashi_agent/adapters/audio.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450199
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795179542247
+      },
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180112573
+      }
+    ],
+    "25.2 Write unit tests in `device/tests/test_audio_adapter.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450226
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182371211
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182560366
+      }
+    ],
+    "25.3 Write property test for audio results": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450253
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182570998
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182736007
+      }
+    ],
+    "26.1 Implement `LocalCloudLink` and `FakeCloudLink`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450282
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182571537
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182735625
+      }
+    ],
+    "26.2 Write unit tests in `device/tests/test_cloud_link.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450302
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182740032
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183125736
+      }
+    ],
+    "26.3 Write property test for privacy at Dispatcher level": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450332
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182740264
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183125246
+      }
+    ],
+    "27.1 Create the keyboard parser in `device/warashi_agent/cli.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450359
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183131112
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183355367
+      }
+    ],
+    "27.2 Write property test for the keyboard parser": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450387
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183368124
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183721353
+      }
+    ],
+    "27.3 Create `device/warashi_agent/selftest.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450418
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183131342
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183356007
+      }
+    ],
+    "27.4 Write unit tests in `device/tests/test_selftest.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450443
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183368890
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183722152
+      }
+    ],
+    "27.5 Implement the entry point in `device/warashi_agent/__main__.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450465
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183369312
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183722979
+      }
+    ],
+    "27.6 Write CLI and startup tests": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450492
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183729691
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183925214
+      }
+    ],
+    "28.1 Rewrite `device/warashi_agent/voice/lines.toml`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450519
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183929909
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184430768
+      }
+    ],
+    "28.2 Rewrite `device/config.example.toml`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450582
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183930743
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184431393
+      }
+    ],
+    "28.3 Update `.gitignore`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450609
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183931557
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184431881
+      }
+    ],
+    "28.4 Write repository tests": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450632
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184443003
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184724298
+      }
+    ],
+    "29.1 Create `device/systemd/warashi-agent.service`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450658
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184729149
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184788109
+      }
+    ],
+    "29.2 Create `scripts/deploy_pi.sh`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450685
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184729626
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184788257
+      }
+    ],
+    "29.3 Write tests for the unit and the deploy script": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450710
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184788654
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184982492
+      }
+    ],
+    "30.1 Update the `Makefile`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450733
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184789038
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184982972
+      }
+    ],
+    "30.2 Extend `device/tests/test_scaffold.py`": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450762
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795185013889
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795185123067
+      }
+    ],
+    "31. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795102450792
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795185123219
+      },
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795185490387
+      }
+    ],
+    "2. Shared model, enums and Config dataclasses": [
+      {
+        "executionId": "81234e13-b3ba-404d-94e8-852f3bee9cd3",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795103143387
+      }
+    ],
+    "4. Config_Loader": [
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105360248
+      }
+    ],
+    "5. Voice_Manifest loader and line choice": [
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105360735
+      }
+    ],
+    "3. Pure Glide_Planner and Head_Tracker": [
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105926234
+      }
+    ],
+    "6. Message_Codec, inbound pipeline and Deduplicator": [
+      {
+        "executionId": "8527e588-369a-4602-8bff-124493614bba",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795105928781
+      }
+    ],
+    "8. State_Machine core and test harness": [
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128033765
+      }
+    ],
+    "9. State_Machine flow: waking and seeking": [
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795128545226
+      }
+    ],
+    "10. State_Machine flow: verdict and head tracking": [
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795129839119
+      }
+    ],
+    "11. State_Machine flow: scanning": [
+      {
+        "executionId": "fc84ec64-a482-4081-b189-5f80d8bbb24c",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795130260058
+      }
+    ],
+    "12. State_Machine flow: reactions": [
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172426316
+      }
+    ],
+    "13. State_Machine flow: cooldown and return to sleep": [
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795172838462
+      }
+    ],
+    "14. State_Machine flow: offline behaviour": [
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795173663652
+      }
+    ],
+    "15. State_Machine flow: PIR debounce": [
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795174554362
+      }
+    ],
+    "16. State_Machine flow: manual commands and privacy": [
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795175759517
+      }
+    ],
+    "17. State_Machine flow: status reports and whole-step properties": [
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795176799297
+      }
+    ],
+    "19. Time base, adapter ports and fakes": [
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795178955414
+      }
+    ],
+    "20. Redaction and Dispatcher with the inbound pipeline": [
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795179531122
+      }
+    ],
+    "21. Servo_Adapter": [
+      {
+        "executionId": "35a18cc4-4252-47a4-a03a-534a17f6c156",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795180482699
+      }
+    ],
+    "22. Lantern_Adapter": [
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182056779
+      }
+    ],
+    "23. PIR_Adapter": [
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182057345
+      }
+    ],
+    "24. Camera_Adapter": [
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182559402
+      }
+    ],
+    "25. Audio_Adapter": [
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795182736043
+      }
+    ],
+    "26. Cloud_Link fake and local implementations": [
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183125797
+      }
+    ],
+    "27. CLI and self-test": [
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795183925293
+      }
+    ],
+    "28. Voice manifest, example config and git ignores": [
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184724407
+      }
+    ],
+    "29. Systemd unit template and deploy script": [
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795184982541
+      }
+    ],
+    "30. Makefile wiring": [
+      {
+        "executionId": "302e398a-c980-48c1-b69b-078de949e048",
+        "chatSessionId": "sess_66a67d02-6a75-4c96-972f-a74e958a8b4e",
+        "timestamp": 1795185123107
+      }
+    ]
+  }
+}

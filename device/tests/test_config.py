@@ -1,0 +1,454 @@
+"""Unit tests for the Config dataclasses and the Config_Loader (tasks 2.3 and 4.2).
+
+The expected values are transcribed from the Glossary table "Configuration keys and defaults"
+in .kiro/specs/device-core-loop/requirements.md, not imported from config.py, so a changed
+default fails here (R25.1). The derived bounds use the numbers the Glossary states for the
+defaults (R10.2).
+
+The loader tests cover the file problems of R25.11 and R25.13, the message format of R25.9,
+each R25.7 cross-key rule at its exact boundary, and the opaque `[aws]` section of R21.7.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import logging
+import math
+import os
+import re
+from pathlib import Path
+
+import pytest
+from hypothesis import given
+
+from tests.strategies import as_mapping, valid_configs
+from warashi_agent.config import (
+    Config,
+    ConfigRejected,
+    format_rejection,
+    load_config,
+    validate_mapping,
+)
+
+TOL = 1e-9
+
+# section -> key -> default, from the Glossary table. `aws` is absent by default (R21.7).
+GLOSSARY_DEFAULTS: dict[str, object] = {
+    "device": {"id": "warashi-01"},
+    "pins": {"pir_pin": 17, "pan_pin": 18, "tilt_pin": 13, "lantern_pin": 23},
+    "motion": {"motion_enabled": False},
+    "servo": {
+        "pan_center_offset": 0,
+        "tilt_center_offset": 0,
+        "pan_limit": 30,
+        "tilt_limit": 20,
+        "pan_invert": False,
+        "tilt_invert": False,
+        "glide_step_deg": 2,
+        "glide_interval_ms": 30,
+        "servo_settle_ms": 300,
+        "nod_deg": 8,
+        "pose_file": "last_pose.json",
+    },
+    "lantern": {
+        "lantern_wake_level": 0.8,
+        "lantern_fade_in_ms": 1500,
+        "lantern_fade_out_ms": 2000,
+    },
+    "camera": {
+        "camera_hfov_deg": 54,
+        "camera_vfov_deg": 41.8,
+        "jpeg_max_bytes": 90000,
+        "scan_pan_positions_deg": (-15, 15, 0),
+        "scan_attempts_max": 3,
+    },
+    "judgement": {"family_confidence_min": 0.80, "stranger_confidence_min": 0.80},
+    "timing": {
+        "tick_interval_ms": 100,
+        "pir_warmup_s": 60,
+        "waking_timeout_s": 3,
+        "verdict_timeout_s": 8,
+        "glide_timeout_s": 3,
+        "stare_s": 2,
+        "audio_timeout_s": 12,
+        "camera_timeout_s": 5,
+        "download_timeout_s": 5,
+        "probe_timeout_s": 5,
+        "cooldown_s": 20,
+        "status_interval_s": 60,
+    },
+    "audio": {"audio_device": "plughw:CARD=Device,DEV=0"},
+    "messages": {"dedup_window_size": 256},
+    "privacy": {"blocked_words": ()},
+    "aws": (),
+}
+
+
+def test_default_config_equals_the_glossary_defaults() -> None:
+    assert dataclasses.asdict(Config()) == GLOSSARY_DEFAULTS
+
+
+@pytest.mark.parametrize(
+    ("section", "key"),
+    [("pins", k) for k in ("pir_pin", "pan_pin", "tilt_pin", "lantern_pin")]
+    + [("camera", "jpeg_max_bytes"), ("camera", "scan_attempts_max")]
+    + [("messages", "dedup_window_size")],
+)
+def test_integer_keys_default_to_int(section: str, key: str) -> None:
+    # R25.14 treats these keys as integers, so their defaults must be ints, not floats.
+    value = getattr(getattr(Config(), section), key)
+    assert type(value) is int
+
+
+def test_config_is_frozen_and_hashable() -> None:
+    # Config lives inside the Machine_State, which must be immutable (R1.1, R1.2).
+    cfg = Config()
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        cfg.timing = None  # type: ignore[misc]
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        cfg.servo.pan_limit = 90.0  # type: ignore[misc]
+    assert hash(cfg) == hash(Config())
+
+
+def test_blocked_words_are_hidden_from_repr() -> None:
+    # The owner may list family names here (R13.1, R25.9).
+    cfg = dataclasses.replace(
+        Config(),
+        privacy=dataclasses.replace(Config().privacy, blocked_words=("ZQXJfamilyname",)),
+    )
+    assert "ZQXJ" not in repr(cfg)
+
+
+def test_default_derived_bounds() -> None:
+    cfg = Config()
+    assert math.isclose(cfg.tick_s, 0.1, rel_tol=0, abs_tol=TOL)
+    # ceil(2 * 30 / 2) * 30 ms
+    assert math.isclose(cfg.sweep_time_s, 0.9, rel_tol=0, abs_tol=TOL)
+    # 3 + 4 * (8 + 3) + 2 + 12 + 20 + 12 * 0.1 (Glossary, Encounter_Bound)
+    assert math.isclose(cfg.encounter_bound_s, 82.2, rel_tol=0, abs_tol=TOL)
+    # waking_timeout_s + T
+    assert math.isclose(cfg.offline_bound_disconnected_s, 3.1, rel_tol=0, abs_tol=TOL)
+    # waking_timeout_s + verdict_timeout_s + 2 * T
+    assert math.isclose(cfg.offline_bound_silent_s, 11.2, rel_tol=0, abs_tol=TOL)
+
+
+# ---------------------------------------------------------------------------------------------
+# Config_Loader (task 4.2)
+# ---------------------------------------------------------------------------------------------
+
+# Prefix that occurs nowhere else, so a leaked blocked word is easy to find in a message.
+MARKER = "ZQXJfamilyname"
+
+
+def _rejected(result: Config | ConfigRejected) -> ConfigRejected:
+    assert isinstance(result, ConfigRejected), f"expected a rejection, got {result!r}"
+    return result
+
+
+def _accepted(result: Config | ConfigRejected) -> Config:
+    assert isinstance(result, Config), (
+        f"expected acceptance, got:\n{format_rejection(result)}"
+        if isinstance(result, ConfigRejected)
+        else result
+    )
+    return result
+
+
+def _violation_keys(result: Config | ConfigRejected) -> list[str]:
+    return [v.key for v in _rejected(result).violations]
+
+
+# --- Files (R25.1, R25.11, R25.13) -----------------------------------------------------------
+
+
+def test_missing_file_with_fake_gives_defaults_and_logs(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    path = tmp_path / "missing.toml"
+    with caplog.at_level(logging.INFO, logger="warashi_agent.config"):
+        result = load_config(path, fake=True)
+    assert result == Config()
+    assert any("default" in record.getMessage() for record in caplog.records)
+
+
+def test_missing_file_without_fake_is_rejected_naming_the_path(tmp_path: Path) -> None:
+    path = tmp_path / "missing.toml"
+    message = format_rejection(_rejected(load_config(path, fake=False)))
+    assert str(path) in message
+    assert "missing" in message
+
+
+@pytest.mark.parametrize("fake", [False, True])
+def test_directory_instead_of_file_is_unreadable(tmp_path: Path, fake: bool) -> None:
+    # Reading a directory raises an OSError other than FileNotFoundError, so `--fake` must
+    # not fall back to the defaults here: only a missing file does (R25.11).
+    message = format_rejection(_rejected(load_config(tmp_path, fake=fake)))
+    assert str(tmp_path) in message
+    assert "unreadable" in message
+
+
+@pytest.mark.skipif(
+    not hasattr(os, "geteuid") or os.geteuid() == 0,
+    reason="root can read a file without read permission",
+)
+def test_file_without_read_permission_is_unreadable(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("[device]\nid = 'warashi-01'\n", encoding="utf-8")
+    path.chmod(0)
+    try:
+        message = format_rejection(_rejected(load_config(path, fake=False)))
+    finally:
+        path.chmod(0o600)
+    assert str(path) in message
+    assert "unreadable" in message
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        b"[device\nid = 'warashi-01'\n",  # unclosed table header
+        b"[timing]\ncooldown_s = = 20\n",  # broken key/value pair
+        b"[device]\nid = '\xff\xfe'\n",  # not UTF-8
+    ],
+    ids=["unclosed-table", "broken-pair", "not-utf8"],
+)
+def test_invalid_toml_is_rejected_naming_the_path(tmp_path: Path, content: bytes) -> None:
+    path = tmp_path / "config.toml"
+    path.write_bytes(content)
+    message = format_rejection(_rejected(load_config(path, fake=True)))
+    assert str(path) in message
+    assert "not valid TOML" in message
+
+
+def test_valid_file_fills_missing_keys_with_defaults(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("[servo]\npan_limit = 45\n", encoding="utf-8")
+    cfg = _accepted(load_config(path, fake=False))
+    assert cfg == dataclasses.replace(
+        Config(), servo=dataclasses.replace(Config().servo, pan_limit=45.0)
+    )
+
+
+# --- Message format (R25.9) ------------------------------------------------------------------
+
+
+def test_single_key_rule_names_key_value_and_allowed_values() -> None:
+    message = format_rejection(_rejected(validate_mapping({"servo": {"pan_limit": 61}})))
+    assert "servo.pan_limit = 61 (allowed: number, 0 < value <= 60)" in message
+
+
+def test_cross_key_rule_names_every_key_and_value() -> None:
+    result = validate_mapping({"timing": {"camera_timeout_s": 8, "verdict_timeout_s": 8}})
+    message = format_rejection(_rejected(result))
+    assert (
+        "timing.camera_timeout_s, timing.verdict_timeout_s = 8, 8 "
+        "(allowed: camera_timeout_s < verdict_timeout_s)"
+    ) in message
+
+
+def test_every_violation_is_reported_in_one_message() -> None:
+    result = validate_mapping(
+        {
+            "servo": {"pan_limit": 0, "tilt_limit": 31},
+            "pins": {"pir_pin": 1.5},
+            "nosuch": {"x": 1},
+        }
+    )
+    keys = _violation_keys(result)
+    assert {"servo.pan_limit", "servo.tilt_limit", "pins.pir_pin", "nosuch"} <= set(keys)
+    message = format_rejection(_rejected(result))
+    for key in ("servo.pan_limit", "servo.tilt_limit", "pins.pir_pin", "nosuch"):
+        assert key in message
+
+
+@pytest.mark.parametrize(
+    "mapping",
+    [
+        {"privacy": {"blocked_words": [MARKER, ""]}},  # empty entry breaks the rule
+        {"privacy": {"blocked_words": [MARKER, 3]}},  # non-string entry
+        {"privacy": {"blocked_words": MARKER}},  # not a list
+        {"privacy": {"blocked_word": [MARKER]}},  # mistyped key
+        {"privacy": MARKER},  # section is not a table
+        {"privacy": {"blocked_words": [MARKER]}, "servo": {"pan_limit": 99}},  # other key
+    ],
+    ids=["empty-entry", "non-string", "not-a-list", "unknown-key", "not-a-table", "other-key"],
+)
+def test_no_blocked_word_in_any_rejection_message(mapping: dict[str, object]) -> None:
+    rejected = _rejected(validate_mapping(mapping))
+    assert MARKER not in format_rejection(rejected)
+    assert MARKER not in repr(rejected)
+
+
+def test_blocked_words_violation_names_the_key_and_rule() -> None:
+    message = format_rejection(
+        _rejected(validate_mapping({"privacy": {"blocked_words": [MARKER, ""]}}))
+    )
+    assert "privacy.blocked_words" in message
+    assert "list of non-empty strings" in message
+
+
+def test_unknown_key_value_is_not_shown() -> None:
+    # A mistyped key may hold a secret (for example a Wi-Fi or AWS value).
+    result = validate_mapping({"device": {"wifi_password": "ZQXJsecret"}})
+    assert _violation_keys(result) == ["device.wifi_password"]
+    assert "ZQXJ" not in format_rejection(_rejected(result))
+
+
+# --- R25.7 cross-key rules at their boundaries ------------------------------------------------
+#
+# Each case sets the keys of one rule so that the rule holds with equality (accepted) and
+# then moves one key by one ulp to break it (rejected, naming every key of the rule). The
+# other keys keep their defaults and satisfy every other rule.
+
+_SWEEP_KEYS = (
+    "servo.pan_limit",
+    "servo.tilt_limit",
+    "servo.glide_step_deg",
+    "servo.glide_interval_ms",
+)
+
+# Default Sweep_Time ceil(2 * 30 / 2) * 30 / 1000 and T = 100 / 1000, written as the Glossary
+# formulas so that the boundary is the float the rule computes.
+_SWEEP_S = math.ceil(2 * 30 / 2) * 30 / 1000
+_T_S = 100 / 1000
+
+_BOUNDARY_CASES = [
+    pytest.param(
+        # waking_timeout_s >= lantern_fade_in_ms / 1000; the default fade-in is 1500 ms.
+        {"timing": {"waking_timeout_s": 1500 / 1000}},
+        {"timing": {"waking_timeout_s": math.nextafter(1500 / 1000, 0)}},
+        ["timing.waking_timeout_s", "lantern.lantern_fade_in_ms"],
+        id="waking-vs-fade-in",
+    ),
+    pytest.param(
+        # waking_timeout_s >= Sweep_Time; a short fade-in keeps the fade-in rule out of the way.
+        {"timing": {"waking_timeout_s": _SWEEP_S}, "lantern": {"lantern_fade_in_ms": 100}},
+        {
+            "timing": {"waking_timeout_s": math.nextafter(_SWEEP_S, 0)},
+            "lantern": {"lantern_fade_in_ms": 100},
+        },
+        ["timing.waking_timeout_s", *_SWEEP_KEYS],
+        id="waking-vs-sweep",
+    ),
+    pytest.param(
+        # glide_timeout_s >= Sweep_Time + 2 * T
+        {"timing": {"glide_timeout_s": _SWEEP_S + 2 * _T_S}},
+        {"timing": {"glide_timeout_s": math.nextafter(_SWEEP_S + 2 * _T_S, 0)}},
+        ["timing.glide_timeout_s", *_SWEEP_KEYS, "timing.tick_interval_ms"],
+        id="glide-vs-sweep-and-tick",
+    ),
+    pytest.param(
+        # cooldown_s >= glide_timeout_s + lantern_fade_out_ms / 1000 = 3 + 2
+        {"timing": {"cooldown_s": 3 + 2000 / 1000}},
+        {"timing": {"cooldown_s": math.nextafter(3 + 2000 / 1000, 0)}},
+        ["timing.cooldown_s", "timing.glide_timeout_s", "lantern.lantern_fade_out_ms"],
+        id="cooldown-vs-glide-and-fade-out",
+    ),
+    pytest.param(
+        # camera_timeout_s < verdict_timeout_s (strict): just below holds, equality breaks.
+        {"timing": {"camera_timeout_s": math.nextafter(8.0, 0)}},
+        {"timing": {"camera_timeout_s": 8.0}},
+        ["timing.camera_timeout_s", "timing.verdict_timeout_s"],
+        id="camera-vs-verdict",
+    ),
+]
+
+
+@pytest.mark.parametrize(("holds", "breaks", "keys"), _BOUNDARY_CASES)
+def test_cross_key_timing_rule_at_its_boundary(
+    holds: dict[str, dict[str, object]],
+    breaks: dict[str, dict[str, object]],
+    keys: list[str],
+) -> None:
+    _accepted(validate_mapping(holds))
+    assert _violation_keys(validate_mapping(breaks)) == [", ".join(keys)]
+
+
+def test_timing_rule_is_skipped_when_one_of_its_keys_failed_earlier() -> None:
+    # R25.7: a rule runs only when every key it uses passed criteria 2 to 6 and 14, so a bad
+    # verdict_timeout_s is reported once, not again by the camera_timeout_s rule.
+    result = validate_mapping({"timing": {"verdict_timeout_s": -1, "camera_timeout_s": 5}})
+    assert _violation_keys(result) == ["timing.verdict_timeout_s"]
+
+
+def test_timing_rule_with_wrong_type_does_not_raise() -> None:
+    result = validate_mapping({"timing": {"cooldown_s": "20", "glide_timeout_s": True}})
+    assert set(_violation_keys(result)) == {"timing.cooldown_s", "timing.glide_timeout_s"}
+
+
+# --- [aws] (R21.7, R25.8) --------------------------------------------------------------------
+
+
+def test_config_without_aws_section_is_accepted() -> None:
+    assert _accepted(validate_mapping({})) == Config()
+
+
+def test_aws_table_with_arbitrary_content_is_accepted(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text(
+        "\n".join(
+            [
+                "[aws]",
+                'endpoint = "placeholder.invalid"',
+                "port = 8883",
+                "ratio = nan",
+                "flags = [true, 1, 'two', [3.5]]",
+                "inline = { a = 1, b = { c = [] } }",
+                "[aws.nested.deeper]",
+                "when = 1979-05-27T07:32:00Z",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    cfg = _accepted(load_config(path, fake=False))
+    assert dataclasses.replace(cfg, aws=()) == Config()
+    expected_keys = ["endpoint", "port", "ratio", "flags", "inline", "nested"]
+    assert [key for key, _ in cfg.aws] == expected_keys
+    assert dict(cfg.aws)["endpoint"] == "placeholder.invalid"
+    hash(cfg)  # the opaque section is frozen, so the Config stays hashable
+
+
+@pytest.mark.parametrize("value", [1, "text", [1, 2], {}], ids=["int", "str", "list", "empty"])
+def test_aws_in_any_form_is_accepted(value: object) -> None:
+    cfg = _accepted(validate_mapping({"aws": value}))
+    assert dataclasses.replace(cfg, aws=()) == Config()
+
+
+def test_unknown_section_outside_aws_is_rejected() -> None:
+    assert _violation_keys(validate_mapping({"aws_extra": {"x": 1}})) == ["aws_extra"]
+
+
+# --- Shared generator check ------------------------------------------------------------------
+
+
+@given(valid_configs())
+def test_every_valid_configs_example_is_accepted(cfg: Config) -> None:
+    # Keeps tests/strategies.py honest: valid_configs() must only produce Configs the loader
+    # accepts, and as_mapping() must rebuild the same Config.
+    assert _accepted(validate_mapping(as_mapping(cfg))) == cfg
+
+
+# ----- device/config.example.toml (task 28.4, R25.12) -----
+EXAMPLE_CONFIG = Path(__file__).resolve().parents[1] / "config.example.toml"
+
+
+def test_example_config_loads_without_violation() -> None:
+    result = load_config(EXAMPLE_CONFIG, fake=False)
+    assert isinstance(result, Config), result
+
+
+def test_example_config_mentions_every_glossary_key() -> None:
+    # GLOSSARY_DEFAULTS is transcribed by hand from the Glossary, so this does not depend on
+    # the loader's own key list. `aws` is reserved and only appears as a commented section.
+    text = EXAMPLE_CONFIG.read_text(encoding="utf-8")
+    missing = [
+        f"{section}.{key}"
+        for section, keys in GLOSSARY_DEFAULTS.items()
+        if isinstance(keys, dict)
+        for key in keys
+        if not re.search(rf"^{re.escape(key)}\s*=", text, re.MULTILINE)
+    ]
+    assert missing == []
+    for section in GLOSSARY_DEFAULTS:
+        assert f"[{section}]" in text

@@ -1,0 +1,23 @@
+# Template. scripts/deploy_pi.sh replaces @WORKDIR@ and @USER@ when it installs the unit.
+[Unit]
+Description=Zashiki-Warashi Guardian device agent
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@USER@
+WorkingDirectory=@WORKDIR@
+ExecStart=/usr/bin/python3 -m warashi_agent
+Environment=PYTHONUNBUFFERED=1
+SupplementaryGroups=gpio video audio
+Restart=on-failure
+RestartSec=5
+RestartPreventExitStatus=2
+KillSignal=SIGTERM
+TimeoutStopSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

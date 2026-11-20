@@ -27,6 +27,10 @@ cdk.out/
 # ----- Secrets and device-specific files (never commit) -----
 # Real device config. Commit config.example.toml instead.
 config.toml
+# Generated voice audio (rebuilt by scripts/generate_voice_lines.*).
+device/warashi_agent/voice/*.wav
+# Last head pose saved by the device at runtime.
+last_pose.json
 .env
 .env.*
 !.env.example
