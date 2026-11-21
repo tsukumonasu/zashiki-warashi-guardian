@@ -1,5 +1,7 @@
 # Zashiki-Warashi Guardian
 
+日本語: [README.ja.md](README.ja.md)
+
 > A traditional Japanese doll that wakes when someone approaches, lights its lantern,
 > slowly turns to look at them, greets family members, and unsettles strangers —
 > then notifies the family.
