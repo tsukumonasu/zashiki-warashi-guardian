@@ -81,3 +81,15 @@ blocked_words = []                # words no voice line may contain; put family 
 # keepalive_s = 60                # 30-1200
 # reconnect_min_s = 1             # first retry delay, 0 < value <= 3600
 # reconnect_max_s = 60            # delay cap, >= reconnect_min_s
+# appsync_realtime_host = "<your-appsync-realtime-host>"   # voice only; host name, written by provision_device.sh
+# appsync_http_host = "<your-appsync-http-host>"           # voice only; host name, written by provision_device.sh
+# [conversation]
+# Optional voice session (voice-conversation). Off by default. Turning it on needs [aws].enabled = true
+# and both appsync_* hosts above.
+# conversation_enabled = false              # true lets a family verdict start a voice session
+# conversation_max_s = 180                  # longest session: 30-420; conversation_silence_s + 5 <= this
+# conversation_silence_s = 15               # local silence limit: 5-60
+# conversation_mic_gain = 4.0               # software gain on the microphone: 0.5-16
+# conversation_chunk_ms = 100               # audio chunk length: 60-200
+# conversation_mute_mic_while_speaking = false   # half-duplex mode
+# conversation_connect_timeout_s = 8        # connect, subscribe and hello: 2-20

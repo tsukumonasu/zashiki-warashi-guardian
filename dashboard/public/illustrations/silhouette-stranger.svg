@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="t d">
+<title id="t">An unfamiliar figure in the dark</title>
+<desc id="d">A tall dark silhouette stands still at the edge of the lantern light.</desc>
+<rect width="240" height="240" fill="#1c2447"/>
+<circle cx="120" cy="120" r="96" fill="#f2b45a" opacity="0.18"/>
+<rect x="0" y="206" width="240" height="34" fill="#121833"/>
+<g fill="#05070f" transform="translate(-14.400000000000006 -24.720000000000027) scale(1.12)"><circle cx="120" cy="82" r="22"/><path d="M84 206 C84 150 96 118 120 118 C144 118 156 150 156 206 Z"/></g>
+<path d="M30 206 V60 H70 V206" fill="none" stroke="#3a4573" stroke-width="4"/>
+</svg>

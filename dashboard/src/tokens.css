@@ -1,0 +1,89 @@
+/*
+ * Design tokens: washi paper, sumi ink, indigo night, andon-lantern amber.
+ * Fonts: Shippori Mincho (OFL 1.1) is self-hosted; body text uses the system stack (design D14).
+ *
+ * Contrast (WCAG 2.x relative luminance, computed when this file was written):
+ *   --color-ink on --color-washi                14.7:1
+ *   --color-ink-soft on --color-washi / shade    8.2:1 / 7.1:1
+ *   --color-paper-text on --color-night         14.8:1
+ *   --color-paper-dim on --color-night          10.5:1
+ *   --color-andon on --color-night               9.5:1   (night on andon is the same ratio: buttons)
+ *   --color-paper-text on --color-night-raised  12.8:1
+ *   --color-paper-dim on --color-night-raised    9.1:1
+ *   --color-andon on --color-night-raised        8.2:1
+ *   --color-link-on-paper on --color-washi       6.4:1
+ *   --color-danger on --color-washi              7.0:1
+ * Every pair is at least 4.5:1, so it also passes for large text (3:1).
+ */
+
+@font-face {
+  font-family: "Shippori Mincho";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ShipporiMincho-Regular.subset.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Shippori Mincho";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/ShipporiMincho-SemiBold.subset.woff2") format("woff2");
+}
+
+:root {
+  /* Palette */
+  --color-washi: #f3ecdc;
+  --color-washi-shade: #e6dcc5;
+  --color-ink: #1b1a1f;
+  --color-ink-soft: #4a443c;
+  --color-night: #121833;
+  --color-night-raised: #1c2447;
+  --color-night-line: #3a4573;
+  --color-paper-text: #f3ecdc;
+  --color-paper-dim: #c3c8de;
+  --color-andon: #f2b45a;
+  --color-andon-glow: rgba(242, 180, 90, 0.35);
+  --color-link-on-paper: #7a4a00;
+  --color-danger: #8f2a2a;
+
+  /* Roles */
+  --surface-page: var(--color-night);
+  --surface-raised: var(--color-night-raised);
+  --surface-paper: var(--color-washi);
+  --text-on-night: var(--color-paper-text);
+  --text-dim-on-night: var(--color-paper-dim);
+  --text-on-paper: var(--color-ink);
+  --text-dim-on-paper: var(--color-ink-soft);
+  --accent: var(--color-andon);
+  --focus-ring: 3px solid var(--color-andon);
+
+  /* Type */
+  --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --font-size-base: 1rem;
+  --font-size-large: 1.5rem;
+
+  /* Space and motion. Slow on purpose; reduced motion overrides below. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2.5rem;
+  --radius: 0.5rem;
+  --fade-lantern: 1.6s;
+  --fade-ui: 0.4s;
+
+  /* Washi-paper texture: a faint fibre grain made from gradients, no image file. */
+  --texture-washi:
+    repeating-linear-gradient(97deg, rgba(120, 100, 60, 0.04) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(7deg, rgba(120, 100, 60, 0.035) 0 1px, transparent 1px 11px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fade-lantern: 0.1s;
+    --fade-ui: 0.01s;
+  }
+}

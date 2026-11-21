@@ -1,5 +1,6 @@
 {
   "notificationEmail": "family@example.invalid",
   "budgetAmountUsd": 10,
-  "budgetEmail": "owner@example.invalid"
+  "budgetEmail": "owner@example.invalid",
+  "voiceEnabled": false
 }

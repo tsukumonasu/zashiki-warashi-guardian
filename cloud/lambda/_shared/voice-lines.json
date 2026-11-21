@@ -64,5 +64,17 @@
     "category": "uncertain",
     "ja": "……かぜの おと、かな。",
     "en": "...Was that only the wind?"
+  },
+  {
+    "id": "conversation_trouble",
+    "category": "family",
+    "ja": "うまく きこえないの。また あとでね。",
+    "en": "I can't hear well. Let's talk later."
+  },
+  {
+    "id": "conversation_bye",
+    "category": "family",
+    "ja": "じゃあね。また おはなし しようね。",
+    "en": "Goodbye for now. Let's talk again."
   }
 ]

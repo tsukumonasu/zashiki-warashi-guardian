@@ -20,6 +20,9 @@ dev = [
     "pytest-timeout>=2.3",
     "hypothesis>=6.112",
     "ruff>=0.4",
+    # Loopback server of the voice-conversation tests. On the Pi the runtime package comes from
+    # apt (python3-websockets); pip never installs it there.
+    "websockets>=13",
 ]
 
 [tool.setuptools.packages.find]

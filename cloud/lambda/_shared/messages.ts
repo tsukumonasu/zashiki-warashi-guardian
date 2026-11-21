@@ -54,7 +54,27 @@ export type CommandData = {
   gaze: { panDeg: number; tiltDeg: number };
   lantern: { level: number; fadeMs: number };
   "mode.set": { mode: "guard" | "sleep" };
+  "conversation.start": {
+    sessionId: string;
+    token: string;
+    maxSeconds: number;
+    silenceSeconds: number;
+    source: "family_verdict" | "manual";
+  };
+  "conversation.end": { sessionId: string; reason: ConversationEndReason };
+  "snapshot.request": { requestId: string };
 };
+export type ConversationEndReason =
+  | "silence"
+  | "limit"
+  | "stranger"
+  | "user"
+  | "manual"
+  | "language"
+  | "unsafe_output"
+  | "error"
+  | "no_client"
+  | "offline";
 export type CommandType = keyof CommandData;
 
 export type TopicKind = "events" | "commands" | "status";
@@ -73,6 +93,14 @@ type FieldSpec = {
   /** false only for error.reported refId: a missing field decodes as null. */
   required?: boolean;
   maxCodePoints?: number;
+  /** A string must match this pattern (ids of the voice session, S4 to S6). */
+  pattern?: RegExp;
+  /** A string must have 1..maxLength code points (the `token` rule). */
+  maxLength?: number;
+  /** Finite integers outside the range are valid and clamped on decode. */
+  clampRange?: readonly [number, number];
+  /** Encode leaves the field out when it is null (optional field with a null default). */
+  omitWhenNull?: boolean;
 };
 
 type TypeSpec = {
@@ -104,6 +132,20 @@ const REASONS = [
   "manual",
   "cooldown_done",
   "error",
+  "conversation",
+  "conversation_done",
+] as const;
+const END_REASONS = [
+  "silence",
+  "limit",
+  "stranger",
+  "user",
+  "manual",
+  "language",
+  "unsafe_output",
+  "error",
+  "no_client",
+  "offline",
 ] as const;
 const ERROR_CODES = [
   "unknown_type",
@@ -125,7 +167,18 @@ const ERROR_CODES = [
   "snapshot_too_large",
   "internal_error",
   "adapter_failed",
+  "conversation_failed",
+  "microphone_failed",
 ] as const;
+
+/** `sessionId` and `requestId` (S4 to S6). */
+const ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
+const id64 = (name: string): FieldSpec => ({ name, kind: "str", pattern: ID_PATTERN });
+const clampedInt = (name: string, min: number, max: number): FieldSpec => ({
+  name,
+  kind: "int",
+  clampRange: [min, max],
+});
 
 const str = (name: string, nullable = false): FieldSpec => ({ name, kind: "str", nullable });
 const num = (name: string): FieldSpec => ({ name, kind: "number" });
@@ -150,6 +203,14 @@ const REGISTRY: Readonly<Record<string, TypeSpec>> = Object.freeze({
       num("panDeg"),
       num("tiltDeg"),
       str("jpegBase64"),
+      {
+        name: "requestId",
+        kind: "str",
+        nullable: true,
+        required: false,
+        pattern: ID_PATTERN,
+        omitWhenNull: true,
+      },
     ],
   },
   "state.changed": {
@@ -170,6 +231,8 @@ const REGISTRY: Readonly<Record<string, TypeSpec>> = Object.freeze({
       { name: "refId", kind: "str", nullable: true, required: false },
     ],
   },
+  "conversation.requested": { fields: [enumOf("reason", ["family_verdict"])] },
+  "conversation.ended": { fields: [id64("sessionId"), enumOf("reason", END_REASONS)] },
   // Commands (cloud -> device)
   "judgement.result": {
     fields: [
@@ -189,6 +252,17 @@ const REGISTRY: Readonly<Record<string, TypeSpec>> = Object.freeze({
   gaze: { fields: [num("panDeg"), num("tiltDeg")] },
   lantern: { fields: [num("level"), int("fadeMs")] },
   "mode.set": { fields: [enumOf("mode", MODES)] },
+  "conversation.start": {
+    fields: [
+      id64("sessionId"),
+      { name: "token", kind: "str", maxLength: 128 },
+      clampedInt("maxSeconds", 30, 420),
+      clampedInt("silenceSeconds", 5, 60),
+      enumOf("source", ["family_verdict", "manual"]),
+    ],
+  },
+  "conversation.end": { fields: [id64("sessionId"), enumOf("reason", END_REASONS)] },
+  "snapshot.request": { fields: [id64("requestId")] },
   // Status (device -> cloud)
   "status.report": {
     fields: [
@@ -217,6 +291,9 @@ function specFor(type: string): TypeSpec | undefined {
 // ---------------------------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------------------------
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
 
 class InvalidError extends Error {}
 
@@ -264,10 +341,23 @@ function isIsoTimestampWithOffset(text: string): boolean {
 function decodeValue(spec: FieldSpec, value: unknown, where: string): unknown {
   switch (spec.kind) {
     case "str":
-      if (typeof value === "string") return value;
+      if (typeof value === "string") {
+        if (spec.pattern !== undefined && !spec.pattern.test(value)) {
+          return invalid(`${where}: does not match the id rule`);
+        }
+        if (spec.maxLength !== undefined) {
+          const length = Array.from(value).length;
+          if (length < 1 || length > spec.maxLength) return invalid(`${where}: length out of range`);
+        }
+        return value;
+      }
       break;
     case "int":
-      if (typeof value === "number" && Number.isInteger(value)) return value;
+      if (typeof value === "number" && Number.isInteger(value)) {
+        return spec.clampRange === undefined
+          ? value
+          : clamp(value, spec.clampRange[0], spec.clampRange[1]);
+      }
       break;
     case "number":
       if (typeof value === "number") return value;
@@ -405,9 +495,10 @@ function encodeFields(specs: readonly FieldSpec[], obj: Obj, path: string): Obj 
     let value = obj[spec.name];
     if (value === undefined) {
       // refId is always written for error.reported; every other undefined field is omitted.
-      if (spec.required === false) out[spec.name] = null;
+      if (spec.required === false && spec.omitWhenNull !== true) out[spec.name] = null;
       continue;
     }
+    if (value === null && spec.omitWhenNull === true) continue;
     const where = `${path}.${spec.name}`;
     if (typeof value === "number" && !Number.isFinite(value)) {
       throw new RangeError(`${where}: non-finite number`);
@@ -451,14 +542,17 @@ export function encodeEnvelope(e: Envelope): string {
 // makeCommand and topicFor
 // ---------------------------------------------------------------------------------------------
 
-const clamp = (value: number, min: number, max: number): number =>
-  Math.min(max, Math.max(min, value));
-
 function finite(value: unknown, where: string): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new RangeError(`${where}: not a finite number`);
   }
   return value;
+}
+
+function checkId(value: unknown, where: string): void {
+  if (typeof value !== "string" || !ID_PATTERN.test(value)) {
+    throw new RangeError(`${where}: does not match the id rule`);
+  }
 }
 
 function clampCommand(type: CommandType, data: CommandData[CommandType]): unknown {
@@ -501,8 +595,45 @@ function clampCommand(type: CommandType, data: CommandData[CommandType]): unknow
     }
     case "mode.set":
       return { mode: (data as CommandData["mode.set"]).mode };
+    case "conversation.start": {
+      const d = data as CommandData["conversation.start"];
+      checkId(d.sessionId, "conversation.start.sessionId");
+      if (typeof d.token !== "string" || Array.from(d.token).length < 1 || Array.from(d.token).length > 128) {
+        throw new RangeError("conversation.start.token: length out of range");
+      }
+      return {
+        sessionId: d.sessionId,
+        token: d.token,
+        maxSeconds: Math.round(clamp(finite(d.maxSeconds, "conversation.start.maxSeconds"), 30, 420)),
+        silenceSeconds: Math.round(
+          clamp(finite(d.silenceSeconds, "conversation.start.silenceSeconds"), 5, 60),
+        ),
+        source: d.source,
+      };
+    }
+    case "conversation.end": {
+      const d = data as CommandData["conversation.end"];
+      checkId(d.sessionId, "conversation.end.sessionId");
+      return { sessionId: d.sessionId, reason: d.reason };
+    }
+    case "snapshot.request": {
+      const d = data as CommandData["snapshot.request"];
+      checkId(d.requestId, "snapshot.request.requestId");
+      return { requestId: d.requestId };
+    }
   }
 }
+
+const COMMAND_TYPES: readonly string[] = [
+  "judgement.result",
+  "speak",
+  "gaze",
+  "lantern",
+  "mode.set",
+  "conversation.start",
+  "conversation.end",
+  "snapshot.request",
+];
 
 /**
  * Build a command envelope, clamping ranges as the device does (R24.9). Throws a `RangeError`
@@ -514,7 +645,7 @@ export function makeCommand<T extends CommandType>(
   data: CommandData[T],
   ctx: { id: string; now: Date; deviceId: string; encounterId: string | null },
 ): Envelope<T, CommandData[T]> {
-  if (!["judgement.result", "speak", "gaze", "lantern", "mode.set"].includes(type)) {
+  if (!COMMAND_TYPES.includes(type)) {
     throw new RangeError("type: not a command type");
   }
   return {

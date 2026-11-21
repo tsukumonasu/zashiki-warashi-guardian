@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="t d">
+<title id="t">Nobody is there</title>
+<desc id="d">An empty doorway lit softly by a lantern. The curtain stirs and nobody stands there.</desc>
+<rect width="240" height="240" fill="#1c2447"/>
+<circle cx="120" cy="120" r="96" fill="#f2b45a" opacity="0.3"/>
+<rect x="0" y="206" width="240" height="34" fill="#121833"/>
+<path d="M70 206 V70 Q120 40 170 70 V206" fill="#121833" stroke="#3a4573" stroke-width="4"/>
+<path d="M150 80 q12 40 -4 90" fill="none" stroke="#c3c8de" stroke-width="3" stroke-linecap="round"/>
+</svg>

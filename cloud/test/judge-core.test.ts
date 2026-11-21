@@ -9,6 +9,8 @@ import {
   CLAIM_TTL_S,
   decodeJpeg,
   handleSnapshot,
+  LOOK_TTL_S,
+  type LookStore,
   PUBLISH_TIMEOUT_MS,
   type JudgeDeps,
   type SnapshotEvent,
@@ -59,7 +61,13 @@ function jpegBase64(size = 1000): string {
 }
 
 function snapshotEvent(
-  overrides: { snapshotId?: string; jpeg?: string; encounterId?: string | null; id?: string } = {},
+  overrides: {
+    snapshotId?: string;
+    jpeg?: string;
+    encounterId?: string | null;
+    id?: string;
+    requestId?: string | null;
+  } = {},
 ): SnapshotEvent {
   return {
     v: 1,
@@ -75,6 +83,7 @@ function snapshotEvent(
       panDeg: 0,
       tiltDeg: 0,
       jpegBase64: overrides.jpeg ?? jpegBase64(),
+      requestId: overrides.requestId === undefined ? null : overrides.requestId,
     },
     topicDeviceId: DEVICE,
   };
@@ -502,6 +511,53 @@ describe("notification (R9.7, R9.8)", () => {
     );
     expect(after).toMatchObject({ notified: true });
     expect(h.notifier.sent).toHaveLength(2);
+  });
+});
+
+describe("look result for a snapshot.request (voice-conversation R8.6, R15.4)", () => {
+  type Put = { requestId: string; verdict: string; atMs: number; ttlS: number };
+  let puts: Put[];
+  let failPut: boolean;
+
+  beforeEach(() => {
+    puts = [];
+    failPut = false;
+    const looks: LookStore = {
+      putLook: async (requestId, verdict, atMs, ttlS) => {
+        if (failPut) throw new Error("dynamo down");
+        puts.push({ requestId, verdict, atMs, ttlS });
+      },
+    };
+    h.deps.looks = looks;
+  });
+
+  it("writes the verdict under the requestId for 10 minutes", async () => {
+    h.faces.queueSearch(FAMILY);
+    await handleSnapshot(snapshotEvent({ requestId: "req-1" }), h.deps);
+    expect(puts).toEqual([{ requestId: "req-1", verdict: "family", atMs: T0, ttlS: 600 }]);
+    expect(LOOK_TTL_S).toBe(600);
+  });
+
+  it("writes nothing when the snapshot carries no requestId", async () => {
+    h.faces.queueSearch(FAMILY);
+    await handleSnapshot(snapshotEvent(), h.deps);
+    expect(puts).toEqual([]);
+  });
+
+  it("a stranger look still records the verdict and sends the single notification", async () => {
+    h.faces.queueSearch(STRANGER).queueDetect({ faces: 1, quality: GOOD_QUALITY, box: BOX });
+    const result = await handleSnapshot(snapshotEvent({ requestId: "req-2" }), h.deps);
+    expect(puts.map((p) => p.verdict)).toEqual(["stranger"]);
+    expect(result).toMatchObject({ outcome: "judged", verdict: "stranger", published: true, notified: true });
+    expect(h.notifier.sent).toHaveLength(1);
+  });
+
+  it("a failing look write does not change the verdict, the publish or the record", async () => {
+    failPut = true;
+    h.faces.queueSearch(FAMILY);
+    const result = await handleSnapshot(snapshotEvent({ requestId: "req-3" }), h.deps);
+    expect(result).toMatchObject({ outcome: "judged", verdict: "family", published: true });
+    expect(logged("look_write_failed")).toHaveLength(1);
   });
 });
 

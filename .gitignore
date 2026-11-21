@@ -51,3 +51,6 @@ warashi_limits.txt
 
 # ----- Integration test measurements (latency harness output, may hold account details) -----
 cloud/.integration-out/
+
+# Listening-test audio of scripts/check_sonic_japanese.py.
+.sonic-check-out/

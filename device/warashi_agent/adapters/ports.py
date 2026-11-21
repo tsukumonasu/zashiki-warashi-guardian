@@ -29,6 +29,8 @@ from warashi_agent.model import (
     PlayAudioUrl,
     PlayLine,
     ReleaseServos,
+    StartConversation,
+    StopConversation,
     TakeSnapshot,
 )
 
@@ -86,6 +88,20 @@ class AudioPort(Protocol):
 
     def stop(self) -> None:
         """Terminate a running playback or download, then kill it after a short grace."""
+        ...
+
+
+class ConversationPort(Protocol):
+    """The voice session (voice-conversation R12.8 to R12.10).
+
+    Posts exactly one ``ConversationFinished`` per session id. ``handle`` never blocks and
+    never raises; a stale or repeated ``StopConversation`` changes nothing.
+    """
+
+    def handle(self, action: StartConversation | StopConversation) -> None: ...
+
+    def stop(self) -> None:
+        """End the running session and its audio processes for shutdown; idempotent."""
         ...
 
 

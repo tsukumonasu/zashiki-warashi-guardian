@@ -31,15 +31,21 @@ const STATES = [
 ] as const;
 const REASONS = [
   "presence", "arrived", "verdict", "no_face", "timeout", "offline", "audio_done", "manual",
-  "cooldown_done", "error",
+  "cooldown_done", "error", "conversation", "conversation_done",
 ] as const;
 const ERROR_CODES = [
   "unknown_type", "unsupported_version", "malformed_message", "wrong_device", "speak_rejected",
   "audio_busy", "command_rejected_state", "unknown_line", "voice_line_missing",
   "voice_line_invalid", "voice_file_missing", "audio_failed", "download_failed",
   "audio_device_missing", "camera_missing", "camera_failed", "snapshot_too_large",
-  "internal_error", "adapter_failed",
+  "internal_error", "adapter_failed", "conversation_failed", "microphone_failed",
 ] as const;
+
+const END_REASONS = [
+  "silence", "limit", "stranger", "user", "manual", "language", "unsafe_output", "error",
+  "no_client", "offline",
+] as const;
+const voiceId = fc.stringMatching(/^[A-Za-z0-9-]{1,64}$/);
 
 const faceBox = fc.record({
   left: finiteNumber,
@@ -62,6 +68,7 @@ const DATA_BY_TYPE: Record<string, fc.Arbitrary<unknown>> = {
     panDeg: finiteNumber,
     tiltDeg: finiteNumber,
     jpegBase64: fc.base64String({ maxLength: 200 }),
+    requestId: voiceId,
   }),
   "state.changed": fc.record({
     from: fc.constantFrom(...STATES),
@@ -101,6 +108,20 @@ const DATA_BY_TYPE: Record<string, fc.Arbitrary<unknown>> = {
     uptimeSec: intValue,
     agentVersion: text,
   }),
+  "conversation.requested": fc.record({ reason: fc.constant("family_verdict") }),
+  "conversation.ended": fc.record({
+    sessionId: voiceId,
+    reason: fc.constantFrom(...END_REASONS),
+  }),
+  "conversation.start": fc.record({
+    sessionId: voiceId,
+    token: fc.string({ minLength: 1, maxLength: 128 }),
+    maxSeconds: fc.integer({ min: 30, max: 420 }),
+    silenceSeconds: fc.integer({ min: 5, max: 60 }),
+    source: fc.constantFrom("family_verdict", "manual"),
+  }),
+  "conversation.end": fc.record({ sessionId: voiceId, reason: fc.constantFrom(...END_REASONS) }),
+  "snapshot.request": fc.record({ requestId: voiceId }),
   "status.offline": fc.constant({}),
 };
 

@@ -58,6 +58,9 @@ const ALL_ROUTES = [
   "POST /faces/upload",
   "POST /faces",
   "DELETE /faces/{memberId}",
+  "POST /conversations",
+  "GET /conversations/{sessionId}",
+  "DELETE /conversations/{sessionId}",
 ];
 const REVIEWER_DENIED = [
   "POST /commands",

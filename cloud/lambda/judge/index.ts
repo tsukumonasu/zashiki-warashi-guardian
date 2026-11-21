@@ -24,6 +24,7 @@ import { createSnsNotifier } from "../_shared/adapters/sns.js";
 import { loadConfig } from "../_shared/config.js";
 import { handleSnapshot } from "./judge-core.js";
 import type { JudgeDeps, JudgeResult, SnapshotEvent } from "./judge-core.js";
+import { createLookStore } from "./look-store.js";
 
 const DEFAULT_COLLECTION_ID = "warashi-household";
 
@@ -40,6 +41,7 @@ function buildDeps(): JudgeDeps {
   const fixedLabel = process.env["WARASHI_DEVICE_LABEL"];
 
   return {
+    looks: createLookStore(),
     faces: createRekognitionFaceSearch(),
     snapshots: createSnapshotStore(),
     bus: createIotBus(),

@@ -91,6 +91,17 @@ GLOSSARY_DEFAULTS: dict[str, object] = {
         "keepalive_s": 60,
         "reconnect_min_s": 1,
         "reconnect_max_s": 60,
+        "appsync_realtime_host": "",
+        "appsync_http_host": "",
+    },
+    "conversation": {
+        "conversation_enabled": False,
+        "conversation_max_s": 180,
+        "conversation_silence_s": 15,
+        "conversation_mic_gain": 4.0,
+        "conversation_chunk_ms": 100,
+        "conversation_mute_mic_while_speaking": False,
+        "conversation_connect_timeout_s": 8,
     },
 }
 
@@ -564,9 +575,111 @@ def test_example_config_mentions_every_glossary_key() -> None:
         if isinstance(keys, dict)
         for key in keys
         if not re.search(
-            rf"^{'# ' if section == 'aws' else ''}{re.escape(key)}\s*=", text, re.MULTILINE
+            rf"^{'# ' if section in ('aws', 'conversation') else ''}{re.escape(key)}\s*=",
+            text,
+            re.MULTILINE,
         )
     ]
     assert missing == []
     for section in GLOSSARY_DEFAULTS:
         assert f"[{section}]" in text
+
+
+# --- [conversation] (voice-conversation R12.14, R12.15) -------------------------------------
+
+
+def _voice_aws(**overrides: object) -> dict[str, object]:
+    table: dict[str, object] = {
+        "enabled": True,
+        "endpoint": "placeholder.invalid",
+        "ca_file": "ca",
+        "cert_file": "cert",
+        "key_file": "key",
+        "appsync_realtime_host": "rt.placeholder.invalid",
+        "appsync_http_host": "http.placeholder.invalid",
+    }
+    return table | overrides
+
+
+def test_conversation_defaults_are_off() -> None:
+    cfg = _accepted(validate_mapping({}))
+    assert cfg.conversation.conversation_enabled is False
+    assert type(cfg.conversation.conversation_max_s) is int
+    assert cfg.encounter_bound_s == Config().encounter_bound_s
+
+
+def test_enabled_conversation_extends_the_encounter_bound() -> None:
+    cfg = _accepted(
+        validate_mapping({"conversation": {"conversation_enabled": True}, "aws": _voice_aws()})
+    )
+    assert math.isclose(
+        cfg.encounter_bound_s, Config().encounter_bound_s + 180 + 2 * cfg.tick_s, abs_tol=TOL
+    )
+
+
+@pytest.mark.parametrize(
+    ("key", "good", "bad"),
+    [
+        ("conversation_max_s", (30, 420), (29, 421, 100.0, True)),
+        ("conversation_silence_s", (5, 60), (4, 61, 10.0)),
+        ("conversation_mic_gain", (0.5, 16, 4), (0.4, 16.1)),
+        ("conversation_chunk_ms", (60, 200), (59, 201, 100.5)),
+        ("conversation_connect_timeout_s", (2, 20), (1.9, 20.1)),
+    ],
+)
+def test_conversation_ranges(key: str, good: tuple[object, ...], bad: tuple[object, ...]) -> None:
+    for value in good:
+        # Silence 60 needs a max of at least 65, so keep the pair valid.
+        table = {key: value, "conversation_max_s": 420}
+        _accepted(validate_mapping({"conversation": table}))
+    for value in bad:
+        table = {key: value}
+        if key != "conversation_max_s":
+            table["conversation_max_s"] = 420
+        assert f"conversation.{key}" in _violation_keys(validate_mapping({"conversation": table}))
+
+
+@pytest.mark.parametrize(("silence", "ok"), [(25, True), (26, False)])
+def test_silence_plus_five_must_fit_in_max(silence: int, ok: bool) -> None:
+    result = validate_mapping(
+        {"conversation": {"conversation_max_s": 30, "conversation_silence_s": silence}}
+    )
+    if ok:
+        _accepted(result)
+    else:
+        assert _violation_keys(result) == [
+            "conversation.conversation_silence_s, conversation.conversation_max_s"
+        ]
+
+
+def test_enabled_conversation_needs_aws_and_both_hosts() -> None:
+    enabled = {"conversation": {"conversation_enabled": True}}
+    result = validate_mapping(enabled)
+    assert _violation_keys(result) == [
+        "conversation.conversation_enabled, aws.enabled",
+        "conversation.conversation_enabled, aws.appsync_realtime_host",
+        "conversation.conversation_enabled, aws.appsync_http_host",
+    ]
+    result = validate_mapping(enabled | {"aws": _voice_aws(appsync_http_host="")})
+    assert _violation_keys(result) == ["conversation.conversation_enabled, aws.appsync_http_host"]
+    _accepted(validate_mapping(enabled | {"aws": _voice_aws()}))
+
+
+def test_disabled_conversation_needs_no_hosts() -> None:
+    _accepted(validate_mapping({"conversation": {"conversation_enabled": False}}))
+
+
+def test_appsync_hosts_are_typed_hidden_and_never_shown() -> None:
+    result = validate_mapping({"aws": {"appsync_http_host": 5}})
+    assert _violation_keys(result) == ["aws.appsync_http_host"]
+    cfg = _accepted(validate_mapping({"aws": {"appsync_http_host": AWS_SECRET}}))
+    assert AWS_SECRET not in repr(cfg)
+    rejected = _rejected(
+        validate_mapping(
+            {
+                "conversation": {"conversation_enabled": True},
+                "aws": _voice_aws(appsync_http_host=""),
+            }
+        )
+    )
+    assert "placeholder" not in format_rejection(rejected)

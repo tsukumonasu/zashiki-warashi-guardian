@@ -64,7 +64,7 @@ describe("fixtures (R24.1, R24.15)", () => {
     expect({ extraFixture }).toEqual({ extraFixture: [] });
     expect({ missingInCodec }).toEqual({ missingInCodec: [] });
     expect({ extraInCodec }).toEqual({ extraInCodec: [] });
-    expect(documented.size).toBe(13);
+    expect(documented.size).toBe(18);
   });
 
   it("each fixture file carries the type named by its file name", () => {
@@ -294,6 +294,136 @@ describe("makeCommand (R24.9, R24.10)", () => {
   it("rejects a type that is not a command", () => {
     expect(() =>
       makeCommand("presence.detected" as never, { source: "pir" } as never, ctx),
+    ).toThrow(RangeError);
+  });
+});
+
+describe("voice conversation types (R16.1, R16.3)", () => {
+  const ID64 = "a".repeat(64);
+  const withData = (file: string, data: Record<string, unknown>): Record<string, unknown> => {
+    const base = readFixture(file);
+    return { ...base, data: { ...(base["data"] as object), ...data } };
+  };
+  const dataOf = (value: unknown): Record<string, unknown> => {
+    const result = decode(value);
+    expect(result.kind).toBe("valid");
+    return result.kind === "valid" ? (result.message.data as Record<string, unknown>) : {};
+  };
+
+  it("snapshot.captured requestId is optional and defaults to null", () => {
+    expect(dataOf(readFixture("snapshot.captured.json"))["requestId"]).toBeNull();
+    const withId = withData("snapshot.captured.json", { requestId: "req-1" });
+    expect(dataOf(withId)["requestId"]).toBe("req-1");
+    const decoded = decode(withId);
+    if (decoded.kind !== "valid") throw new Error("expected valid");
+    const encoded = JSON.parse(encodeEnvelope(decoded.message)) as { data: { requestId: string } };
+    expect(encoded.data.requestId).toBe("req-1");
+  });
+
+  it.each(["", "a b", "a_b", "あ", "a".repeat(65)])("rejects the id %j", (bad) => {
+    expect(decode(withData("snapshot.request.json", { requestId: bad })).kind).toBe("malformed");
+    expect(decode(withData("conversation.end.json", { sessionId: bad })).kind).toBe("malformed");
+    expect(decode(withData("snapshot.captured.json", { requestId: bad })).kind).toBe("malformed");
+  });
+
+  it("accepts a 64-character id", () => {
+    expect(decode(withData("snapshot.request.json", { requestId: ID64 })).kind).toBe("valid");
+  });
+
+  it("checks the token length 1..128", () => {
+    expect(decode(withData("conversation.start.json", { token: "" })).kind).toBe("malformed");
+    expect(decode(withData("conversation.start.json", { token: "t".repeat(129) })).kind).toBe(
+      "malformed",
+    );
+    expect(decode(withData("conversation.start.json", { token: "t".repeat(128) })).kind).toBe(
+      "valid",
+    );
+  });
+
+  it.each([
+    [0, 30],
+    [29, 30],
+    [1000, 420],
+  ])("clamps maxSeconds %d to %d", (given, expected) => {
+    expect(dataOf(withData("conversation.start.json", { maxSeconds: given }))["maxSeconds"]).toBe(
+      expected,
+    );
+  });
+
+  it.each([
+    [-3, 5],
+    [4, 5],
+    [61, 60],
+  ])("clamps silenceSeconds %d to %d", (given, expected) => {
+    expect(
+      dataOf(withData("conversation.start.json", { silenceSeconds: given }))["silenceSeconds"],
+    ).toBe(expected);
+  });
+
+  it("rejects a non-integer or non-finite duration and a bad enumeration value", () => {
+    expect(decode(withData("conversation.start.json", { maxSeconds: 1.5 })).kind).toBe("malformed");
+    expect(decode(withData("conversation.start.json", { maxSeconds: "9" })).kind).toBe("malformed");
+    expect(
+      decodeEnvelope(JSON.stringify(readFixture("conversation.start.json")).replace("180", "1e400"))
+        .kind,
+    ).toBe("malformed");
+    expect(decode(withData("conversation.start.json", { source: "other" })).kind).toBe("malformed");
+    expect(decode(withData("conversation.end.json", { reason: "bored" })).kind).toBe("malformed");
+    expect(decode(withData("conversation.ended.json", { reason: "bored" })).kind).toBe("malformed");
+    expect(decode(withData("conversation.requested.json", { reason: "x" })).kind).toBe("malformed");
+  });
+
+  it("accepts every ConversationEndReason", () => {
+    for (const reason of [
+      "silence", "limit", "stranger", "user", "manual",
+      "language", "unsafe_output", "error", "no_client", "offline",
+    ]) {
+      expect(decode(withData("conversation.ended.json", { reason })).kind).toBe("valid");
+    }
+  });
+
+  it("accepts the new state.changed reasons, the conversing state and the new error codes", () => {
+    for (const reason of ["conversation", "conversation_done"]) {
+      expect(
+        decode(withData("state.changed.json", { from: "greeting", to: "conversing", reason })).kind,
+      ).toBe("valid");
+    }
+    for (const code of ["conversation_failed", "microphone_failed"]) {
+      expect(decode(withData("error.reported.json", { code })).kind).toBe("valid");
+    }
+  });
+
+  it("makeCommand clamps and validates the new commands", () => {
+    const ctx = { id: "i", now: new Date("2026-11-20T12:34:56.789Z"), deviceId: "d", encounterId: null };
+    const start = makeCommand(
+      "conversation.start",
+      { sessionId: "s-1", token: "tok", maxSeconds: 9999, silenceSeconds: 1, source: "manual" },
+      ctx,
+    );
+    expect(start.data).toMatchObject({ maxSeconds: 420, silenceSeconds: 5 });
+    expect(decodeEnvelope(encodeEnvelope(start)).kind).toBe("valid");
+    expect(
+      decodeEnvelope(
+        encodeEnvelope(makeCommand("conversation.end", { sessionId: "s-1", reason: "user" }, ctx)),
+      ).kind,
+    ).toBe("valid");
+    expect(
+      decodeEnvelope(encodeEnvelope(makeCommand("snapshot.request", { requestId: "r-1" }, ctx))).kind,
+    ).toBe("valid");
+    expect(() => makeCommand("snapshot.request", { requestId: "bad id" }, ctx)).toThrow(RangeError);
+    expect(() =>
+      makeCommand(
+        "conversation.start",
+        { sessionId: "s", token: "", maxSeconds: 60, silenceSeconds: 10, source: "manual" },
+        ctx,
+      ),
+    ).toThrow(RangeError);
+    expect(() =>
+      makeCommand(
+        "conversation.start",
+        { sessionId: "s", token: "t", maxSeconds: Number.NaN, silenceSeconds: 10, source: "manual" },
+        ctx,
+      ),
     ).toThrow(RangeError);
   });
 });

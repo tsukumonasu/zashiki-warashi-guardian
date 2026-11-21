@@ -1,0 +1,44 @@
+{
+  "sampleId": "stranger_01",
+  "verdict": "stranger",
+  "confidence": 0.99,
+  "face": { "left": 0.4, "top": 0.2, "width": 0.22, "height": 0.34 },
+  "commands": [
+    {
+      "v": 1,
+      "id": "5a1f0c52-7d0e-4b0a-8f0d-1c2b3a4d5e11",
+      "ts": "2026-11-20T12:35:10.100Z",
+      "deviceId": "warashi-sim",
+      "encounterId": null,
+      "type": "judgement.result",
+      "data": {
+        "snapshotId": "sim-snapshot-stranger_01",
+        "verdict": "stranger",
+        "confidence": 0.99,
+        "face": { "left": 0.4, "top": 0.2, "width": 0.22, "height": 0.34 }
+      }
+    },
+    {
+      "v": 1,
+      "id": "5a1f0c52-7d0e-4b0a-8f0d-1c2b3a4d5e12",
+      "ts": "2026-11-20T12:35:10.101Z",
+      "deviceId": "warashi-sim",
+      "encounterId": null,
+      "type": "speak",
+      "data": {
+        "lineId": "warning_stranger_first",
+        "audioUrl": null,
+        "ja": "……だあれ？ このいえの ひとじゃ ないね。",
+        "en": "...Who are you? You don't belong to this house."
+      }
+    }
+  ],
+  "speech": {
+    "lineId": "warning_stranger_first",
+    "ja": "……だあれ？ このいえの ひとじゃ ないね。",
+    "en": "...Who are you? You don't belong to this house.",
+    "mp3Url": null,
+    "generated": false
+  },
+  "latencyMs": { "total": 580, "search": 290 }
+}

@@ -34,7 +34,20 @@ from warashi_agent.messages import (
     SpeakData,
     decode,
 )
-from warashi_agent.model import CommandEvent, Gaze, JudgementResult, Lantern, ModeSet, Speak
+from warashi_agent.messages import ConversationEnd as WireConversationEnd
+from warashi_agent.messages import ConversationStart as WireConversationStart
+from warashi_agent.messages import SnapshotRequest as WireSnapshotRequest
+from warashi_agent.model import (
+    CommandEvent,
+    ConversationEnd,
+    ConversationStart,
+    Gaze,
+    JudgementResult,
+    Lantern,
+    ModeSet,
+    SnapshotRequest,
+    Speak,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -110,6 +123,22 @@ def to_command_event(env: Envelope) -> CommandEvent:
             return Lantern(ref_id=env.id, level=data.level, fade_ms=data.fade_ms)
         case ModeSetData():
             return ModeSet(ref_id=env.id, mode=data.mode)
+        case WireConversationStart():
+            # The token is a secret: it moves into the event, whose repr hides it (R13.6).
+            return ConversationStart(
+                ref_id=env.id,
+                session_id=data.session_id,
+                token=data.token,
+                max_s=data.max_seconds,
+                silence_s=data.silence_seconds,
+                source=data.source.value,
+            )
+        case WireConversationEnd():
+            return ConversationEnd(
+                ref_id=env.id, session_id=data.session_id, reason=data.reason.value
+            )
+        case WireSnapshotRequest():
+            return SnapshotRequest(ref_id=env.id, request_id=data.request_id)
     raise ValueError(f"{env.type} is not a command type")
 
 

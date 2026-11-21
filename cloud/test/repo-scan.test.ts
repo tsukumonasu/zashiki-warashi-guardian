@@ -12,6 +12,11 @@
 //   - documentation placeholder account ids `123456789012` and `000000000000`;
 //   - `docs/fixtures/` golden messages, which hold placeholder ids only and are still scanned by
 //     every rule except the allow-listed values above;
+//   - voice-session tokens (`<uuid>.<43 Base64URL characters>`) whose secret is one repeated
+//     character or whose id is the all-zero placeholder (the `docs/fixtures/` golden messages);
+//   - AppSync hosts that start with `xxxx`, `example`, `placeholder` or `your`;
+//   - audio recordings (`*.wav`, `*.mp3` and similar) only inside `device/warashi_agent/voice/`,
+//     which git ignores, so in practice never in a listed file;
 //   - lock files and `.kiro/` spec text are scanned for secrets, but lock files skip the token rule
 //     because integrity hashes look like tokens.
 import { execFileSync } from "node:child_process";
@@ -65,6 +70,14 @@ const RULES: readonly Rule[] = [
     skipFile: isLockFile,
   },
   {
+    // A voice-session token (docs/schema.md "Voice session channels"). It is the only credential
+    // of a session, so a real one must never be committed.
+    id: "voice-session-token",
+    pattern: /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.([A-Za-z0-9_-]{43})\b/,
+    allow: (m) => /^0{8}-0{4}-4000-8000-0{12}$/.test(m[1] ?? "") || /^(.)\1{42}$/.test(m[2] ?? ""),
+    skipFile: isLockFile,
+  },
+  {
     id: "arn-with-account-id",
     pattern: /arn:aws[a-z-]*:[a-z0-9-]+:[a-z0-9-]*:(\d{12}):/,
     allow: (m) => isPlaceholderAccount(m[1] ?? ""),
@@ -77,7 +90,7 @@ const RULES: readonly Rule[] = [
   {
     id: "endpoint-host",
     pattern:
-      /\b[a-z0-9-]+(?:-ats)?\.(?:iot|execute-api|lambda-url)\.[a-z0-9-]+\.amazonaws\.com\b|\b[a-z0-9]{10,}\.cloudfront\.net\b|\b[a-z0-9-]+\.auth\.[a-z0-9-]+\.amazoncognito\.com\b/i,
+      /\b[a-z0-9-]+(?:-ats)?\.(?:iot|execute-api|lambda-url)\.[a-z0-9-]+\.amazonaws\.com\b|\b[a-z0-9]{10,}\.cloudfront\.net\b|\b[a-z0-9]{10,}\.(?:appsync-api|appsync-realtime-api)\.[a-z0-9-]+\.amazonaws\.com\b|\b[a-z0-9-]+\.auth\.[a-z0-9-]+\.amazoncognito\.com\b/i,
     // Placeholder hosts and the made-up region `test-region` used by script stubs.
     allow: (m) => /^(?:xxxx|example|placeholder|your)|\.test-region\./i.test(m[0]),
   },
@@ -110,6 +123,9 @@ const RULES: readonly Rule[] = [
 ];
 
 const IMAGE_EXT = /\.(jpe?g|png|gif|webp|bmp|heic|tiff?)$/i;
+const AUDIO_EXT = /\.(wav|mp3|pcm|ogg|opus|m4a|flac|aac)$/i;
+/** The generated voice lines. Git ignores it; the exception only keeps the rule honest. */
+const VOICE_FOLDER = /^device\/warashi_agent\/voice\//;
 const SAMPLE_OR_FACE_PATH = /(^|\/)(samples?|faces?|selfies?)\//i;
 
 function isExampleFile(file: string): boolean {
@@ -153,9 +169,13 @@ export function scanText(file: string, text: string): Finding[] {
 }
 
 function scanPaths(files: readonly string[]): Finding[] {
-  return files
+  const images = files
     .filter((f) => IMAGE_EXT.test(f) && SAMPLE_OR_FACE_PATH.test(f) && !isExampleFile(f))
     .map((f) => ({ file: f, line: 0, rule: "image-under-sample-or-face-path" }));
+  const audio = files
+    .filter((f) => AUDIO_EXT.test(f) && !VOICE_FOLDER.test(f) && !isExampleFile(f))
+    .map((f) => ({ file: f, line: 0, rule: "audio-recording" }));
+  return [...images, ...audio];
 }
 
 const describeFinding = (f: Finding): string => `${f.file}:${f.line} violates rule "${f.rule}"`;
@@ -224,6 +244,26 @@ describe("repository scan rules detect violations and honor the allow list", () 
     expect(scanText("a.md", `call ${["090", "1234", "5678"].join("-")}`).map((f) => f.rule)).toEqual(["phone-number"]);
   });
 
+  it("flags a real-looking voice-session token and allows the placeholder", () => {
+    const id = ["0b8f6c1e", "3a52", "4d0f", "9d53", "2f1f3c1f7a10"].join("-");
+    const secret = "Zq8".repeat(14) + "Z";
+    expect(scanText("a.md", `${id}.${secret}`).map((f) => f.rule)).toEqual(["voice-session-token"]);
+    const placeholder = `${"0".repeat(8)}-0000-4000-8000-${"0".repeat(12)}.${"A".repeat(43)}`;
+    expect(scanText("a.json", placeholder)).toEqual([]);
+  });
+
+  it("flags an AppSync host and allows a placeholder host", () => {
+    const host = `abcdefghij1234.appsync-api.ap-northeast-1.${"amazonaws"}.com`;
+    expect(scanText("a.md", host).map((f) => f.rule)).toEqual(["endpoint-host"]);
+    expect(scanText("a.md", host.replace("abcdefghij1234", "xxxxxxxxxxxx"))).toEqual([]);
+  });
+
+  it("flags an audio recording outside the git-ignored voice folder", () => {
+    expect(
+      scanPaths(["docs/demo/hello.wav", "device/warashi_agent/voice/a.wav", "docs/a.md"]).map((f) => f.file),
+    ).toEqual(["docs/demo/hello.wav"]);
+  });
+
   it("skips *.example files", () => {
     expect(scanText("config.example.toml", `mail ${"a"}@${"b"}.jp`)).toEqual([]);
   });
@@ -257,6 +297,17 @@ describe("README and .gitignore statements (R5.17, R9.12, R19.7, R25.8, R19.3)",
   it("R25.8: art piece, not an alarm product; a photograph may be greeted as family", () => {
     expect(readme).toMatch(/art piece and not an alarm product/i);
     expect(readme).toMatch(/photograph of a family member .*may be greeted as family/i);
+  });
+
+  it("R9.11: the voice section states the no-guardrails, photograph, Tokyo, no-storage and owner-step facts", () => {
+    expect(readme).toMatch(/Nova Sonic has no guardrails/i);
+    expect(readme).toMatch(/only proof that a family member is present/i);
+    expect(readme).toMatch(/photograph of a family member .*passes/i);
+    expect(readme).toMatch(/Amazon Bedrock in the Tokyo Region/i);
+    expect(readme).toMatch(/Nothing is stored: no audio, no transcript/i);
+    expect(readme).toContain("scripts/check_sonic_japanese.py");
+    expect(readme).toContain("scripts/check_appsync_ordering.py");
+    expect(readme).toContain(".kiro/specs/voice-conversation/tasks.md");
   });
 
   it("R19.3: cdk.context.json is ignored and the example file exists", () => {

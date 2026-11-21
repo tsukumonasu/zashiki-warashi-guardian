@@ -410,6 +410,9 @@ Rules for every task:
       `search <= total` (R15.6), 300-second MP3 URL or `null` (R15.15), no publish and no
       encounter write (R15.8), `500 internal` without partial output on failure (R15.9). Output
       builders accept the member registry only to prove that no label leaks (R8.1, R8.3).
+    - Cross-spec note (`dashboard-simulation` task 2.3): the `/simulate` output must match the shape
+      of the fixtures in `docs/fixtures/simulate-v1/` (`family`, `stranger`, `no_face`); the tests
+      in `cloud/test/speech-simulate.test.ts` should assert the same shape.
     - _Requirements: 8.1, 8.3, 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8, 15.9, 15.10, 15.12, 15.13, 15.15_
   - [x] 14.3 Write unit tests in `cloud/test/speech-simulate.test.ts`
     - Bedrock failure, bad JSON, sanitizer rejection, Polly failure, stranger generation off;
@@ -594,7 +597,8 @@ Rules for every task:
     - _Requirements: 1.7, 1.8, 1.9, 1.10, 4.6, 9.10, 19.5, 20.7, 25.5_
   - [x] 19.6 Implement `ApiStack` and its template tests
     - Cognito user pool (self sign-up disabled, groups `family` and `reviewer`), public SPA app
-      client, HTTP API with JWT authorizer on every route, `api-read` (no S3 permission, invoke on
+      client (no secret, no Cognito domain; `USER_PASSWORD_AUTH` added next to SRP by
+      `dashboard-simulation` task 2.1, and the template test asserts both), HTTP API with JWT authorizer on every route, `api-read` (no S3 permission, invoke on
       the signer only), `snapshot-signer`, `api-simulate`, `api-admin`, each with its own role as in
       the design Lambda table, CORS limited to the web origin, `POST /simulate` throttle of 2 per
       second and burst 5, 14-day log groups.
@@ -864,6 +868,10 @@ Rules for every task:
 - **Web and API stack cycle.** Task 19.7 has to resolve the CORS origin and `config.json`
   dependency between `WebStack` and `ApiStack` without breaking the five-stack layout. This is the
   one place where the plan may need a decision from the owner.
+- **Data bucket CORS (cross-spec, `dashboard-simulation` task 2.2).** `WebStack` now also sets a
+  POST-only CORS rule on the data bucket for the CloudFront origin (custom resource `S3 PutBucketCors`,
+  new prop `dataBucketName`, wired in `bin/cloud.ts`), using the same cycle resolution as the API.
+  `DataStack` is unchanged apart from a comment. Test: `cloud/test/web-stack.test.ts`.
 - Tasks that need AWS pricing, latency or claim-shape measurements record "pending owner
   measurement" in `design.md` until step O6 (task 1.3).
 

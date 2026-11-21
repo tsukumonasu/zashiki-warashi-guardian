@@ -1,0 +1,1604 @@
+{
+  "pbtResults": {
+    "16.4 Write tests for frames, reorder and handshake": {
+      "status": "passed",
+      "lastRunTimestamp": 1795248905423
+    },
+    "18.2 Write property tests for frames and audio (dashboard)": {
+      "status": "passed",
+      "lastRunTimestamp": 1795248928927
+    },
+    "8.6 Write property test for the Sonic event order": {
+      "status": "passed",
+      "lastRunTimestamp": 1795249469132
+    },
+    "16.2 Write property test for audio gain and chunking (device)": {
+      "status": "passed",
+      "lastRunTimestamp": 1795249472951
+    },
+    "8.5 Write property test for the language check": {
+      "status": "passed",
+      "lastRunTimestamp": 1795249473478
+    },
+    "6.3 Write property test for daily caps": {
+      "status": "passed",
+      "lastRunTimestamp": 1795249773878
+    },
+    "6.4 Write property test for one session at a time": {
+      "status": "passed",
+      "lastRunTimestamp": 1795250298139
+    },
+    "7.3 Write property test for tool commands within servo limits": {
+      "status": "passed",
+      "lastRunTimestamp": 1795250323109
+    },
+    "5.3 Write property test for session termination": {
+      "status": "passed",
+      "lastRunTimestamp": 1795250323531
+    },
+    "15.4 Write property test for the `conversing` exit": {
+      "status": "passed",
+      "lastRunTimestamp": 1795250795275
+    },
+    "8.7 Write property test for no family data and no stored speech": {
+      "status": "passed",
+      "lastRunTimestamp": 1795251175359
+    },
+    "16.9 Write property test for one end per session": {
+      "status": "passed",
+      "lastRunTimestamp": 1795251828019
+    }
+  },
+  "executionHistory": {
+    "1.1 Verify AppSync Events in `ap-northeast-1`, the CDK construct and the IAM actions": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244158999
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244172842
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245033026
+      }
+    ],
+    "1.2 Verify Nova 2.5 Sonic voices, Japanese support, model facts and pricing": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159038
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244172874
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245034004
+      }
+    ],
+    "1.3 Read the GenU and Nova samples licenses": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159063
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244173022
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245034461
+      }
+    ],
+    "1.4 Record the verification results and the pending measurements in `design.md`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159092
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245042630
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245159104
+      }
+    ],
+    "2.1 Apply the changes S1 to S20 to `docs/schema.md` before any code": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159111
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245042692
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245159648
+      }
+    ],
+    "2.2 Create the new golden messages in `docs/fixtures/schema-v1/`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159138
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245162805
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245257510
+      }
+    ],
+    "2.3 Create `docs/fixtures/voice-v1/` and the persona marker list": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159167
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245163367
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245258031
+      }
+    ],
+    "2.4 Extend the Python message codec and fixture tests": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159194
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245261895
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245446399
+      }
+    ],
+    "2.5 Extend the TypeScript message codec": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159213
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245262653
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245446463
+      }
+    ],
+    "3.1 Implement the voice settings in `cloud/lambda/_shared/voice/config.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159240
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245263115
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245447097
+      }
+    ],
+    "3.2 Write unit tests in `cloud/test/voice/config.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159265
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245452027
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245715764
+      }
+    ],
+    "4.1 Implement `cloud/lambda/_shared/voice/frames.ts` and `reorder.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159291
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245452082
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245718549
+      }
+    ],
+    "4.2 Write unit tests in `cloud/test/voice/frames.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159311
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795246727601
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795247115626
+      }
+    ],
+    "4.3 Write property test for the frame codec (TypeScript)": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159337
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795246729589
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795247183846
+      }
+    ],
+    "5.1 Implement `cloud/lambda/_shared/voice/session.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159362
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795246731250
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248767863
+      }
+    ],
+    "5.2 Write unit tests in `cloud/test/voice/session.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159391
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249724754
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250244129
+      }
+    ],
+    "5.3 Write property test for session termination": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159412
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250249245
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251013507
+      }
+    ],
+    "6.1 Create the ports and the in-memory store in `cloud/lambda/_shared/voice/ports.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159440
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245728586
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245856317
+      }
+    ],
+    "6.2 Implement `cloud/lambda/_shared/voice/caps.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159468
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795246733183
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248684935
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248685704
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248768642
+      }
+    ],
+    "6.3 Write property test for daily caps": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159497
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249724911
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250244711
+      }
+    ],
+    "6.4 Write property test for one session at a time": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159572
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250250243
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251015538
+      }
+    ],
+    "6.5 Write unit tests in `cloud/test/voice/caps.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159596
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251033042
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251225593
+      }
+    ],
+    "7.1 Implement `cloud/lambda/_shared/voice/tools.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159614
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795246734816
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248685030
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248686339
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248769273
+      }
+    ],
+    "7.2 Write unit tests in `cloud/test/voice/tools.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159639
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249725776
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250243075
+      }
+    ],
+    "7.3 Write property test for tool commands within servo limits": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159668
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250251111
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251015053
+      }
+    ],
+    "8.1 Implement `cloud/lambda/_shared/voice/prompt.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159690
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245452693
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245717853
+      }
+    ],
+    "8.2 Implement `cloud/lambda/_shared/voice/language.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159711
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245453494
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245716838
+      }
+    ],
+    "8.3 Implement `cloud/lambda/_shared/voice/sonic-events.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159735
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245454425
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245714884
+      }
+    ],
+    "8.4 Write unit tests in `cloud/test/voice/prompt-language-sonic.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159757
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248778604
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249424330
+      }
+    ],
+    "8.5 Write property test for the language check": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159777
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249429333
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249716073
+      }
+    ],
+    "8.6 Write property test for the Sonic event order": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159799
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249429386
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249716940
+      }
+    ],
+    "8.7 Write property test for no family data and no stored speech": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159825
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251033661
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251224047
+      }
+    ],
+    "9. Checkpoint - cloud pure cores": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159843
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251231622
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251449056
+      }
+    ],
+    "10.1 Create the stream fakes in `cloud/test/voice/fake-stream.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159868
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251457525
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251661393
+      }
+    ],
+    "10.2 Implement `cloud/lambda/voice-session/session-runner.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159894
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251667630
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251937799
+      }
+    ],
+    "10.3 Write unit tests in `cloud/test/voice/session-runner.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159923
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795262688501
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795264850522
+      }
+    ],
+    "11.1 Implement `cloud/lambda/voice-start/voice-start-core.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159942
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795262692059
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795263497531
+      }
+    ],
+    "11.2 Implement `cloud/lambda/voice-grant/voice-grant-core.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159968
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795262693602
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795263109901
+      }
+    ],
+    "11.3 Implement `cloud/lambda/voice-authorizer/authorizer-core.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244159993
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795262694879
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795263140760
+      }
+    ],
+    "11.4 Write unit tests in `cloud/test/voice/start-grant-authorizer.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160011
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795263501050
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795263918462
+      }
+    ],
+    "11.5 Update the `judge` Lambda for `requestId`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160034
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795262696226
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795263124648
+      }
+    ],
+    "12.1 Implement the adapters": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160057
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795264907027
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795265628425
+      }
+    ],
+    "12.2 Write adapter tests in `cloud/test/voice/adapters.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160076
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795265629086
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795265785721
+      }
+    ],
+    "12.3 Implement the four voice handlers": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160102
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795265629492
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795265784704
+      }
+    ],
+    "12.4 Write handler tests in `cloud/test/voice/handlers.test.ts` and `log-privacy.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160129
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795265786189
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266037497
+      }
+    ],
+    "13. Checkpoint - cloud application logic": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160146
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266038214
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266092651
+      }
+    ],
+    "14.1 Implement `cloud/lib/voice-stack.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160167
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266093194
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266274199
+      }
+    ],
+    "14.2 Wire the HTTP routes and the web CSP": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160189
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266274639
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266452668
+      }
+    ],
+    "14.3 Write template tests in `cloud/test/voice/voice-stack.test.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160208
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266452816
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266582365
+      }
+    ],
+    "14.4 Update the cross-stack tests": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160235
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266453374
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266583136
+      }
+    ],
+    "15.1 Add the `[conversation]` settings to `device/warashi_agent/config.py`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160260
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245728647
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245856828
+      }
+    ],
+    "15.2 Implement the `conversing` phase in `device/warashi_agent/state_machine.py` and `model.py`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160280
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248779088
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249421626
+      }
+    ],
+    "15.3 Write unit tests in `device/tests/test_state_machine_conversing.py`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160306
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249727302
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250242238
+      }
+    ],
+    "15.4 Write property test for the `conversing` exit": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160332
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250252023
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251014313
+      }
+    ],
+    "16.1 Create `device/warashi_agent/conversation/audio.py`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160355
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245729564
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245857673
+      }
+    ],
+    "16.2 Write property test for audio gain and chunking (device)": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160375
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249430021
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249715278
+      }
+    ],
+    "16.3 Create `frames.py`, `reorder.py` and `appsync.py` in `device/warashi_agent/conversation/`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160400
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245730898
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245858756
+      }
+    ],
+    "16.4 Write tests for frames, reorder and handshake": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160427
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248779971
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249423232
+      }
+    ],
+    "16.5 Create the recorded-audio fakes for CI": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160455
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249431130
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249717804
+      }
+    ],
+    "16.6 Implement `device/warashi_agent/conversation/client.py`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160478
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249727355
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250242292
+      }
+    ],
+    "16.7 Write tests in `device/tests/test_conversation_client.py`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160501
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251034175
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251226074
+      }
+    ],
+    "16.8 Implement `device/warashi_agent/adapters/conversation.py`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160570
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251458263
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251659758
+      }
+    ],
+    "16.9 Write property test for one end per session": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160595
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251667798
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251938442
+      }
+    ],
+    "16.10 Wire the conversation into `__main__`, the dispatcher and the provisioning script": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160612
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251668591
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251939249
+      }
+    ],
+    "16.11 Add the two voice lines and keep the catalog in sync": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160634
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245878562
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795246708520
+      }
+    ],
+    "17. Checkpoint - device and dashboard": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160656
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251946482
+      },
+      {
+        "executionId": "df9d1897-41a8-4648-90b9-9f9b5541aacd",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795261759159
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795262179211
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795262675459
+      }
+    ],
+    "18.1 Create `dashboard/src/voice/frames.ts` and `audio.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160674
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245731312
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245859680
+      }
+    ],
+    "18.2 Write property tests for frames and audio (dashboard)": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160701
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248781724
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249420992
+      }
+    ],
+    "18.3 Implement `transport.ts`, `VoiceClient.ts` and `useVoice.ts`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160722
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795250252518
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251224216
+      }
+    ],
+    "18.4 Handle the new envelopes in the simulation reducer": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160740
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795248780783
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795249422451
+      }
+    ],
+    "18.5 Implement `dashboard/src/components/TalkPanel.tsx`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160764
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251459161
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251660567
+      }
+    ],
+    "18.6 Write tests in `dashboard/test/voice/`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160786
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251669321
+      },
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251940221
+      }
+    ],
+    "19.1 Create `scripts/check_sonic_japanese.py`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160807
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245878670
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795246416598
+      }
+    ],
+    "19.2 Create `scripts/check_appsync_ordering.py`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160830
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245879328
+      },
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795246690128
+      }
+    ],
+    "20.1 Write the voice integration tests": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160854
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266583604
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266830123
+      }
+    ],
+    "21.1 Update `README.md` with the voice sections": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160873
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266830235
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266907338
+      }
+    ],
+    "21.2 Update `docs/third-party.md`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160898
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266830289
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266908333
+      }
+    ],
+    "21.3 Update `structure.md` and `tech.md`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160922
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266830335
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266908942
+      }
+    ],
+    "21.4 Extend the repository scan": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160943
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266909299
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795267124904
+      }
+    ],
+    "21.5 Finalize `design.md`": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160966
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795267171824
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795267302826
+      }
+    ],
+    "21.6 Add the `docs/kiro-usage.md` journal entry": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244160989
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266920630
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795267171218
+      }
+    ],
+    "22. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795244161011
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795267303491
+      },
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795267457429
+      }
+    ],
+    "1. Verify and record the unverified items of `design.md` (first implementation task)": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245159142
+      }
+    ],
+    "2. Contract and golden fixtures (contract first)": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245446514
+      }
+    ],
+    "3. Voice configuration": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795245715816
+      }
+    ],
+    "19. Owner scripts": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795246702904
+      }
+    ],
+    "4. Frame codec and reorder window (cloud)": [
+      {
+        "executionId": "12c00bd6-0ab8-45b8-a862-4b2d25eacc00",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795247189051
+      }
+    ],
+    "5. Session reducer": [
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251013573
+      }
+    ],
+    "15. Device configuration and `conversing` state": [
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251014348
+      }
+    ],
+    "7. Tool dispatcher": [
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251015085
+      }
+    ],
+    "8. Prompt, language check and Sonic event builder": [
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251224122
+      }
+    ],
+    "6. Ports, lock and daily caps": [
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251225628
+      }
+    ],
+    "16. Device conversation client": [
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251939283
+      }
+    ],
+    "18. Dashboard voice client": [
+      {
+        "executionId": "b80a291b-85e0-45c0-b31b-594f88a04bec",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795251940278
+      }
+    ],
+    "11. Start, grant and authorizer cores, and the judge change": [
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795263918745
+      }
+    ],
+    "10. Stream fakes and session runner": [
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795264852525
+      }
+    ],
+    "12. AWS adapters and Lambda handlers": [
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266037553
+      }
+    ],
+    "14. CDK `VoiceStack`": [
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266583175
+      }
+    ],
+    "20. Opt-in integration tests (never part of `make test`)": [
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795266830190
+      }
+    ],
+    "21. Documentation, repository hygiene and the Kiro journal": [
+      {
+        "executionId": "35b1b71d-efef-4952-9961-66074a89ca1d",
+        "chatSessionId": "sess_71343b48-147a-40b8-9088-31c14b2e7bbf",
+        "timestamp": 1795267302872
+      }
+    ]
+  }
+}

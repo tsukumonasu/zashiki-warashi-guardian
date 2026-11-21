@@ -193,7 +193,14 @@ describe("Property 8: No label leakage", () => {
         expect(keys).toEqual(
           ["state", "mode", "panDeg", "tiltDeg", "lantern", "cameraActive", "micActive", "motionEnabled", "uptimeSec", "agentVersion"].sort(),
         );
-        expect(encodeEnvelope(decoded.message)).not.toContain(label);
+        // A short label may be a substring of the fixed envelope text itself (for example "0" or "ing").
+        // Such a label cannot show a leak, so compare against the encoding of the same message without extras.
+        const encoded = encodeEnvelope(decoded.message);
+        const clean = JSON.parse(raw) as { data: Record<string, unknown> };
+        delete clean.data.displayName;
+        delete clean.data.who;
+        fc.pre(!JSON.stringify(clean).includes(label));
+        expect(encoded).not.toContain(label);
       }),
       { numRuns: 100 },
     );

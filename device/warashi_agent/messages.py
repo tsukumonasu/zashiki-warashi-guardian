@@ -23,6 +23,7 @@ Only the standard library is used.
 
 import json
 import math
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field, fields
 from datetime import UTC, datetime
@@ -66,6 +67,38 @@ class ErrorCode(StrEnum):
     SNAPSHOT_TOO_LARGE = "snapshot_too_large"
     INTERNAL_ERROR = "internal_error"
     ADAPTER_FAILED = "adapter_failed"
+    CONVERSATION_FAILED = "conversation_failed"
+    MICROPHONE_FAILED = "microphone_failed"
+
+
+class ConversationEndReason(StrEnum):
+    """Why a voice session ended (``docs/schema.md``, voice-conversation S3)."""
+
+    SILENCE = "silence"
+    LIMIT = "limit"
+    STRANGER = "stranger"
+    USER = "user"
+    MANUAL = "manual"
+    LANGUAGE = "language"
+    UNSAFE_OUTPUT = "unsafe_output"
+    ERROR = "error"
+    NO_CLIENT = "no_client"
+    OFFLINE = "offline"
+
+
+class ConversationSource(StrEnum):
+    """What started a voice session (``conversation.start.source``)."""
+
+    FAMILY_VERDICT = "family_verdict"
+    MANUAL = "manual"
+
+
+ID_PATTERN = re.compile(r"[A-Za-z0-9-]{1,64}")
+"""``sessionId`` and ``requestId`` (S4 to S6). ``fullmatch`` is used, so no newline slips in."""
+
+TOKEN_MAX_LENGTH = 128
+MAX_SECONDS_RANGE = (30, 420)
+SILENCE_SECONDS_RANGE = (5, 60)
 
 
 # --------------------------------------------------------------------------------------------
@@ -94,6 +127,7 @@ class SnapshotCaptured:
     pan_deg: float
     tilt_deg: float
     jpeg_base64: str = field(repr=False)
+    request_id: str | None = None  # set only when answering a snapshot.request (S3)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -137,6 +171,23 @@ class ErrorReported:
     code: ErrorCode
     message: str
     ref_id: str | None
+
+
+@dataclass(frozen=True, kw_only=True)
+class ConversationRequested:
+    """The doll asks the cloud for a voice session (S1)."""
+
+    TYPE: ClassVar[str] = "conversation.requested"
+    reason: Literal["family_verdict"]
+
+
+@dataclass(frozen=True, kw_only=True)
+class ConversationEnded:
+    """The doll left ``conversing`` (S2)."""
+
+    TYPE: ClassVar[str] = "conversation.ended"
+    session_id: str
+    reason: ConversationEndReason
 
 
 # Commands (cloud -> device)
@@ -194,6 +245,39 @@ class ModeSetData:
     mode: Mode
 
 
+@dataclass(frozen=True, kw_only=True)
+class ConversationStart:
+    """Start the audio client for a voice session (S4).
+
+    ``token`` is a secret: it is hidden from ``repr()`` and never logged or published.
+    ``max_seconds`` and ``silence_seconds`` are clamped on decode to 30..420 and 5..60.
+    """
+
+    TYPE: ClassVar[str] = "conversation.start"
+    session_id: str
+    token: str = field(repr=False)
+    max_seconds: int
+    silence_seconds: int
+    source: ConversationSource
+
+
+@dataclass(frozen=True, kw_only=True)
+class ConversationEnd:
+    """The cloud ends a session (S5). Safe to receive twice."""
+
+    TYPE: ClassVar[str] = "conversation.end"
+    session_id: str
+    reason: ConversationEndReason
+
+
+@dataclass(frozen=True, kw_only=True)
+class SnapshotRequest:
+    """Take a snapshot for a voice session (S6)."""
+
+    TYPE: ClassVar[str] = "snapshot.request"
+    request_id: str
+
+
 # Status (device -> cloud)
 
 
@@ -228,8 +312,19 @@ EventData = (
     | ReactionPerformed
     | EncounterEnded
     | ErrorReported
+    | ConversationRequested
+    | ConversationEnded
 )
-CommandData = JudgementResultData | SpeakData | GazeData | LanternData | ModeSetData
+CommandData = (
+    JudgementResultData
+    | SpeakData
+    | GazeData
+    | LanternData
+    | ModeSetData
+    | ConversationStart
+    | ConversationEnd
+    | SnapshotRequest
+)
 StatusData = StatusReport | StatusOffline
 Payload = EventData | CommandData | StatusData
 
@@ -278,6 +373,14 @@ class FieldSpec:
     required: bool = True
     # Set only for error.reported message: the sender cuts the text (R22.10).
     max_code_points: int | None = None
+    # str rules of S4 to S6: ``pattern`` must fullmatch; length bounds count code points.
+    pattern: re.Pattern[str] | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    # int rule of S4: a finite integer outside the range is valid and clamped (R22.11).
+    clamp: tuple[int, int] | None = None
+    # True for the optional ``snapshot.captured.requestId``: ``None`` is not written at all.
+    omit_if_none: bool = False
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -304,6 +407,10 @@ def _enum(wire: str, attr: str, enum_type: type[StrEnum]) -> FieldSpec:
 
 def _str(wire: str, attr: str, *, nullable: bool = False) -> FieldSpec:
     return FieldSpec(wire_name=wire, attribute=attr, kind="str", nullable=nullable)
+
+
+def _id(wire: str, attr: str) -> FieldSpec:
+    return FieldSpec(wire_name=wire, attribute=attr, kind="str", pattern=ID_PATTERN)
 
 
 def _num(wire: str, attr: str) -> FieldSpec:
@@ -359,6 +466,15 @@ _TYPE_SPECS: tuple[TypeSpec, ...] = (
             _num("panDeg", "pan_deg"),
             _num("tiltDeg", "tilt_deg"),
             _str("jpegBase64", "jpeg_base64"),
+            FieldSpec(
+                wire_name="requestId",
+                attribute="request_id",
+                kind="str",
+                nullable=True,
+                required=False,
+                pattern=ID_PATTERN,
+                omit_if_none=True,
+            ),
         ),
     ),
     TypeSpec(
@@ -404,6 +520,28 @@ _TYPE_SPECS: tuple[TypeSpec, ...] = (
             ),
         ),
     ),
+    TypeSpec(
+        type=ConversationRequested.TYPE,
+        direction="event",
+        payload=ConversationRequested,
+        fields=(
+            FieldSpec(
+                wire_name="reason",
+                attribute="reason",
+                kind="enum",
+                allowed_values=("family_verdict",),
+            ),
+        ),
+    ),
+    TypeSpec(
+        type=ConversationEnded.TYPE,
+        direction="event",
+        payload=ConversationEnded,
+        fields=(
+            _id("sessionId", "session_id"),
+            _enum("reason", "reason", ConversationEndReason),
+        ),
+    ),
     # Commands
     TypeSpec(
         type=JudgementResultData.TYPE,
@@ -445,6 +583,49 @@ _TYPE_SPECS: tuple[TypeSpec, ...] = (
         direction="command",
         payload=ModeSetData,
         fields=(_enum("mode", "mode", Mode),),
+    ),
+    TypeSpec(
+        type=ConversationStart.TYPE,
+        direction="command",
+        payload=ConversationStart,
+        fields=(
+            _id("sessionId", "session_id"),
+            FieldSpec(
+                wire_name="token",
+                attribute="token",
+                kind="str",
+                min_length=1,
+                max_length=TOKEN_MAX_LENGTH,
+            ),
+            FieldSpec(
+                wire_name="maxSeconds",
+                attribute="max_seconds",
+                kind="int",
+                clamp=MAX_SECONDS_RANGE,
+            ),
+            FieldSpec(
+                wire_name="silenceSeconds",
+                attribute="silence_seconds",
+                kind="int",
+                clamp=SILENCE_SECONDS_RANGE,
+            ),
+            _enum("source", "source", ConversationSource),
+        ),
+    ),
+    TypeSpec(
+        type=ConversationEnd.TYPE,
+        direction="command",
+        payload=ConversationEnd,
+        fields=(
+            _id("sessionId", "session_id"),
+            _enum("reason", "reason", ConversationEndReason),
+        ),
+    ),
+    TypeSpec(
+        type=SnapshotRequest.TYPE,
+        direction="command",
+        payload=SnapshotRequest,
+        fields=(_id("requestId", "request_id"),),
     ),
     # Status
     TypeSpec(
@@ -577,7 +758,11 @@ def _encode_value(spec: FieldSpec, value: Any) -> Any:
 
 
 def _encode_fields(specs: tuple[FieldSpec, ...], obj: object) -> dict[str, Any]:
-    return {s.wire_name: _encode_value(s, getattr(obj, s.attribute)) for s in specs}
+    return {
+        s.wire_name: _encode_value(s, getattr(obj, s.attribute))
+        for s in specs
+        if not (s.omit_if_none and getattr(obj, s.attribute) is None)
+    }
 
 
 def encode(envelope: Envelope) -> bytes:
@@ -674,9 +859,17 @@ def _decode_value(spec: FieldSpec, value: Any, where: str) -> Any:
     match spec.kind:
         case "str":
             if isinstance(value, str):
+                if spec.pattern is not None and spec.pattern.fullmatch(value) is None:
+                    raise _InvalidError(f"{where}: does not match the id pattern")
+                if spec.min_length is not None and len(value) < spec.min_length:
+                    raise _InvalidError(f"{where}: too short")
+                if spec.max_length is not None and len(value) > spec.max_length:
+                    raise _InvalidError(f"{where}: too long")
                 return value
         case "int":
             if type(value) is int:
+                if spec.clamp is not None:
+                    return max(spec.clamp[0], min(spec.clamp[1], value))
                 return value
         case "number":
             if type(value) is int or type(value) is float:

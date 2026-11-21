@@ -46,10 +46,12 @@ from warashi_agent.adapters.cloud import (
     MqttCloudLink,
     PahoClientFactory,
 )
+from warashi_agent.adapters.conversation import ConversationAdapter
 from warashi_agent.adapters.fakes import (
     FakeAudio,
     FakeCamera,
     FakeCloudLink,
+    FakeConversation,
     FakePir,
     FakePwmDevice,
     FakeServoDeviceFactory,
@@ -59,6 +61,7 @@ from warashi_agent.adapters.pir import PirAdapter
 from warashi_agent.adapters.ports import (
     AudioPort,
     CameraPort,
+    ConversationPort,
     LanternPort,
     PirPort,
     ProbeResult,
@@ -168,6 +171,8 @@ class Factories:
     camera: Callable[[Config, Post, Scheduler], CameraPort]
     audio: Callable[[Config, Post, Scheduler, tuple[VoiceLine, ...]], AudioPort]
     wait: Callable[[float], None] = time.sleep
+    conversation: Callable[[Config, Post, Scheduler], ConversationPort] | None = None
+    """Called only when ``conversation_enabled``; ``None`` leaves voice sessions off."""
 
 
 def select_real_cloud(config: Config, scheduler: Scheduler) -> CloudLink:
@@ -197,6 +202,7 @@ def real_factories() -> Factories:
         pir=lambda config, post, scheduler: PirAdapter(config.pins.pir_pin, post),
         camera=lambda config, post, scheduler: CameraAdapter(post, scheduler, config),
         audio=lambda config, post, scheduler, lines: AudioAdapter(post, scheduler, config, lines),
+        conversation=lambda config, post, scheduler: ConversationAdapter(post, config),
     )
 
 
@@ -214,6 +220,7 @@ def fake_factories() -> Factories:
         pir=lambda config, post, scheduler: FakePir(post, scheduler),
         camera=lambda config, post, scheduler: FakeCamera(post, scheduler),
         audio=lambda config, post, scheduler, lines: FakeAudio(post, scheduler),
+        conversation=lambda config, post, scheduler: FakeConversation(post, scheduler),
     )
 
 
@@ -366,6 +373,9 @@ def build_adapters(
 ) -> Adapters:
     """Build the five adapters and make the lantern 0 (R16.3).
 
+    A sixth, the conversation adapter, is built only when ``conversation_enabled`` (R12.15);
+    building it opens no socket and starts no thread.
+
     The Servo_Adapter reads ``pose_file`` lazily and creates no servo device, and the PIR
     adapter claims its pin only in ``start()``, so nothing moves here (R15.6, R17).
     """
@@ -375,7 +385,19 @@ def build_adapters(
     pir = factories.pir(config, post, scheduler)
     camera = factories.camera(config, post, scheduler)
     audio = factories.audio(config, post, scheduler, lines)
-    return Adapters(servo=servo, lantern=lantern, pir=pir, camera=camera, audio=audio)
+    conversation = (
+        factories.conversation(config, post, scheduler)
+        if config.conversation.conversation_enabled and factories.conversation is not None
+        else None
+    )
+    return Adapters(
+        servo=servo,
+        lantern=lantern,
+        pir=pir,
+        camera=camera,
+        audio=audio,
+        conversation=conversation,
+    )
 
 
 def load_voice(config: Config, *, fake: bool) -> ManifestResult:
@@ -457,6 +479,7 @@ def stop_quietly(parts: Parts) -> None:
         parts.adapters.pir.close,
         parts.adapters.camera.stop,
         parts.adapters.audio.stop,
+        *((parts.adapters.conversation.stop,) if parts.adapters.conversation else ()),
         parts.cloud.stop,
     )
     for stop in steps:

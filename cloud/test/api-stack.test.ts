@@ -61,8 +61,11 @@ describe("ApiStack", () => {
   it("uses a public SPA app client without a secret (R13.1)", () => {
     template.hasResourceProperties("AWS::Cognito::UserPoolClient", {
       GenerateSecret: false,
-      ExplicitAuthFlows: Match.arrayWith(["ALLOW_USER_SRP_AUTH"]),
+      ExplicitAuthFlows: Match.arrayWith(["ALLOW_USER_PASSWORD_AUTH", "ALLOW_USER_SRP_AUTH"]),
     });
+    template.resourceCountIs("AWS::Cognito::UserPoolDomain", 0);
+    const client = Object.values(template.findResources("AWS::Cognito::UserPoolClient"))[0]!;
+    expect((client["Properties"] as Record<string, unknown>)["GenerateSecret"]).toBe(false);
   });
 
   it("puts the Cognito JWT authorizer on every route (R13.1)", () => {

@@ -21,9 +21,12 @@ function synth(dashboardDistPath: string): Template {
   const stack = new WebStack(app, "WebStack", {
     env: { account: "111111111111", region: "ap-northeast-1" },
     apiUrl: "https://api.example.invalid/",
+    voiceHttpHost: "http.example.invalid",
+    voiceRealtimeHost: "realtime.example.invalid",
     apiId: "abc123",
     userPoolId: "ap-northeast-1_example",
     userPoolClientId: "exampleclient",
+    dataBucketName: "example-data-bucket",
     dashboardDistPath,
   });
   return Template.fromStack(stack);
@@ -82,9 +85,12 @@ describe("WebStack", () => {
     const stack = new WebStack(app, "WebStack", {
       env: { account: "111111111111", region: "ap-northeast-1" },
       apiUrl: "https://api.example.invalid/",
+      voiceHttpHost: "http.example.invalid",
+      voiceRealtimeHost: "realtime.example.invalid",
       apiId: "abc123",
       userPoolId: "ap-northeast-1_example",
       userPoolClientId: "exampleclient",
+      dataBucketName: "example-data-bucket",
       dashboardDistPath: builtDist(),
     });
     app.synth();
@@ -122,6 +128,20 @@ describe("WebStack", () => {
     const text = JSON.stringify(template.toJSON());
     expect(text).toContain("updateApi");
     expect(text).toContain("apigateway:PATCH");
+  });
+
+  it("sets a POST-only CORS rule on the data bucket for the CloudFront origin, never `*` (dashboard R15.5)", () => {
+    const resources = Object.values(template.findResources("Custom::AWS")).filter((r) =>
+      JSON.stringify(r).includes("putBucketCors"),
+    );
+    expect(resources.length).toBe(1);
+    const create = JSON.stringify(resources[0]);
+    expect(create).toContain("example-data-bucket");
+    expect(create).toContain("CORSRules");
+    expect(create).toContain("AllowedHeaders");
+    expect(create).not.toContain('AllowedOrigins\\":[\\"*');
+    expect(create).toContain("Distribution");
+    expect(JSON.stringify(template.toJSON())).toContain("s3:PutBucketCORS");
   });
 
   it("adds security headers and the WebUrl output", () => {

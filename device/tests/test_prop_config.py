@@ -113,6 +113,14 @@ GLOSSARY: dict[str, Rule] = {
     "audio.audio_device": Rule("card", "plughw:CARD=Device,DEV=0"),
     "messages.dedup_window_size": Rule("int", 256, 16, 4096),
     "privacy.blocked_words": Rule("str_list", ()),
+    # voice-conversation R12.14: the `[conversation]` section (design table, task 15.1).
+    "conversation.conversation_enabled": Rule("bool", False),
+    "conversation.conversation_max_s": Rule("int", 180, 30, 420),
+    "conversation.conversation_silence_s": Rule("int", 15, 5, 60),
+    "conversation.conversation_mic_gain": Rule("number", 4.0, 0.5, 16),
+    "conversation.conversation_chunk_ms": Rule("int", 100, 60, 200),
+    "conversation.conversation_mute_mic_while_speaking": Rule("bool", False),
+    "conversation.conversation_connect_timeout_s": Rule("number", 8.0, 2, 20),
 }
 
 SECTIONS: dict[str, tuple[str, ...]] = {}
@@ -205,6 +213,12 @@ RANGE_CROSS_RULES: tuple[tuple[tuple[str, ...], Callable[[Mapping[str, Any]], bo
     (
         ("camera.scan_attempts_max", "camera.scan_pan_positions_deg"),
         lambda v: v["camera.scan_attempts_max"] <= len(v["camera.scan_pan_positions_deg"]),
+    ),
+    (
+        ("conversation.conversation_silence_s", "conversation.conversation_max_s"),
+        lambda v: (
+            v["conversation.conversation_silence_s"] + 5 <= v["conversation.conversation_max_s"]
+        ),
     ),
 )
 
@@ -303,6 +317,19 @@ def oracle(mapping: Mapping[str, object]) -> Verdict:
         if all(k in values for k in keys) and not holds(values):
             broken = True
             involved.update(keys)
+    # voice-conversation R12.15: voice needs `[aws].enabled` and both AppSync hosts. The oracle
+    # reads only those three `[aws]` keys; the generators never turn `[aws]` on.
+    voice = "conversation.conversation_enabled"
+    if values.get(voice) is True:
+        aws = mapping.get("aws")
+        aws = aws if isinstance(aws, Mapping) else {}
+        hosts_ok = all(
+            isinstance(aws.get(h), str) and aws.get(h) != ""
+            for h in ("appsync_realtime_host", "appsync_http_host")
+        )
+        if aws.get("enabled") is not True or not hosts_ok:
+            broken = True
+            involved.add(voice)
     pins = [k for k in PIN_KEYS if k in values]
     for k in pins:
         if any(values[j] == values[k] for j in pins if j != k):
@@ -657,6 +684,14 @@ def _same(expected: object, actual: object, kind: str) -> bool:
 # though its value is in range: the oracle rejects it and the message must name the key.
 # test_float_jpeg_max_bytes_is_a_type_violation pins the same case as a plain example.
 @example(case=Case(mapping={"camera": {"jpeg_max_bytes": 50000.0}}, markers=[]))
+# voice-conversation R12.15: voice enabled without `[aws]`, and a silence time that is too long.
+@example(case=Case(mapping={"conversation": {"conversation_enabled": True}}, markers=[]))
+@example(
+    case=Case(
+        mapping={"conversation": {"conversation_max_s": 30, "conversation_silence_s": 26}},
+        markers=[],
+    )
+)
 def test_validate_mapping_matches_the_glossary_oracle(case: Case) -> None:
     """**Validates: Requirements 21.7, 25.1, 25.2, 25.3, 25.4, 25.5, 25.6, 25.7, 25.8, 25.9,
     25.14, 29.13**"""

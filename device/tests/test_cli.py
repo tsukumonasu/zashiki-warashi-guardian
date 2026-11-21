@@ -224,3 +224,95 @@ def test_fake_factories_use_fake_link_even_when_aws_is_enabled() -> None:
 
     link = entry.fake_factories().cloud(_aws_config(enabled=True), _scheduler())
     assert isinstance(link, FakeCloudLink)
+
+
+# ============================================================================================
+# Conversation wiring (voice-conversation R12.15)
+# ============================================================================================
+
+
+def _voice_config(*, enabled: bool):  # type: ignore[no-untyped-def]
+    from warashi_agent.config import AwsConfig, Config, ConversationConfig
+
+    return Config(
+        aws=AwsConfig(
+            enabled=True,
+            endpoint="example.invalid",
+            appsync_realtime_host="rt.example.invalid",
+            appsync_http_host="http.example.invalid",
+        ),
+        conversation=ConversationConfig(conversation_enabled=enabled),
+    )
+
+
+def _build(factories: entry.Factories, config):  # type: ignore[no-untyped-def]
+    scheduler = ManualScheduler(ManualClock(0.0))
+    return entry.build_adapters(config, factories, scheduler, lambda event: None, ())
+
+
+def test_conversation_adapter_is_not_built_when_voice_is_off() -> None:
+    assert _build(entry.fake_factories(), _voice_config(enabled=False)).conversation is None
+
+
+def test_fake_mode_builds_fake_conversation_when_voice_is_on() -> None:
+    from warashi_agent.adapters.fakes import FakeConversation
+
+    adapters = _build(entry.fake_factories(), _voice_config(enabled=True))
+    assert isinstance(adapters.conversation, FakeConversation)
+
+
+def test_real_factories_build_the_adapter_without_starting_a_thread() -> None:
+    import threading
+
+    from warashi_agent.adapters.conversation import ConversationAdapter
+
+    before = threading.active_count()
+    adapter = entry.real_factories().conversation
+    assert adapter is not None
+    built = adapter(_voice_config(enabled=True), lambda event: None, _scheduler())
+    assert isinstance(built, ConversationAdapter)
+    assert threading.active_count() == before
+
+
+def test_inbound_conversation_commands_become_command_events() -> None:
+    from datetime import UTC, datetime
+
+    from warashi_agent import messages as m
+    from warashi_agent import model
+    from warashi_agent.inbound import Deduplicator, route_inbound
+
+    def route(data: m.CommandData):  # type: ignore[no-untyped-def]
+        env = m.Envelope(
+            id=f"id-{type(data).__name__}",
+            ts=datetime(2026, 1, 1, tzinfo=UTC),
+            device_id="warashi-01",
+            encounter_id=None,
+            data=data,
+        )
+        return route_inbound(m.encode(env), Deduplicator(window=8), "warashi-01")[1]
+
+    start = route(
+        m.ConversationStart(
+            session_id="s-1",
+            token="secret-token",
+            max_seconds=90,
+            silence_seconds=10,
+            source=m.ConversationSource.MANUAL,
+        )
+    )
+    assert isinstance(start, model.ConversationStart)
+    assert (start.session_id, start.max_s, start.silence_s, start.source) == (
+        "s-1",
+        90,
+        10,
+        "manual",
+    )
+    assert "secret-token" not in repr(start)
+
+    end = route(m.ConversationEnd(session_id="s-1", reason=m.ConversationEndReason.USER))
+    assert isinstance(end, model.ConversationEnd)
+    assert (end.session_id, end.reason) == ("s-1", "user")
+
+    look = route(m.SnapshotRequest(request_id="r-1"))
+    assert isinstance(look, model.SnapshotRequest)
+    assert look.request_id == "r-1"

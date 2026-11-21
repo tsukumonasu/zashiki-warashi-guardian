@@ -7,8 +7,13 @@ Single source of truth for everything exchanged between the doll (`/device`), th
 > (`.kiro/specs/device-core-loop/design.md`, section "docs/schema.md Changes"). Each change is
 > marked with its reason next to it. The `cloud-judgement` design
 > (`.kiro/specs/cloud-judgement/design.md`) verified the AWS limits, clarified a few cloud-side
-> rules and defined the HTTP API below. No event or command field changed, so `v` stays 1. From
-> now on, change this file first and keep code and tests in all three parts in sync with it.
+> rules and defined the HTTP API below. The `dashboard-simulation` design
+> (`.kiro/specs/dashboard-simulation/design.md`) added S1 (consent notice text location) and S2
+> (voice-line catalog source). No event or command field changed, so `v` stays 1.
+> The `voice-conversation` design (`.kiro/specs/voice-conversation/design.md`, rows S1 to S20)
+> added the conversation events, commands, states, the "Voice session channels" section and the
+> `/conversations` routes; `v` stays 1 because every change adds a type, an optional field or an
+> enumeration value. From now on, change this file first and keep code and tests in all three parts in sync with it.
 
 ## Transport
 AWS IoT Core, MQTT over TLS, QoS 1. `<id>` is the device id, for example `warashi-01`.
@@ -62,11 +67,26 @@ the current encounter.
 | `type` | `data` | Meaning |
 |---|---|---|
 | `presence.detected` | `{ "source": "pir" \| "sound" \| "manual" }` | A new encounter starts. |
-| `snapshot.captured` | `{ "snapshotId": string, "width": int, "height": int, "panDeg": number, "tiltDeg": number, "jpegBase64": string }` | A snapshot taken at the given head angles. Asks the cloud for a verdict. |
+| `snapshot.captured` | `{ "snapshotId": string, "width": int, "height": int, "panDeg": number, "tiltDeg": number, "jpegBase64": string, "requestId": string \| null }` | A snapshot taken at the given head angles. Asks the cloud for a verdict. `requestId` is optional (default `null`) and set only when the snapshot answers a `snapshot.request` (S3). |
 | `state.changed` | `{ "from": State, "to": State, "reason": Reason }` | State machine transition. `reason` is one of the values in "`state.changed` reasons" below. |
 | `reaction.performed` | `{ "kind": "family" \| "stranger" \| "uncertain", "lineId": string \| null, "offline": boolean }` | What the doll actually did. `offline` is true when it reacted without a verdict. |
 | `encounter.ended` | `{ "reason": "cooldown" \| "manual" \| "error" }` | The encounter is over. |
 | `error.reported` | `{ "code": ErrorCode, "message": string, "refId": string \| null }` | A recoverable problem (no secrets, no image data). `code` is one of the codes in "`error.reported` codes" below. `refId` is always present. |
+| `conversation.requested` | `{ "reason": "family_verdict" }` | The doll asks for a voice session. Sent once per encounter on entering `greeting` after an accepted `family` verdict, only when `conversation_enabled` is on and the cloud is connected. |
+| `conversation.ended` | `{ "sessionId": string, "reason": ConversationEndReason }` | The doll left `conversing`. Sent on every exit from that state. |
+
+Changes from `voice-conversation` (S1 to S3):
+
+- **S1 `conversation.requested`.** *Reason:* the cloud decides whether the doll gets a session.
+- **S2 `conversation.ended`.** *Reason:* the cloud closes its session and releases the lock even
+  when the doll ended it.
+- **S3 `snapshot.captured.requestId`.** `snapshot.captured.data` gains the optional field
+  `requestId: string | null` (default `null`). It is set only for a snapshot that answers a
+  `snapshot.request`. *Reason:* lets the `judge` Lambda store a result under the id that the
+  session waits for.
+- **`ConversationEndReason`** is one of `silence`, `limit`, `stranger`, `user`, `manual`,
+  `language`, `unsafe_output`, `error`, `no_client`, `offline`. *Reason:* one enumeration for the
+  doll, the cloud and the dashboard.
 
 Notes on the event fields:
 
@@ -117,6 +137,10 @@ Cloud receiver rules (added by `cloud-judgement`):
 | `manual` | A `mode.set` with `mode: "sleep"` ended the encounter early. |
 | `cooldown_done` | The cooldown time elapsed. |
 | `error` | A snapshot failed, no voice line of the needed category was available, or the device restarted after an internal error. |
+| `conversation` | The doll entered `conversing` (S7). |
+| `conversation_done` | The doll left `conversing` after a normal end (S7). |
+
+*Reason (S7):* the timeline can show why the doll entered or left a conversation.
 
 #### Reason mapping
 The device sets `reason` by the **first row whose transition and cause both match**.
@@ -127,6 +151,14 @@ The device sets `reason` by the **first row whose transition and cause both matc
 | any state other than `sleeping` → `sleeping` | restart after an internal error of the state machine, published by the device main loop | `error` |
 | `cooldown` → `sleeping` | cooldown deadline | `cooldown_done` |
 | `waking`, `seeking`, `gazing`, `greeting`, `warning` or `uncertain` → `cooldown` | `mode.set` with `mode: "sleep"` | `manual` |
+| `conversing` → `cooldown` | `mode.set` with `mode: "sleep"` | `manual` |
+| `conversing` → `cooldown` | `cloud.disconnected` | `offline` |
+| `conversing` → `cooldown` | a `stranger` verdict for a `snapshot.request` | `verdict` |
+| `conversing` → `cooldown` | `ConversationFinished` from the adapter, or `conversation.end` for the current session | `conversation_done` |
+| `conversing` → `cooldown` | adapter failure | `error` |
+| `conversing` → `cooldown` | `conversing` deadline | `timeout` |
+| `sleeping` → `conversing` | `conversation.start` with `source: "manual"` | `conversation` |
+| `greeting` → `conversing` | audio done with a pending conversation grant | `conversation` |
 | `waking` → `uncertain` | cloud disconnected when leaving `waking`, whatever the leaving cause | `offline` |
 | `waking` → `seeking` | `servo.arrived` and lantern fade-in elapsed | `arrived` |
 | `waking` → `seeking` | waking deadline | `timeout` |
@@ -140,6 +172,13 @@ The device sets `reason` by the **first row whose transition and cause both matc
 | `greeting`, `warning` or `uncertain` → `cooldown` | no voice line of the needed category | `error` |
 | `greeting`, `warning` or `uncertain` → `cooldown` | `audio.finished` or `audio.failed` | `audio_done` |
 | `greeting`, `warning` or `uncertain` → `cooldown` | audio deadline | `timeout` |
+
+*Reason (S8):* one reason per cause. The conversation rows sit after the `manual` row of the other
+states; the row for "any state other than `sleeping` → `sleeping`" is unchanged. A `stranger`
+verdict inside `conversing` ends the conversation and the encounter goes to `cooldown`, not
+`warning`; the next PIR edge after the cooldown starts a fresh encounter. (S9) `state.changed.to`
+may be `conversing`, which is already in State, and `encounter.ended.reason` is unchanged: the
+encounter still ends through `cooldown`.
 
 ### `error.reported` codes
 The device publishes `error.reported` only with these codes.
@@ -165,6 +204,12 @@ The device publishes `error.reported` only with these codes.
 | `snapshot_too_large` | device, camera | the JPEG is still above the device's JPEG limit (at most 90,000 bytes) at the lowest quality | `null` |
 | `internal_error` | device, main loop | the state machine raised an exception and was restarted | `null` |
 | `adapter_failed` | device, hardware adapter | an adapter worker raised an exception | `null` |
+| `conversation_failed` | device, conversation client | the audio client failed: connect, authentication or transport | `null` |
+| `microphone_failed` | device, microphone | `arecord` failed or produced no data | `null` |
+
+*Reason (S12):* receivers handle the two voice codes without parsing text. `command_rejected_state`
+also covers `speak` in `conversing`, a `snapshot.request` outside `conversing` or while another is
+outstanding, and a `conversation.start` the doll cannot accept (S11).
 
 ## Commands (cloud → device)
 | `type` | `data` | Meaning |
@@ -174,6 +219,21 @@ The device publishes `error.reported` only with these codes.
 | `gaze` | `{ "panDeg": number, "tiltDeg": number }` | Look in a direction. The device clamps to its calibrated limits and moves slowly. |
 | `lantern` | `{ "level": number, "fadeMs": int }` | Lantern brightness 0..1 with a fade time. |
 | `mode.set` | `{ "mode": "guard" \| "sleep" }` | `sleep` ignores presence until set back to `guard`. |
+| `conversation.start` | `{ "sessionId": string, "token": string, "maxSeconds": int, "silenceSeconds": int, "source": "family_verdict" \| "manual" }` | Start the doll's audio client for a voice session. `token` is a secret: the device never logs it and never publishes it. |
+| `conversation.end` | `{ "sessionId": string, "reason": ConversationEndReason }` | The cloud ends a session. Safe to receive twice and for an unknown session. |
+| `snapshot.request` | `{ "requestId": string }` | Take a snapshot for a voice session. Valid in `conversing` only; elsewhere the device answers `command_rejected_state`. The doll answers with a `snapshot.captured` that carries the same `requestId`. |
+
+Changes from `voice-conversation` (S4 to S6):
+
+- **S4 `conversation.start`.** *Reason:* starts the doll's audio client.
+- **S5 `conversation.end`.** *Reason:* the cloud can end a session on the doll.
+- **S6 `snapshot.request`.** *Reason:* serves the `look()` tool and the silent family re-check.
+- **Field rules.** `sessionId` and `requestId` match `[A-Za-z0-9-]{1,64}`. `token` is 1 to 128
+  characters. The doll clamps `maxSeconds` to 30..420 and `silenceSeconds` to 5..60; finite values
+  outside these ranges are valid, as for other numbers. Cloud tool commands reuse `gaze` and
+  `lantern` unchanged. *Reason:* bounds the values and keeps the existing command set.
+- **S11 `speak` in `conversing`.** The device rejects it with `command_rejected_state`.
+  *Reason:* one audio user at a time.
 
 Notes on the command fields:
 
@@ -202,8 +262,9 @@ Notes on the status fields:
   the times in the table. Its envelope always carries `encounterId: null`. *Reason:* the
   dashboard shows when the doll ignores presence, the camera indicator stays current, and
   status stays independent of encounters.
-- **`micActive`.** `false` while no feature records audio (no feature of `device-core-loop`
-  does). *Reason:* makes the privacy indicator exact.
+- **`micActive`.** `true` while the state is `conversing` and `false` otherwise. A
+  `status.report` is also sent on each change of `micActive`, at the same moment as the state
+  change (S10). *Reason:* makes the privacy indicator exact.
 - **`status.offline` timing.** The broker publishes the last will that the device registered at
   connect time, so its `ts` is the connect time. Receivers use their own arrival time for it and
   never its `ts`. AWS does not guarantee the order of will messages across reconnects; a later
@@ -231,6 +292,7 @@ published on MQTT, never appear in envelopes, and are not part of the contract t
 | `cloud.connected` | The device's cloud link came online. |
 | `cloud.disconnected` | The device's cloud link went offline. |
 | `adapter.error` | A hardware adapter failed; carries a code from the `error.reported` code list. |
+| `ConversationFinished` | The conversation adapter ended, exactly once per session; carries the session id and a reason that is a `ConversationEndReason` or `adapter_failed`. |
 
 ## Shared definitions
 - **State**: `sleeping` · `waking` · `seeking` · `gazing` · `greeting` · `warning` ·
@@ -242,9 +304,65 @@ published on MQTT, never appear in envelopes, and are not part of the contract t
   device configuration concern (`pan_invert`, `tilt_invert`), not part of the contract.
 - **Privacy:** names never appear in `judgement.result`, `status.report` or any event. The
   text of a `speak` command may contain a family nickname only when the verdict was `family`.
-  The device discards `data` fields this document does not define.
+  The device discards `data` fields this document does not define. Voice transcripts and audio
+  are never stored, and no tool result, prompt or frame contains a name (S14).
+- **Voice-line catalog:** the device's `voice/lines.toml` (ids, categories, `ja`, `en`) is the
+  single source of the catalog. `scripts/export_voice_catalog.py` copies it to the dashboard,
+  and the cloud's `lineId` check uses the same ids. *Reason:* one source and a drift check
+  keep the device, the cloud and the dashboard simulation on the same lines.
 - **Idempotency:** every command is safe to receive twice. The device drops a repeated `id`
   within its duplicate window (see "Duplicates and extra fields").
+
+## Voice session channels
+Added by `voice-conversation` (S13). *Reason:* the doll, the cloud and the dashboard share one
+frame definition. A voice session carries audio and text over an AWS AppSync Events API, not over
+MQTT. The `v` of this contract stays 1.
+
+### Namespace, channels and tokens
+Namespace `voice`. A channel segment is at most 50 characters; `<sid>` is the session id (a UUID,
+36 characters).
+
+| Channel | Direction | Frames |
+|---|---|---|
+| `/voice/<sid>/in` | client → session | `hello`, `audio`, `look.result`, `bye` |
+| `/voice/<sid>/out` | session → client | `audio`, `interrupt`, `command` |
+| `/voice/<sid>/text` | session → client and observer | `state`, `transcript`, `end` |
+
+A token is `<sessionId>.<secret>`, where `secret` is 32 random bytes in Base64URL. The token regex
+is `^[0-9a-f-]{36}\.[A-Za-z0-9_-]{43}$`. Two tokens exist.
+
+| Token | Held by | Allowed operations |
+|---|---|---|
+| `clientToken` | the audio client (doll or browser) | publish `/voice/<sid>/in`; subscribe `/voice/<sid>/out` and `/voice/<sid>/text` |
+| `observerToken` | a browser that started a doll session | subscribe `/voice/<sid>/text` |
+
+The authorizer accepts a token only while the session phase is `starting` or `live` and
+`expiresAt` is in the future. It rejects wildcard channels and every other channel. Tokens are
+stored only as SHA-256 hashes. The doll never logs or publishes its token. *Reason:* a token is the
+only credential of a session and must not leak.
+
+### Frames
+Every frame is a JSON object with a string `t`. A receiver ignores an unknown `t`. `LookVerdict` is
+`family`, `stranger`, `no_face` or `uncertain`.
+
+| Channel | `t` | Fields | Meaning |
+|---|---|---|---|
+| `in` | `hello` | `client: "device" \| "browser"`, `v: 1` | The client is connected and subscribed. |
+| `in` | `audio` | `seq: int`, `pcm: string` | Microphone chunk. `pcm` is Base64 of 16 kHz S16LE mono. |
+| `in` | `look.result` | `requestId: string`, `verdict: LookVerdict` | Virtual doll only: the simulated answer to a `snapshot.request` command frame. |
+| `in` | `bye` | `reason: "user" \| "silence" \| "limit" \| "error"` | The client ends the session. |
+| `out` | `audio` | `seq: int`, `pcm: string` | Model speech. `pcm` is Base64 of 24 kHz S16LE mono. |
+| `out` | `interrupt` | none | Stop playback now (barge-in or unsafe output). |
+| `out` | `command` | `envelope: Envelope` | Browser sessions only: a command envelope for the virtual doll. |
+| `text` | `state` | `state: "waiting" \| "live" \| "ending"` | Session phase. |
+| `text` | `transcript` | `role: "user" \| "assistant"`, `text: string`, `final: boolean` | Live subtitles. Never stored. |
+| `text` | `end` | `reason: ConversationEndReason` | The session ended. |
+
+Limits: an audio chunk of 100 ms is 3,200 bytes in and 4,800 bytes out, about 4.3 KB and 6.4 KB
+after Base64, far below the 240 KB subscription limit. A frame is malformed when `pcm` is not valid
+Base64, decodes to an odd number of bytes, or decodes to more than 12,800 bytes. A decoder never
+throws; it returns the frame or a malformed result. A transcript text, like every other frame
+field, never contains a name. *Reason:* bounds the input and keeps every receiver total.
 
 ## HTTP API (dashboard ⇄ cloud)
 Defined by the `cloud-judgement` design. Encounter records reuse the envelope and the types
@@ -261,7 +379,10 @@ above so the timeline and the simulation share one model.
   `sampleId`, which matches `[a-z0-9_-]{1,64}`.
 - **Errors.** `{ "error": { "code": string, "message": string } }`. Codes: `unauthorized` (401),
   `forbidden` (403), `not_found` (404), `validation_failed` (400), `consent_required` (409),
-  `face_count_invalid` (422), `rate_limited` (429, with `Retry-After` seconds), `internal` (500).
+  `face_count_invalid` (422), `rate_limited` (429, with `Retry-After` seconds), `internal` (500),
+  `session_active` (409, a session already uses this doll or this virtual doll),
+  `voice_unavailable` (503, kill switch or a failed start). A daily voice cap gives the existing
+  `429 rate_limited` with `Retry-After` set to the seconds until the next UTC midnight (S19).
   Messages are at most 200 characters and never contain image data, face ids, names or pre-signed
   URLs. `Retry-After` is a whole number of seconds from 1 to 86,400. *Reason:* the error list is
   checked against the implementation (see "Fixtures and contract checks").
@@ -287,10 +408,19 @@ above so the timeline and the simulation share one model.
 | `POST /faces/upload` | yes | no | |
 | `POST /faces` | yes | no | |
 | `DELETE /faces/{memberId}` | yes | no | |
+| `POST /conversations` | yes | only when `reviewerVoiceEnabled` | reviewer: browser client and virtual target only; otherwise `403 forbidden` |
+| `GET /conversations/{sessionId}` | owner | owner | a non-owner gets `404 not_found` |
+| `DELETE /conversations/{sessionId}` | owner | owner | a non-owner gets `404 not_found` |
 
 ### Routes
-`GET /me` → `{ "role": "family" | "reviewer", "consentNoticeVersion": string, "limits": { "simulatePerHour": int, "generatePerHour": int } }`.
-Each limit is an integer of at least 1.
+`GET /me` → `{ "role": "family" | "reviewer", "consentNoticeVersion": string, "limits": { "simulatePerHour": int, "generatePerHour": int }, "voice": { "enabled": boolean, "maxSeconds": int, "remainingToday": int } }`.
+Each limit is an integer of at least 1. `voice.remainingToday` is an integer of at least 0.
+*Reason (S18):* the dashboard can disable the Talk button and show the reason.
+`consentNoticeVersion` names a notice text that the dashboard bundles under
+`dashboard/src/content/consent/<version>.md`. The cloud and the dashboard are released together
+whenever this version changes. *Reason:* the version a family member accepts must match the text
+they were shown, and a cloud that expects a version the dashboard does not bundle would make every
+face registration fail with `409 consent_required`.
 
 `GET /samples` → `{ "samples": [ { "sampleId": string, "label": "family" | "stranger" | "no_face" | "uncertain" } ] }`.
 Labels are the expected outcome shown in the dashboard. They never contain names.
@@ -328,7 +458,8 @@ is stored.
 The cloud clamps `lantern.level` to 0..1, `lantern.fadeMs` to 0..10000, `gaze.panDeg` to -60..60
 and `gaze.tiltDeg` to -30..30 (the widest limits the device config accepts), and publishes with
 QoS 1 to `warashi/<deviceId>/commands` with `encounterId: null`. `deviceId` is 1 to 64 characters of
-`[A-Za-z0-9_-]`. `speak` needs a `lineId` from the line catalog. An unknown `type`, a missing or
+`[A-Za-z0-9_-]`. `speak` needs a `lineId` from the line catalog, which is the device's `voice/lines.toml`
+(see "Shared definitions"); the cloud's `lineId` check uses the same ids. An unknown `type`, a missing or
 non-finite number, or a `mode` other than `guard` or `sleep` gives `400 validation_failed` and
 publishes nothing. An offline doll still gets one publish and `deviceOnline: false`; the command is
 never stored or replayed. A failed publish gives `500 internal` without a retry. *Reason:* the
@@ -351,6 +482,20 @@ face is indexed with an opaque member id, never a name. `GET /faces` never retur
 `/faces` route gives `403 forbidden` to `reviewer`.
 
 `DELETE /faces/{memberId}` → `204`. Deletes the face vectors and the member record.
+
+`POST /conversations` body `{ "deviceId": string, "client": "browser" | "device", "target": "real" | "virtual" }`
+(S16). `client: "device"` requires `target: "real"`, and `target: "real"` requires `family`.
+`reviewer` may start only a browser session against the virtual doll, and only when
+`reviewerVoiceEnabled` is on. Success for `browser` is `201 { "sessionId", "clientToken", "hosts": { "http", "realtime" }, "channels": { "in", "out", "text" }, "maxSeconds", "silenceSeconds", "expiresAt" }`.
+Success for `device` is `202 { "sessionId", "observerToken", "hosts", "channels", "deviceOnline": boolean }`;
+the cloud sends the doll a `conversation.start` command with `source: "manual"`. A busy doll or
+virtual doll gives `409 session_active`; a kill switch or a failed start gives
+`503 voice_unavailable`; a daily cap gives `429 rate_limited`. *Reason:* one start route for both
+clients.
+
+`GET /conversations/{sessionId}` → `{ "sessionId", "phase", "endReason": ConversationEndReason | null }`
+(S17). `DELETE /conversations/{sessionId}` → `204` and ends the session with reason `user`. A
+non-owner or an unknown id gives `404 not_found`. *Reason:* lets the UI show a failed start.
 
 ### Encounter record
 ```json
@@ -395,7 +540,27 @@ TypeScript tests both decode every fixture to `valid` and re-encode it to a sema
 value (key order ignored). A type without a fixture, or a fixture without a type, fails the tests
 and names the type or file.
 
-The route table and the error code list in "HTTP API" are also checked by tests: the routes and
+`docs/fixtures/schema-v1/` also holds one golden file for each type added by `voice-conversation`:
+`conversation.requested`, `conversation.ended`, `conversation.start`, `conversation.end` and
+`snapshot.request`.
+
+`docs/fixtures/voice-v1/` holds **one golden frame for each frame type and direction** listed in
+"Voice session channels", plus `sonic-session-ok.jsonl` and `sonic-session-tools.jsonl` (scripted
+Bedrock event streams with short synthetic audio and placeholder text). The Python, TypeScript and
+dashboard tests decode every file and re-encode it to a semantically equal value. A frame without a
+fixture, or a fixture without a frame, fails and names it. *Reason:* the same bytes are checked in
+all three parts.
+
+The route table and the error code list in "HTTP API" are also checked by tests (S20, which now
+include the voice routes and the codes `session_active` and `voice_unavailable`): the routes and
 codes implemented in `/cloud` must equal the role matrix and the error list above, and a missing or
 extra entry fails the tests and is named. *Reason:* this document stays the single source of truth,
 and drift is caught by a test instead of by a reviewer.
+
+`docs/fixtures/simulate-v1/` holds one example of a successful `POST /simulate` response for each of
+`family.json`, `stranger.json` and `no_face.json`. Each has `commands` in the order
+`judgement.result`, `speak` (envelopes with `deviceId: "warashi-sim"` and `encounterId: null`), a
+`face` box and `confidence` within 0..1, `latencyMs.search` ≤ `latencyMs.total`, and no name or image
+data. The dashboard tests (`dashboard-simulation` task 5.2, which also checks that its bundled copies
+are identical) and the cloud tests of `/simulate` check this shape. *Reason:* the dashboard's offline
+simulation and the live cloud answer stay in the same shape, and a test catches drift.

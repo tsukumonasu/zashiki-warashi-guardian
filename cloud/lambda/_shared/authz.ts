@@ -19,7 +19,10 @@ export type RouteKey =
   | "GET /faces"
   | "POST /faces/upload"
   | "POST /faces"
-  | "DELETE /faces/{memberId}";
+  | "DELETE /faces/{memberId}"
+  | "POST /conversations"
+  | "GET /conversations/{sessionId}"
+  | "DELETE /conversations/{sessionId}";
 
 /** Routes the `family` role may call: every route of the role matrix. */
 const FAMILY_ROUTES: ReadonlySet<string> = new Set<RouteKey>([
@@ -34,6 +37,9 @@ const FAMILY_ROUTES: ReadonlySet<string> = new Set<RouteKey>([
   "POST /faces/upload",
   "POST /faces",
   "DELETE /faces/{memberId}",
+  "POST /conversations",
+  "GET /conversations/{sessionId}",
+  "DELETE /conversations/{sessionId}",
 ]);
 
 /** Routes the `reviewer` role may call: read-only routes and the simulation. No doll control, no faces. */
@@ -44,6 +50,10 @@ const REVIEWER_ROUTES: ReadonlySet<string> = new Set<RouteKey>([
   "GET /encounters/{id}",
   "GET /device/status",
   "POST /simulate",
+  // Role rules (reviewer only when `reviewerVoiceEnabled`, owner-only reads) live in voice-start-core.
+  "POST /conversations",
+  "GET /conversations/{sessionId}",
+  "DELETE /conversations/{sessionId}",
 ]);
 
 /** The route table, exported so tests can compare it with the role matrix. */

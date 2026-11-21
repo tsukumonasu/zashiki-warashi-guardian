@@ -1,0 +1,18 @@
+{"event":{"sessionStart":{"inferenceConfiguration":{"maxTokens":1024,"topP":0.9,"temperature":0.7},"turnDetectionConfiguration":{"endpointingSensitivity":"MEDIUM"}}}}
+{"event":{"promptStart":{"promptName":"prompt-0001","textOutputConfiguration":{"mediaType":"text/plain"},"audioOutputConfiguration":{"mediaType":"audio/lpcm","sampleRateHertz":24000,"sampleSizeBits":16,"channelCount":1,"voiceId":"tiffany","encoding":"base64","audioType":"SPEECH"},"toolUseOutputConfiguration":{"mediaType":"application/json"},"toolConfiguration":{"tools":[{"toolSpec":{"name":"turn_head","description":"placeholder tool","inputSchema":{"json":{"type":"object","properties":{},"required":[]}}}},{"toolSpec":{"name":"set_lantern","description":"placeholder tool","inputSchema":{"json":{"type":"object","properties":{},"required":[]}}}},{"toolSpec":{"name":"look","description":"placeholder tool","inputSchema":{"json":{"type":"object","properties":{},"required":[]}}}}],"toolChoice":{"auto":{}}}}}}
+{"event":{"contentStart":{"promptName":"prompt-0001","contentName":"system-0001","type":"TEXT","role":"SYSTEM","interactive":false,"textInputConfiguration":{"mediaType":"text/plain"}}}}
+{"event":{"textInput":{"promptName":"prompt-0001","contentName":"system-0001","content":"placeholder system prompt"}}}
+{"event":{"contentEnd":{"promptName":"prompt-0001","contentName":"system-0001"}}}
+{"event":{"contentStart":{"promptName":"prompt-0001","contentName":"audio-0001","type":"AUDIO","role":"USER","interactive":true,"audioInputConfiguration":{"mediaType":"audio/lpcm","sampleRateHertz":16000,"sampleSizeBits":16,"channelCount":1,"audioType":"SPEECH","encoding":"base64"}}}}
+{"event":{"audioInput":{"promptName":"prompt-0001","contentName":"audio-0001","content":"AAABAAIAAwA="}}}
+{"event":{"textOutput":{"promptName":"prompt-0001","contentName":"out-0001","role":"USER","content":"placeholder user text"}}}
+{"event":{"toolUse":{"promptName":"prompt-0001","contentName":"tool-0001","toolUseId":"tool-use-0001","toolName":"turn_head","content":"{\"direction\":\"left\"}"}}}
+{"event":{"toolUse":{"promptName":"prompt-0001","contentName":"tool-0002","toolUseId":"tool-use-0002","toolName":"set_lantern","content":"{\"level\":0.5,\"fade_ms\":1200}"}}}
+{"event":{"toolUse":{"promptName":"prompt-0001","contentName":"tool-0003","toolUseId":"tool-use-0003","toolName":"look","content":"{}"}}}
+{"event":{"textOutput":{"promptName":"prompt-0001","contentName":"out-0002","role":"ASSISTANT","content":"placeholder assistant text"}}}
+{"event":{"audioOutput":{"promptName":"prompt-0001","contentName":"out-0003","content":"AAABAAIAAwA="}}}
+{"event":{"textOutput":{"promptName":"prompt-0001","contentName":"out-0004","role":"ASSISTANT","content":"{ \"interrupted\" : true }"}}}
+{"event":{"contentEnd":{"promptName":"prompt-0001","contentName":"out-0003","stopReason":"INTERRUPTED"}}}
+{"event":{"contentEnd":{"promptName":"prompt-0001","contentName":"audio-0001"}}}
+{"event":{"promptEnd":{"promptName":"prompt-0001"}}}
+{"event":{"sessionEnd":{}}}

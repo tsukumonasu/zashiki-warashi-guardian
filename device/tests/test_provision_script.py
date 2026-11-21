@@ -95,7 +95,14 @@ def env(tmp_path: Path) -> dict[str, str]:
     e["STUB_LOG"] = str(log)
     e["STUB_STATE"] = str(state)
     e["STUB_KEY_MARKER"] = KEY_MARKER
-    for name in ("STUB_FAIL", "STUB_CURL_FAIL", "STUB_CURL_BAD", "STUB_GIT_TREE"):
+    for name in (
+        "STUB_FAIL",
+        "STUB_CURL_FAIL",
+        "STUB_CURL_BAD",
+        "STUB_GIT_TREE",
+        "APPSYNC_REALTIME_HOST",
+        "APPSYNC_HTTP_HOST",
+    ):
         e.pop(name, None)
     return e
 
@@ -346,3 +353,53 @@ def test_no_key_text_in_any_output(
     for path in out.iterdir():
         if path.name != "device.private.key":
             assert KEY_MARKER not in path.read_text()
+
+
+def test_appsync_hosts_from_arguments_are_written(
+    env: dict[str, str], tmp_path: Path, out: Path
+) -> None:
+    result = run(
+        env,
+        tmp_path,
+        *base_args(out),
+        "--appsync-realtime-host",
+        "rt.example.invalid",
+        "--appsync-http-host",
+        "http.example.invalid",
+    )
+    assert result.returncode == 0, result.stderr
+    table = tomllib.loads((out / "warashi-aws.toml").read_text())["aws"]
+    assert table["appsync_realtime_host"] == "rt.example.invalid"
+    assert table["appsync_http_host"] == "http.example.invalid"
+
+
+def test_appsync_hosts_from_environment_are_written(
+    env: dict[str, str], tmp_path: Path, out: Path
+) -> None:
+    result = run(
+        env,
+        tmp_path,
+        *base_args(out),
+        APPSYNC_REALTIME_HOST="rt.example.invalid",
+        APPSYNC_HTTP_HOST="http.example.invalid",
+    )
+    assert result.returncode == 0, result.stderr
+    table = tomllib.loads((out / "warashi-aws.toml").read_text())["aws"]
+    assert table["appsync_realtime_host"] == "rt.example.invalid"
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["--appsync-realtime-host", "rt.example.invalid"],
+        ["--appsync-http-host", "http.example.invalid"],
+        ["--appsync-realtime-host", 'bad"host', "--appsync-http-host", "ok.example.invalid"],
+    ],
+)
+def test_bad_appsync_arguments_are_refused_before_any_side_effect(
+    env: dict[str, str], tmp_path: Path, out: Path, args: list[str]
+) -> None:
+    result = run(env, tmp_path, *base_args(out), *args)
+    assert result.returncode != 0
+    assert aws_calls(env) == []
+    assert not out.exists()

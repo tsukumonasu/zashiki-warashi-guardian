@@ -32,7 +32,14 @@ from datetime import UTC, datetime
 from typing import Final
 
 from warashi_agent.adapters.cloud import CloudLink, InboundRaw
-from warashi_agent.adapters.ports import AudioPort, CameraPort, LanternPort, PirPort, ServoPort
+from warashi_agent.adapters.ports import (
+    AudioPort,
+    CameraPort,
+    ConversationPort,
+    LanternPort,
+    PirPort,
+    ServoPort,
+)
 from warashi_agent.config import Config
 from warashi_agent.inbound import Deduplicator, ErrorToPublish, route_inbound
 from warashi_agent.messages import (
@@ -55,7 +62,9 @@ from warashi_agent.model import (
     PublishStatus,
     Reason,
     ReleaseServos,
+    StartConversation,
     State,
+    StopConversation,
     TakeSnapshot,
     Tick,
 )
@@ -107,6 +116,8 @@ class Adapters:
     pir: PirPort
     camera: CameraPort
     audio: AudioPort
+    conversation: ConversationPort | None = None
+    """Built only when ``conversation_enabled``; ``None`` means voice sessions are off."""
 
 
 class Ticker:
@@ -377,10 +388,19 @@ class Dispatcher:
                 self._adapters.camera.handle(action)
             case PlayLine() | PlayAudioUrl():
                 self._adapters.audio.handle(action)
+            case StartConversation() | StopConversation():
+                if self._adapters.conversation is not None:
+                    self._adapters.conversation.handle(action)
+                else:
+                    self._log.warning("conversation action without an adapter dropped")
             case PublishEvent():
                 self.publish(action.data, action.encounter_id)
             case PublishStatus():
                 self.publish(action.data, None)  # status never belongs to an Encounter
+
+    def _stop_conversation(self) -> None:
+        if self._adapters.conversation is not None:
+            self._adapters.conversation.stop()
 
     def _gate_open(self, action: Action) -> bool:
         """False once ``_safe_stop`` ran: no Action may reach the servos or lantern (R20.6)."""
@@ -443,6 +463,7 @@ class Dispatcher:
             ("pir", self._adapters.pir.close),
             ("camera", self._adapters.camera.stop),
             ("audio", self._adapters.audio.stop),
+            ("conversation", self._stop_conversation),
             ("cloud link", self._cloud.stop),
         )
         for name, stop in steps:

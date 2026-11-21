@@ -51,6 +51,11 @@ export interface WebStackProps extends StackProps {
   apiId: string;
   userPoolId: string;
   userPoolClientId: string;
+  /** AppSync Events API hosts from VoiceStack; added to the CSP `connect-src` (voice R16.6). */
+  voiceHttpHost: string;
+  voiceRealtimeHost: string;
+  /** Name of the DataStack bucket; this stack sets its CORS rule (browser face uploads). */
+  dataBucketName: string;
   /** Folder with the built dashboard. Defaults to `<repo>/dashboard/dist`. */
   dashboardDistPath?: string;
   /** CORS settings applied to the HTTP API together with the CloudFront origin. */
@@ -95,7 +100,7 @@ export class WebStack extends Stack {
           // Snapshots and speech are pre-signed S3 URLs; sign-in calls Cognito directly.
           contentSecurityPolicy: [
             "default-src 'self'",
-            `connect-src 'self' ${props.apiUrl} https://cognito-idp.${this.region}.amazonaws.com`,
+            `connect-src 'self' ${props.apiUrl} https://cognito-idp.${this.region}.amazonaws.com https://${props.voiceHttpHost} wss://${props.voiceRealtimeHost}`,
             "img-src 'self' data: https://*.amazonaws.com",
             "media-src 'self' https://*.amazonaws.com",
             "style-src 'self' 'unsafe-inline'",
@@ -211,6 +216,32 @@ export class WebStack extends Stack {
         new iam.PolicyStatement({
           actions: ["apigateway:PATCH"],
           resources: [`arn:${this.partition}:apigateway:${this.region}::/apis/${props.apiId}`],
+        }),
+      ]),
+      installLatestAwsSdk: false,
+    });
+
+    // CORS rule of the data bucket for browser uploads of face photos (dashboard-simulation X2,
+    // R15.5). Same cycle resolution as the API: the CloudFront origin is known only here, so this
+    // stack sets the rule on the bucket of DataStack. The origin is never `*`.
+    new cr.AwsCustomResource(this, "DataBucketCorsOrigin", {
+      onUpdate: {
+        service: "S3",
+        action: "putBucketCors",
+        parameters: {
+          Bucket: props.dataBucketName,
+          CORSConfiguration: {
+            CORSRules: [
+              { AllowedOrigins: [this.webUrl], AllowedMethods: ["POST"], AllowedHeaders: ["*"], MaxAgeSeconds: 600 },
+            ],
+          },
+        },
+        physicalResourceId: cr.PhysicalResourceId.of(`${props.dataBucketName}-cors`),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromStatements([
+        new iam.PolicyStatement({
+          actions: ["s3:PutBucketCORS"],
+          resources: [`arn:${this.partition}:s3:::${props.dataBucketName}`],
         }),
       ]),
       installLatestAwsSdk: false,

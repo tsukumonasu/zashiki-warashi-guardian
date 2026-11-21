@@ -6,6 +6,9 @@
 #       --policy <DevicePolicyName> [--region ap-northeast-1] [--rotate] [--pi-dir /home/pi/.warashi]
 #
 #   --policy  the device policy name, a stack output of the cloud app.
+#   --appsync-realtime-host / --appsync-http-host  the voice stack's AppSync Events host names
+#             (stack outputs; or env APPSYNC_REALTIME_HOST / APPSYNC_HTTP_HOST). Give both or
+#             neither; they are written to warashi-aws.toml, never committed.
 #   --rotate  issue a new certificate; the old one is deactivated only after the new one
 #             is attached to both the policy and the thing.
 #
@@ -31,6 +34,7 @@ usage() {
     cat >&2 <<'EOF'
 Usage: provision_device.sh --thing <name> --out <dir> --policy <policy-name>
                            [--region <region>] [--rotate] [--pi-dir <dir on the Pi>]
+                           [--appsync-realtime-host <host> --appsync-http-host <host>]
 
   --thing    IoT thing name, for example warashi-01
   --out      directory for the certificate, key, CA and warashi-aws.toml;
@@ -38,6 +42,9 @@ Usage: provision_device.sh --thing <name> --out <dir> --policy <policy-name>
   --policy   device policy name (stack output of the cloud app)
   --region   AWS Region (default: ap-northeast-1)
   --rotate   create a new certificate and retire the old one
+  --appsync-realtime-host, --appsync-http-host
+             AppSync Events host names for voice (or env APPSYNC_REALTIME_HOST and
+             APPSYNC_HTTP_HOST); both or neither
   --pi-dir   directory on the Pi used for the paths in warashi-aws.toml
              (default: /home/pi/.warashi)
 EOF
@@ -55,6 +62,8 @@ POLICY=""
 REGION="$DEFAULT_REGION"
 ROTATE=0
 PI_DIR="/home/pi/.warashi"
+APPSYNC_REALTIME_HOST="${APPSYNC_REALTIME_HOST:-}"
+APPSYNC_HTTP_HOST="${APPSYNC_HTTP_HOST:-}"
 
 # Step 1: arguments. Nothing is created before they are valid (R21.10).
 while [ $# -gt 0 ]; do
@@ -64,6 +73,8 @@ while [ $# -gt 0 ]; do
         --policy) [ $# -ge 2 ] || { usage; exit 2; }; POLICY="$2"; shift 2 ;;
         --region) [ $# -ge 2 ] || { usage; exit 2; }; REGION="$2"; shift 2 ;;
         --pi-dir) [ $# -ge 2 ] || { usage; exit 2; }; PI_DIR="$2"; shift 2 ;;
+        --appsync-realtime-host) [ $# -ge 2 ] || { usage; exit 2; }; APPSYNC_REALTIME_HOST="$2"; shift 2 ;;
+        --appsync-http-host) [ $# -ge 2 ] || { usage; exit 2; }; APPSYNC_HTTP_HOST="$2"; shift 2 ;;
         --rotate) ROTATE=1; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "provision_device: unknown argument: $1" >&2; usage; exit 2 ;;
@@ -94,6 +105,18 @@ if ! [[ "$PI_DIR" =~ ^/[A-Za-z0-9._/-]*$ ]]; then
     fail "arguments" "--pi-dir must be an absolute path of plain characters"
 fi
 PI_DIR="${PI_DIR%/}"
+# The two AppSync hosts go into a TOML string: host-name characters only, both or neither.
+if [ -n "$APPSYNC_REALTIME_HOST" ] || [ -n "$APPSYNC_HTTP_HOST" ]; then
+    if [ -z "$APPSYNC_REALTIME_HOST" ] || [ -z "$APPSYNC_HTTP_HOST" ]; then
+        fail "arguments" "give both AppSync hosts or neither"
+    fi
+    if ! [[ "$APPSYNC_REALTIME_HOST" =~ ^[A-Za-z0-9.-]{1,253}$ ]]; then
+        fail "arguments" "the AppSync realtime host must be a plain host name"
+    fi
+    if ! [[ "$APPSYNC_HTTP_HOST" =~ ^[A-Za-z0-9.-]{1,253}$ ]]; then
+        fail "arguments" "the AppSync http host must be a plain host name"
+    fi
+fi
 
 # Step 2: refuse an --out inside a git work tree (R21.4). The deepest existing ancestor is
 # resolved with symlinks followed (the missing tail cannot be a link), then asked to git.
@@ -262,6 +285,12 @@ keepalive_s = 60
 reconnect_min_s = 1
 reconnect_max_s = 60
 EOF
+if [ -n "$APPSYNC_REALTIME_HOST" ]; then
+    {
+        printf 'appsync_realtime_host = "%s"\n' "$APPSYNC_REALTIME_HOST"
+        printf 'appsync_http_host = "%s"\n' "$APPSYNC_HTTP_HOST"
+    } >> "$TMP_TOML"
+fi
 mv -f "$TMP_TOML" "$TOML_FILE"
 
 echo "provision_device: done. Thing '$THING' is ready in $REGION."

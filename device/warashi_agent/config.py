@@ -165,6 +165,24 @@ class AwsConfig:
     keepalive_s: int = 60
     reconnect_min_s: float = 1.0
     reconnect_max_s: float = 60.0
+    appsync_realtime_host: str = field(default="", repr=False)
+    appsync_http_host: str = field(default="", repr=False)
+
+
+@dataclass(frozen=True, kw_only=True)
+class ConversationConfig:
+    """`[conversation]`: the voice session of voice-conversation R12.14, R12.15.
+
+    Off by default, so a doll that has not been provisioned for voice behaves as before.
+    """
+
+    conversation_enabled: bool = False
+    conversation_max_s: int = 180
+    conversation_silence_s: int = 15
+    conversation_mic_gain: float = 4.0
+    conversation_chunk_ms: int = 100
+    conversation_mute_mic_while_speaking: bool = False
+    conversation_connect_timeout_s: float = 8.0
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -187,6 +205,7 @@ class Config:
     messages: MessagesConfig = field(default_factory=MessagesConfig)
     privacy: PrivacyConfig = field(default_factory=PrivacyConfig)
     aws: AwsConfig = field(default_factory=AwsConfig)
+    conversation: ConversationConfig = field(default_factory=ConversationConfig)
 
     # Derived values (Glossary). They live here so the State_Machine, the Config_Loader's
     # cross-key rules (R25.7) and the property tests share one definition of each bound.
@@ -211,7 +230,12 @@ class Config:
         waking -> seeking (all scans) -> gazing -> warning -> cooldown.
         """
         t, n = self.timing, self.camera.scan_attempts_max
-        return (
+        conversation_s = (
+            self.conversation.conversation_max_s + 2 * self.tick_s
+            if self.conversation.conversation_enabled
+            else 0.0
+        )
+        return conversation_s + (
             t.waking_timeout_s
             + (n + 1) * (t.verdict_timeout_s + t.glide_timeout_s)
             + t.stare_s
@@ -257,6 +281,7 @@ _SECTIONS: dict[str, type] = {
     "audio": AudioConfig,
     "messages": MessagesConfig,
     "privacy": PrivacyConfig,
+    "conversation": ConversationConfig,
 }
 
 # `[aws]` is not in `_SECTIONS`: its rules depend on `aws.enabled` and, optionally, on the
@@ -482,6 +507,46 @@ KEY_SPECS: tuple[KeySpec, ...] = (
     ),
 )
 
+KEY_SPECS += (
+    _spec("conversation", "conversation_enabled", "bool", _always, "boolean"),
+    _spec(
+        "conversation",
+        "conversation_max_s",
+        "int",
+        _in_range(30, 420),
+        "integer, 30 <= value <= 420",
+    ),
+    _spec(
+        "conversation",
+        "conversation_silence_s",
+        "int",
+        _in_range(5, 60),
+        "integer, 5 <= value <= 60",
+    ),
+    _spec(
+        "conversation",
+        "conversation_mic_gain",
+        "float",
+        _in_range(0.5, 16),
+        "number, 0.5 <= value <= 16",
+    ),
+    _spec(
+        "conversation",
+        "conversation_chunk_ms",
+        "int",
+        _in_range(60, 200),
+        "integer, 60 <= value <= 200",
+    ),
+    _spec("conversation", "conversation_mute_mic_while_speaking", "bool", _always, "boolean"),
+    _spec(
+        "conversation",
+        "conversation_connect_timeout_s",
+        "float",
+        _in_range(2, 20),
+        "number, 2 <= value <= 20",
+    ),
+)
+
 _SPECS_BY_NAME: dict[str, KeySpec] = {s.name: s for s in KEY_SPECS}
 
 
@@ -585,6 +650,14 @@ _CROSS_RULES: tuple[_CrossRule, ...] = (
         keys=("camera.scan_attempts_max", "camera.scan_pan_positions_deg"),
         holds=lambda v: v["camera.scan_attempts_max"] <= len(v["camera.scan_pan_positions_deg"]),
         allowed="0 <= scan_attempts_max <= length of scan_pan_positions_deg",
+        stage="range",
+    ),
+    _CrossRule(
+        keys=("conversation.conversation_silence_s", "conversation.conversation_max_s"),
+        holds=lambda v: (
+            v["conversation.conversation_silence_s"] + 5 <= v["conversation.conversation_max_s"]
+        ),
+        allowed="conversation_silence_s + 5 <= conversation_max_s",
         stage="range",
     ),
     _CrossRule(
@@ -693,7 +766,8 @@ def _convert(kind: Kind, value: object) -> tuple[bool, object]:
 _HOSTNAME = re.compile(r"[A-Za-z0-9]([A-Za-z0-9.-]{0,251}[A-Za-z0-9])?")
 _AWS_PATH_KEYS = ("ca_file", "cert_file", "key_file")
 # Values of these keys are never echoed: the endpoint and paths belong to the owner's Pi.
-_AWS_HIDDEN_KEYS = frozenset({"endpoint", *_AWS_PATH_KEYS})
+_AWS_HOST_KEYS = ("appsync_realtime_host", "appsync_http_host")
+_AWS_HIDDEN_KEYS = frozenset({"endpoint", *_AWS_PATH_KEYS, *_AWS_HOST_KEYS})
 _AWS_RECONNECT_TEXT = "number, 0 < value <= 3600"
 
 # key -> (kind, single-key check, allowed text). Defaults come from `AwsConfig`.
@@ -707,6 +781,8 @@ _AWS_SPECS: dict[str, tuple[Kind, Callable[[Any], bool], str]] = {
     "keepalive_s": ("int", _in_range(30, 1200), "integer, 30 <= value <= 1200"),
     "reconnect_min_s": ("float", _in_range(0, 3600, lo_open=True), _AWS_RECONNECT_TEXT),
     "reconnect_max_s": ("float", _in_range(0, 3600, lo_open=True), _AWS_RECONNECT_TEXT),
+    "appsync_realtime_host": ("str", _always, "string (host name)"),
+    "appsync_http_host": ("str", _always, "string (host name)"),
 }
 
 
@@ -884,9 +960,39 @@ def validate_mapping(
         violations.extend(aws_violations)
         if checked is not None:
             aws = checked
+    violations.extend(_conversation_needs_aws(typed, aws))
     if violations:
         return ConfigRejected(violations=tuple(violations))
     return _build(typed, aws)
+
+
+def _conversation_needs_aws(typed: Mapping[str, object], aws: AwsConfig) -> list[Violation]:
+    """R12.15: a doll with voice enabled needs the AWS link and both AppSync hosts.
+
+    Only checked when `conversation_enabled` is true and the `[aws]` table itself passed, so
+    one mistake is not reported twice. Host values are never shown.
+    """
+    if typed.get("conversation.conversation_enabled") is not True:
+        return []
+    problems: list[Violation] = []
+    if not aws.enabled:
+        problems.append(
+            Violation(
+                key="conversation.conversation_enabled, aws.enabled",
+                value="True, False",
+                allowed="conversation_enabled needs aws.enabled = true",
+            )
+        )
+    for key in _AWS_HOST_KEYS:
+        if getattr(aws, key) == "":
+            problems.append(
+                Violation(
+                    key=f"conversation.conversation_enabled, aws.{key}",
+                    value=None,
+                    allowed=f"conversation_enabled needs a non-empty aws.{key}",
+                )
+            )
+    return problems
 
 
 def _holds(rule: _CrossRule, values: Mapping[str, Any]) -> bool:

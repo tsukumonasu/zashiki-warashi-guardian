@@ -332,7 +332,7 @@ Nothing is published to the real doll and nothing is written to the encounter ta
 |---|---|
 | `DataStack` | S3 data bucket (private, SSE-S3, lifecycle by prefix, block public access, `enforceSSL`), DynamoDB table `warashi` (on-demand, TTL attribute `ttl`, GSI1), Rekognition collections `warashi-household` and `warashi-demo` (fixed ids). |
 | `JudgementStack` | IoT data endpoint lookup (custom resource calling `DescribeEndpoint` with `iot:Data-ATS`), device IoT policy, two topic rules, `judge` and `ingest` functions with Lambda permissions for `iot.amazonaws.com`, SNS topic and optional e-mail subscription. |
-| `ApiStack` | Cognito user pool (no self sign-up, groups `family` and `reviewer`), public SPA app client, HTTP API with JWT authorizer, `api-read`, `snapshot-signer` (internal, no route), `api-simulate`, `api-admin`, CORS limited to the web origin, route throttles. |
+| `ApiStack` | Cognito user pool (no self sign-up, groups `family` and `reviewer`), public SPA app client (no secret, no Cognito domain; auth flows `USER_SRP_AUTH` and `USER_PASSWORD_AUTH`, the latter added for the `dashboard-simulation` sign-in form, task 2.1), HTTP API with JWT authorizer, `api-read`, `snapshot-signer` (internal, no route), `api-simulate`, `api-admin`, CORS limited to the web origin, route throttles. |
 | `WebStack` | Private S3 site bucket, CloudFront with origin access control, SPA error fallback, `BucketDeployment` with `config.json`. |
 | `BudgetStack` | `AWS::Budgets::Budget`, monthly, notifications at 50, 80 and 100 percent. |
 
@@ -364,6 +364,14 @@ API's CORS needs the CloudFront origin. Resolution: dependencies run one way, `W
 [API Gateway IAM reference](https://docs.aws.amazon.com/service-authorization/latest/reference/list_apigateway.html)).
 R18.6 and R19.8 hold as written. Caveat: if a later `ApiStack` change replaces the API or adds
 `corsPreflight`, the CORS setting is lost until `WebStack` is deployed again (`cdk deploy --all` does both).
+**Data bucket CORS (added by `dashboard-simulation` task 2.2, R15.5).** Browser face uploads use a
+pre-signed POST to the data bucket, which needs a CORS rule for the dashboard origin. The origin is
+known only in `WebStack`, so `DataStack` creates the bucket without CORS and `WebStack` sets the rule
+with a second `AwsCustomResource` (`S3 PutBucketCors`; origin `https://<distribution domain>`, method
+`POST`, headers `*`, never `*` as origin). Its role has only `s3:PutBucketCORS` on that bucket.
+`WebStack` takes the new prop `dataBucketName`. Same caveat as the API: replacing the bucket loses the
+rule until `WebStack` is deployed again.
+
 `/config.json` has its own CloudFront behavior (cache policy max TTL 60 s) and its own
 `BucketDeployment` (`Cache-Control: public, max-age=60`, no prune), so the dashboard bundle is never rebuilt
 for a config change. `WebStack` also adds a response headers policy (HSTS, nosniff, frame deny, referrer

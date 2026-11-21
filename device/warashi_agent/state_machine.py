@@ -49,6 +49,10 @@ from warashi_agent.config import Config, JudgementConfig
 from warashi_agent.glide import clamp, clamp_gaze
 from warashi_agent.head_tracker import head_target
 from warashi_agent.messages import (
+    ConversationEnded,
+    ConversationEndReason,
+    ConversationRequested,
+    ConversationSource,
     EncounterEnded,
     ErrorCode,
     ErrorReported,
@@ -68,6 +72,9 @@ from warashi_agent.model import (
     Category,
     CloudConnected,
     CloudDisconnected,
+    ConversationEnd,
+    ConversationFinished,
+    ConversationStart,
     EndReason,
     Event,
     FaceBox,
@@ -89,8 +96,11 @@ from warashi_agent.model import (
     ServoArrived,
     SnapshotFailed,
     SnapshotReady,
+    SnapshotRequest,
     Speak,
+    StartConversation,
     State,
+    StopConversation,
     TakeSnapshot,
     Tick,
     Verdict,
@@ -98,6 +108,12 @@ from warashi_agent.model import (
 from warashi_agent.voice import VoiceLine, choose_line
 
 LANTERN_FADE_MS_MAX = 10_000
+
+# Ids of the two closing lines of a voice session. Defined here, before the Reaction code
+# uses them; the conversation flow below refers to them by the same names.
+CONVERSATION_BYE_LINE = "conversation_bye"
+CONVERSATION_TROUBLE_LINE = "conversation_trouble"
+CONVERSATION_LINE_IDS = frozenset({CONVERSATION_BYE_LINE, CONVERSATION_TROUBLE_LINE})
 """Upper Clamp of every ``LanternFade.fade_ms`` (R12.2, docs/schema.md)."""
 
 IdKind = Literal["snap", "motion", "play"]
@@ -186,6 +202,19 @@ class Gazing:
 
 
 @dataclass(frozen=True, kw_only=True)
+class ConversationGrant:
+    """A ``conversation.start`` stored in ``greeting`` until the greeting line ends (R11.2).
+
+    ``token`` is a secret, so it is hidden from ``repr()`` and never reaches a log line.
+    """
+
+    session_id: str
+    token: str = field(repr=False)
+    max_s: int
+    silence_s: int
+
+
+@dataclass(frozen=True, kw_only=True)
 class Greeting:
     """Family greeting with a nod (R7.1, R7.2)."""
 
@@ -196,6 +225,7 @@ class Greeting:
     nod_deadline: float
     nod_returned: bool = False
     line: ReactionLine
+    pending_conversation: ConversationGrant | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -230,7 +260,40 @@ class Cooldown:
     manual: bool  # entered by mode.set sleep, so encounter.ended says "manual" (R8.3, R12.7)
 
 
-Phase = Sleeping | Waking | Seeking | Gazing | Greeting | WarningPhase | Uncertain | Cooldown
+@dataclass(frozen=True, kw_only=True)
+class LookRequest:
+    """An outstanding ``snapshot.request`` of a voice session (R11.15)."""
+
+    request_id: str
+    snapshot_id: str
+    pan_deg: float  # head angles when the snapshot was requested
+    tilt_deg: float
+    deadline: float  # now + verdict_timeout_s; a lost snapshot must not block later looks
+
+
+@dataclass(frozen=True, kw_only=True)
+class Conversing:
+    """A voice session is live. Always has a deadline, so the state always ends (R11.5, R11.6)."""
+
+    state: ClassVar[State] = State.CONVERSING
+    session_id: str
+    deadline: float  # entry + min(command maxSeconds, conversation_max_s)
+    look: LookRequest | None = None
+    # Snapshot ids already sent for this session. A verdict is acted on only for one of them.
+    looked_snapshot_ids: tuple[str, ...] = ()
+
+
+Phase = (
+    Sleeping
+    | Waking
+    | Seeking
+    | Gazing
+    | Greeting
+    | WarningPhase
+    | Uncertain
+    | Cooldown
+    | Conversing
+)
 
 
 # --------------------------------------------------------------------------------------------
@@ -247,6 +310,7 @@ class Encounter:
     attempt: SnapshotAttempt | None = None  # the current snapshot attempt
     scans_run: int = 0  # scan attempts run in this Encounter (R6.1, R6.5)
     reacted: bool = False  # reaction.performed was published (R7.8)
+    conversation_requested: bool = False  # conversation.requested was sent (R11, S1)
 
     def with_verdict(self, accepted: AcceptedVerdict) -> Encounter:
         """Record ``accepted`` unless a final Accepted_Verdict is already set (R4.6).
@@ -611,7 +675,7 @@ def next_camera_watch(ctx: StepContext, prev: MachineState) -> CameraWatch | Non
     if camera is not None:
         result_handled = (
             isinstance(event, SnapshotReady | SnapshotFailed)
-            and prev.state is State.SEEKING
+            and prev.state in (State.SEEKING, State.CONVERSING)
             and event.snapshot_id == camera.snapshot_id
         )
         deadline_passed = isinstance(event, Tick) and ctx.now >= camera.deadline
@@ -630,7 +694,8 @@ def status_report(ms: MachineState, now: float) -> StatusReport:
     """The ``status.report`` data for the state at the end of a call (R23.4, R23.5).
 
     Built from the returned state so the dashboard sees what the doll does after this call.
-    ``micActive`` is always false because no feature of this spec records audio (R23.3).
+    ``micActive`` is true only in ``conversing``, the one state in which the doll records
+    audio (voice-conversation R11.19, S10).
     """
     pan, tilt = ms.gaze
     return StatusReport(
@@ -640,7 +705,7 @@ def status_report(ms: MachineState, now: float) -> StatusReport:
         tilt_deg=tilt,
         lantern=ms.lantern_level,
         camera_active=ms.camera is not None,
-        mic_active=False,
+        mic_active=ms.state is State.CONVERSING,
         motion_enabled=ms.config.motion.motion_enabled,
         uptime_sec=math.floor(now - ms.start_time),
         agent_version=ms.agent_version,
@@ -1140,7 +1205,10 @@ def play_reaction_line(
     """
     if _as(ms.encounter, Encounter).reacted:
         return ms, None, NO_REACTION_LINE
-    line = choose_line(ms.lines, kind, ctx.event.rand)
+    # The two conversation lines are in the ``family`` category so a family member may hear
+    # them, but they are never a Reaction: a greeting must not say goodbye (R11.10 to R11.13).
+    pool = tuple(line for line in ms.lines if line.id not in CONVERSATION_LINE_IDS)
+    line = choose_line(pool, kind, ctx.event.rand)
     if line is None:
         return ms, None, NO_REACTION_LINE
     play_id = ctx.new_id("play")
@@ -1183,6 +1251,7 @@ def enter_greeting(ctx: StepContext, ms: MachineState, reason: Reason) -> Machin
     ms, line, reaction_line = play_reaction_line(ctx, ms, Category.FAMILY)
     nod = ctx.gaze_to(pan, tilt - ms.config.servo.nod_deg)
     ms = announce_reaction(ctx, ms, Category.FAMILY, line, offline=False)
+    ms = request_conversation(ctx, ms)
     phase = Greeting(
         pan=pan,
         tilt=tilt,
@@ -1337,6 +1406,8 @@ def on_audio_result_reaction(ctx: StepContext) -> MachineState:
     line = reaction_line_of(ms.phase)
     if line is None or line.play_id is None or line.play_id != play_id:
         return ms
+    if isinstance(ms.phase, Greeting) and ms.phase.pending_conversation is not None:
+        return leave_greeting_for_conversation(ctx, ms, ms.phase, ms.phase.pending_conversation)
     return enter_cooldown(ctx, ms, Reason.AUDIO_DONE)
 
 
@@ -1508,7 +1579,7 @@ def reject(ctx: StepContext, code: ErrorCode) -> MachineState:
     doll, touching a deadline or ending the Encounter, so a rejection can never hang it.
     """
     command = ctx.event
-    if not isinstance(command, Speak | Gaze | Lantern):
+    if not isinstance(command, Speak | Gaze | Lantern | ConversationStart | SnapshotRequest):
         raise TypeError(f"expected a rejectable command, got {type(command).__name__}")
     ctx.report_error(code, REJECTION_MESSAGES[code], command.ref_id)
     return ctx.ms
@@ -1561,6 +1632,9 @@ def on_speak(ctx: StepContext) -> MachineState:
     The codec guarantees exactly one of ``line_id`` and ``audio_url``.
     """
     ms, cmd = ctx.ms, _as(ctx.event, Speak)
+    if isinstance(ms.phase, Conversing):
+        # One audio user at a time: the conversation owns the speaker (R11.17, S11).
+        return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
     situation = situation_category(ms)
     line: VoiceLine | None = None
     if cmd.line_id is not None:
@@ -1659,9 +1733,348 @@ def on_mode_set(ctx: StepContext) -> MachineState:
         return ms
     ms = dataclasses.replace(ms, mode=mode)
     ending = mode is Mode.SLEEP and ms.encounter is not None
+    if ending and isinstance(ms.phase, Conversing):
+        return leave_conversing(
+            ctx,
+            ms,
+            ms.phase,
+            state_reason=Reason.MANUAL,
+            end_reason=ConversationEndReason.MANUAL,
+            manual=True,
+        )
     if ending and ms.state not in (State.SLEEPING, State.COOLDOWN):
         return enter_cooldown(ctx, ms, Reason.MANUAL, manual=True)
     return ms
+
+
+# --------------------------------------------------------------------------------------------
+# Flow: voice conversation (voice-conversation task 15.2; R11)
+# --------------------------------------------------------------------------------------------
+
+_NO_LINE_END_REASONS = frozenset(
+    {
+        ConversationEndReason.STRANGER,
+        ConversationEndReason.MANUAL,
+        ConversationEndReason.OFFLINE,
+        ConversationEndReason.UNSAFE_OUTPUT,
+    }
+)
+_TROUBLE_END_REASONS = frozenset({ConversationEndReason.ERROR, ConversationEndReason.LANGUAGE})
+
+
+def conversation_line_id(end_reason: ConversationEndReason) -> str | None:
+    """The line the doll says when it leaves ``conversing`` for ``end_reason`` (R11.10 to R11.12).
+
+    A stranger, a manual stop, a lost cloud and unsafe output get silence: someone who should
+    not hear a family goodbye, or nobody at all, is listening. A failure gets the "I can't hear
+    well" line. Every other reason, including a remote end, gets the goodbye. Neither line is a
+    Reaction, so neither publishes ``reaction.performed`` (R11.13).
+    """
+    if end_reason in _NO_LINE_END_REASONS:
+        return None
+    if end_reason in _TROUBLE_END_REASONS:
+        return CONVERSATION_TROUBLE_LINE
+    return CONVERSATION_BYE_LINE
+
+
+def request_conversation(ctx: StepContext, ms: MachineState) -> MachineState:
+    """Ask the cloud for a voice session, once per Encounter (S1, R11.1).
+
+    Called when ``greeting`` is entered after an accepted ``family`` verdict. Nothing is sent
+    when conversations are off or the cloud is unreachable, because no session could start.
+    """
+    encounter = _as(ms.encounter, Encounter)
+    enabled = ms.config.conversation.conversation_enabled
+    if encounter.conversation_requested or not enabled or not ms.cloud_connected:
+        return ms
+    ctx.publish(ConversationRequested(reason="family_verdict"))
+    encounter = dataclasses.replace(encounter, conversation_requested=True)
+    return dataclasses.replace(ms, encounter=encounter)
+
+
+def enter_conversing(
+    ctx: StepContext,
+    ms: MachineState,
+    grant: ConversationGrant,
+    reason: Reason,
+    *,
+    manual_start: bool = False,
+) -> MachineState:
+    """Enter ``conversing``: announce, start the adapter, set the deadline (R11.5).
+
+    The deadline always exists, so a hung adapter cannot keep the doll here (R11.6).
+    ``maxSeconds`` of the command is clamped to ``conversation_max_s``, and the silence limit
+    stays at least 5 s below the maximum, as the config rule requires. ``manual_start`` is
+    true when the doll was asleep: it wakes the lantern and glides to center like ``waking``.
+    The status report with ``micActive: true`` is added by ``finalize`` (R11.19).
+    """
+    max_s = min(grant.max_s, ms.config.conversation.conversation_max_s)
+    silence_s = min(grant.silence_s, max_s - 5)
+    ctx.change_state(State.CONVERSING, reason)
+    if manual_start:
+        ctx.publish(PresenceDetected(source="manual"))
+        lantern = ms.config.lantern
+        ctx.fade_lantern(lantern.lantern_wake_level, lantern.lantern_fade_in_ms)
+        ctx.gaze_to(0.0, 0.0)
+    ctx.emit(
+        StartConversation(
+            session_id=grant.session_id, token=grant.token, max_s=max_s, silence_s=silence_s
+        )
+    )
+    phase = Conversing(session_id=grant.session_id, deadline=ctx.now + max_s)
+    return dataclasses.replace(ms, phase=phase)
+
+
+def leave_conversing(
+    ctx: StepContext,
+    ms: MachineState,
+    phase: Conversing,
+    *,
+    state_reason: Reason,
+    end_reason: ConversationEndReason,
+    manual: bool = False,
+) -> MachineState:
+    """Leave ``conversing`` for ``cooldown``: one stop and one ``conversation.ended`` (R11.8).
+
+    Order: ``StopConversation``, ``conversation.ended``, ``state.changed``, the cooldown entry
+    actions, then the closing line chosen by ``end_reason``. The stop comes first so the
+    microphone closes before anything else happens. ``manual`` is true only for ``mode.set``
+    sleep, so ``encounter.ended`` says ``manual``.
+    """
+    ctx.emit(StopConversation(session_id=phase.session_id))
+    ctx.publish(ConversationEnded(session_id=phase.session_id, reason=end_reason))
+    ms = enter_cooldown(ctx, ms, state_reason, manual=manual)
+    line_id = conversation_line_id(end_reason)
+    line = ms.line_by_id(line_id) if line_id is not None else None
+    if line is None:
+        return ms
+    return emit_play_line(ctx, ms, line)
+
+
+def leave_greeting_for_conversation(
+    ctx: StepContext, ms: MachineState, phase: Greeting, grant: ConversationGrant
+) -> MachineState:
+    """The greeting line ended with a stored grant: start the conversation (R11.2).
+
+    A cloud that went away since the grant, or a switch turned off, ends the visit as an
+    ordinary greeting would. A nod that has not returned yet returns first, so the head does
+    not stay bowed for the whole conversation.
+    """
+    if not ms.cloud_connected or not ms.config.conversation.conversation_enabled:
+        return enter_cooldown(ctx, ms, Reason.AUDIO_DONE)
+    if not phase.nod_returned:
+        ms = return_from_nod(ctx, ms, phase)
+    return enter_conversing(ctx, ms, grant, Reason.CONVERSATION)
+
+
+def on_conversation_start_sleeping(ctx: StepContext) -> MachineState:
+    """``conversation.start`` in ``sleeping``: a manual start in mode ``guard`` only (R11.3)."""
+    ms, cmd = ctx.ms, _as(ctx.event, ConversationStart)
+    if (
+        not ms.config.conversation.conversation_enabled
+        or cmd.source != ConversationSource.MANUAL
+        or ms.mode is not Mode.GUARD
+    ):
+        return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+    ms = dataclasses.replace(ms, encounter=ctx.begin_encounter())
+    grant = ConversationGrant(
+        session_id=cmd.session_id, token=cmd.token, max_s=cmd.max_s, silence_s=cmd.silence_s
+    )
+    return enter_conversing(ctx, ms, grant, Reason.CONVERSATION, manual_start=True)
+
+
+def on_conversation_start_greeting(ctx: StepContext) -> MachineState:
+    """``conversation.start`` in ``greeting``: store the grant for a family verdict (R11.2).
+
+    The conversation starts when the greeting line ends, so the doll never talks over its own
+    greeting. A second start for the stored session changes nothing; any other is rejected.
+    """
+    ms, cmd = ctx.ms, _as(ctx.event, ConversationStart)
+    phase = _as(ms.phase, Greeting)
+    accepted = _as(ms.encounter, Encounter).accepted
+    if (
+        not ms.config.conversation.conversation_enabled
+        or cmd.source != ConversationSource.FAMILY_VERDICT
+        or accepted is not AcceptedVerdict.FAMILY
+    ):
+        return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+    if phase.pending_conversation is not None:
+        if phase.pending_conversation.session_id == cmd.session_id:
+            return ms
+        return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+    grant = ConversationGrant(
+        session_id=cmd.session_id, token=cmd.token, max_s=cmd.max_s, silence_s=cmd.silence_s
+    )
+    return dataclasses.replace(ms, phase=dataclasses.replace(phase, pending_conversation=grant))
+
+
+def on_conversation_start_conversing(ctx: StepContext) -> MachineState:
+    """``conversation.start`` in ``conversing``: ignore the same session, reject another."""
+    ms = ctx.ms
+    if _as(ctx.event, ConversationStart).session_id == _as(ms.phase, Conversing).session_id:
+        return ms
+    return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+
+
+def on_conversation_start_other(ctx: StepContext) -> MachineState:
+    """``conversation.start`` in any other state: rejected (R11.4)."""
+    return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+
+
+def on_conversation_end_conversing(ctx: StepContext) -> MachineState:
+    """``conversation.end`` for the current session: stop and cool down (R11.7, R11.9)."""
+    ms, cmd = ctx.ms, _as(ctx.event, ConversationEnd)
+    phase = _as(ms.phase, Conversing)
+    if cmd.session_id != phase.session_id:
+        return ms
+    return leave_conversing(
+        ctx,
+        ms,
+        phase,
+        state_reason=Reason.CONVERSATION_DONE,
+        end_reason=ConversationEndReason(cmd.reason),
+    )
+
+
+def on_conversation_finished_conversing(ctx: StepContext) -> MachineState:
+    """The adapter ended the session: ``conversation_done``, or ``error`` if it failed (R11.7)."""
+    ms, event = ctx.ms, _as(ctx.event, ConversationFinished)
+    phase = _as(ms.phase, Conversing)
+    if event.session_id != phase.session_id:
+        return ms
+    if event.reason == "adapter_failed":
+        return leave_conversing(
+            ctx,
+            ms,
+            phase,
+            state_reason=Reason.ERROR,
+            end_reason=ConversationEndReason.ERROR,
+        )
+    return leave_conversing(
+        ctx,
+        ms,
+        phase,
+        state_reason=Reason.CONVERSATION_DONE,
+        end_reason=ConversationEndReason(event.reason),
+    )
+
+
+def on_tick_conversing(ctx: StepContext) -> MachineState:
+    """The deadline ends ``conversing`` whatever the adapter does (R11.6, design V17).
+
+    A look whose snapshot never arrived is dropped at its own deadline, so a lost capture
+    cannot block later ``snapshot.request`` commands.
+    """
+    ms = ctx.ms
+    phase = _as(ms.phase, Conversing)
+    if ctx.now >= phase.deadline:
+        return leave_conversing(
+            ctx,
+            ms,
+            phase,
+            state_reason=Reason.TIMEOUT,
+            end_reason=ConversationEndReason.LIMIT,
+        )
+    if phase.look is not None and ctx.now >= phase.look.deadline:
+        return dataclasses.replace(ms, phase=dataclasses.replace(phase, look=None))
+    return ms
+
+
+def on_cloud_disconnected_conversing(ctx: StepContext) -> MachineState:
+    """``cloud.disconnected`` in ``conversing``: stop and cool down, reason ``offline``."""
+    ms = _with_connectivity(ctx.ms, False)
+    return leave_conversing(
+        ctx,
+        ms,
+        _as(ms.phase, Conversing),
+        state_reason=Reason.OFFLINE,
+        end_reason=ConversationEndReason.OFFLINE,
+    )
+
+
+def on_snapshot_request_conversing(ctx: StepContext) -> MachineState:
+    """``snapshot.request`` in ``conversing``: take one snapshot for the session (R11.15)."""
+    ms, cmd = ctx.ms, _as(ctx.event, SnapshotRequest)
+    phase = _as(ms.phase, Conversing)
+    if phase.look is not None:
+        return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+    snapshot_id = ctx.new_id("snap")
+    ctx.emit(TakeSnapshot(snapshot_id=snapshot_id))
+    pan, tilt = ctx.gaze
+    look = LookRequest(
+        request_id=cmd.request_id,
+        snapshot_id=snapshot_id,
+        pan_deg=pan,
+        tilt_deg=tilt,
+        deadline=ctx.now + ms.config.timing.verdict_timeout_s,
+    )
+    return dataclasses.replace(ms, phase=dataclasses.replace(phase, look=look))
+
+
+def on_snapshot_request_other(ctx: StepContext) -> MachineState:
+    """``snapshot.request`` outside ``conversing``: rejected (R11.16)."""
+    return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+
+
+def on_snapshot_ready_conversing(ctx: StepContext) -> MachineState:
+    """Send the snapshot of the outstanding look with its ``requestId`` (R11.15).
+
+    The look ends here; its snapshot id is remembered so a ``stranger`` verdict for it can end
+    the conversation. A stale snapshot publishes nothing.
+    """
+    ms, event = ctx.ms, _as(ctx.event, SnapshotReady)
+    phase = _as(ms.phase, Conversing)
+    look = phase.look
+    if look is None or event.snapshot_id != look.snapshot_id:
+        return ms
+    ctx.publish(
+        SnapshotCaptured(
+            snapshot_id=look.snapshot_id,
+            width=event.width,
+            height=event.height,
+            pan_deg=look.pan_deg,
+            tilt_deg=look.tilt_deg,
+            jpeg_base64=base64.b64encode(event.jpeg).decode("ascii"),
+            request_id=look.request_id,
+        )
+    )
+    phase = dataclasses.replace(
+        phase, look=None, looked_snapshot_ids=(*phase.looked_snapshot_ids, look.snapshot_id)
+    )
+    return dataclasses.replace(ms, phase=phase)
+
+
+def on_snapshot_failed_conversing(ctx: StepContext) -> MachineState:
+    """Report a failed snapshot and end the outstanding look it belongs to (R11.15)."""
+    ms = on_snapshot_failed(ctx)
+    phase = _as(ms.phase, Conversing)
+    look = phase.look
+    if look is None or _as(ctx.event, SnapshotFailed).snapshot_id != look.snapshot_id:
+        return ms
+    return dataclasses.replace(ms, phase=dataclasses.replace(phase, look=None))
+
+
+def on_judgement_conversing(ctx: StepContext) -> MachineState:
+    """A ``stranger`` verdict for a look ends the conversation; anything else is ignored (R11.18).
+
+    The greeting already happened, so the Encounter goes to ``cooldown`` and not ``warning``;
+    the Accepted_Verdict of the Encounter stays as it is. The doll then says nothing (R11.20).
+    """
+    ms, event = ctx.ms, _as(ctx.event, JudgementResult)
+    phase = _as(ms.phase, Conversing)
+    known = (*phase.looked_snapshot_ids, *([phase.look.snapshot_id] if phase.look else []))
+    if event.snapshot_id not in known:
+        return ms
+    accepted = accept(event.verdict, event.confidence, ms.config.judgement)
+    if accepted is not AcceptedVerdict.STRANGER:
+        return ms
+    return leave_conversing(
+        ctx,
+        ms,
+        phase,
+        state_reason=Reason.VERDICT,
+        end_reason=ConversationEndReason.STRANGER,
+    )
 
 
 # --------------------------------------------------------------------------------------------
@@ -1699,6 +2112,18 @@ STATE_HANDLERS: Mapping[tuple[State, type], Handler] = MappingProxyType(
         # Cooldown and return to sleep (task 13.1).
         (State.COOLDOWN, ServoArrived): on_servo_arrived_cooldown,
         (State.COOLDOWN, Tick): on_tick_cooldown,
+        # Voice conversation (voice-conversation task 15.2).
+        (State.SLEEPING, ConversationStart): on_conversation_start_sleeping,
+        (State.GREETING, ConversationStart): on_conversation_start_greeting,
+        (State.CONVERSING, ConversationStart): on_conversation_start_conversing,
+        (State.CONVERSING, ConversationEnd): on_conversation_end_conversing,
+        (State.CONVERSING, ConversationFinished): on_conversation_finished_conversing,
+        (State.CONVERSING, Tick): on_tick_conversing,
+        (State.CONVERSING, CloudDisconnected): on_cloud_disconnected_conversing,
+        (State.CONVERSING, SnapshotRequest): on_snapshot_request_conversing,
+        (State.CONVERSING, SnapshotReady): on_snapshot_ready_conversing,
+        (State.CONVERSING, SnapshotFailed): on_snapshot_failed_conversing,
+        (State.CONVERSING, JudgementResult): on_judgement_conversing,
         # Manual commands (task 16.1).
         **{
             (state, command_cls): on_motion_command_resting
@@ -1722,6 +2147,9 @@ GLOBAL_HANDLERS: Mapping[type, Handler] = MappingProxyType(
         # PIR debounce (task 15.1).
         PirRising: on_pir_rising,
         PirFalling: on_pir_falling,
+        # Voice conversation: rejected outside the states that handle them (task 15.2).
+        ConversationStart: on_conversation_start_other,
+        SnapshotRequest: on_snapshot_request_other,
         # Manual commands (task 16.1).
         Speak: on_speak,
         Gaze: on_gaze,

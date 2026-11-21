@@ -18,10 +18,12 @@ interface Res {
   props: Json;
 }
 
-const EXPECTED_STACKS = ["DataStack", "JudgementStack", "ApiStack", "WebStack", "BudgetStack"];
+const EXPECTED_STACKS = ["DataStack", "JudgementStack", "ApiStack", "VoiceStack", "WebStack", "BudgetStack"];
 const EXPECTED_OUTPUTS = [
   "ApiUrl",
   "WebUrl",
+  "VoiceHttpHost",
+  "VoiceRealtimeHost",
   "IotEndpoint",
   "UserPoolId",
   "UserPoolClientId",
@@ -118,11 +120,11 @@ const WILDCARD_RESOURCE_EXCEPTIONS: Array<{ role: RegExp; action: string; why: s
 // ---------------------------------------------------------------- tests
 
 describe("Cloud_App template", () => {
-  it("synthesizes the five stacks (R19.1, R26.4)", () => {
+  it("synthesizes the six stacks (R19.1, R26.4)", () => {
     expect([...stackNames].sort()).toEqual([...EXPECTED_STACKS].sort());
   });
 
-  it("exposes the ten required outputs, each defined in exactly one stack with a value (R19.2)", () => {
+  it("exposes the twelve required outputs, each defined in exactly one stack with a value (R19.2)", () => {
     for (const name of EXPECTED_OUTPUTS) {
       const found = outputs.filter((o) => o.name === name);
       expect(found.map((o) => o.stack), `output ${name} must be defined once`).toHaveLength(1);
@@ -203,6 +205,7 @@ describe("Cloud_App template", () => {
     const tagProperty: Record<string, string> = {
       "AWS::ApiGatewayV2::Api": "Tags",
       "AWS::ApiGatewayV2::Stage": "Tags",
+      "AWS::AppSync::Api": "Tags",
       "AWS::Budgets::Budget": "ResourceTags",
       "AWS::CloudFront::Distribution": "Tags",
       "AWS::Cognito::UserPool": "UserPoolTags",
@@ -276,5 +279,22 @@ describe("Cloud_App template", () => {
       .filter((p) => p.props["SourceArn"] === undefined)
       .map(label);
     expect(loose).toEqual([]);
+  });
+
+  it("includes the four VoiceStack functions, each with its own role and 14-day log group (R3.10)", () => {
+    const fns = ofType("AWS::Lambda::Function").filter((f) => f.stack === "VoiceStack");
+    expect(fns).toHaveLength(4);
+    const roles = fns.map((f) => (f.props["Role"] as { "Fn::GetAtt": string[] })["Fn::GetAtt"][0]);
+    expect(new Set(roles).size).toBe(4);
+    const groups = ofType("AWS::Logs::LogGroup").filter((g) => g.stack === "VoiceStack");
+    expect(groups).toHaveLength(4);
+    expect(groups.every((g) => g.props["RetentionInDays"] === 14)).toBe(true);
+  });
+
+  it("needs no documented `*` resource exception for any VoiceStack role (R3.10)", () => {
+    const offenders = identityStatements()
+      .filter(({ stack, statement }) => stack === "VoiceStack" && asArray(statement.Resource).includes("*"))
+      .map(({ role }) => role);
+    expect(offenders).toEqual([]);
   });
 });

@@ -10,14 +10,50 @@
 
 ---
 
-## Try it now (no hardware, no account needed)
+## Reviewer quick start
 
-> Not deployed yet. The dashboard and its simulation mode are built by the
-> `dashboard-simulation` spec; this section will list the exact steps.
+The simulation needs **no hardware and no account**. A virtual doll runs the same messages as the
+real one, in your browser, with bundled sample responses. It also works offline after the first
+load. All four scenarios take **under two minutes** in total (about 62 seconds of doll time).
+The sign-in below is optional and only adds the Live cloud switch. The demo account is
+**read-only**: it cannot move or speak through the real doll, cannot manage faces and never sees
+real snapshots. The demo credentials are in the Devpost submission text, not here.
 
-1. Open the dashboard URL above.
-2. Click **Simulation mode**.
-3. Follow the on-screen prompts. The full encounter flow runs in your browser.
+### Simulation (no sign-in)
+
+1. Open the dashboard URL above and click **Enter the house**.
+2. Sound is on by default and starts only after your first scenario click. The **Mute sound**
+   control in the header stays visible. Every spoken line also shows Japanese text with an English
+   subtitle, so the scenarios work muted.
+3. Under **Call a visitor**, click one scenario button. The buttons are disabled while one runs;
+   **Stop** ends it early.
+
+| Click | You should see |
+|---|---|
+| **A family member comes home** | State goes Waking, Looking for someone, Gazing, Greeting, Settling down, Sleeping. The lantern glows, the head turns slowly toward the visitor, verdict **Family**, a warm Japanese greeting with an English subtitle. A simulated visit is added to the timeline. About 14 s. |
+| **A stranger enters at night** | The doll wakes and stares in silence, then whispers a line (subtitle appears only then). Verdict **Stranger**. The timeline entry shows **Family notified** with the note "(simulated, nothing was sent)". About 17 s. |
+| **Something moves, but no one is there** | The doll looks around several times and finds nobody. Verdict **No face**, then a cautious "is someone there?" line. About 20 s. |
+| **The network is down** | The doll reacts with no cloud and no snapshot: lantern, gaze and a cached line. Verdict **Offline**. About 11 s. |
+
+4. Open **Timeline** in the navigation. Your runs are listed under **Simulated visits**, newest
+   first. Select one to see its events in time order.
+
+### Live cloud (demo sign-in)
+
+1. On the first screen click **Sign in**, enter the demo username and password from the Devpost
+   text, and click **Sign in**. The header then shows the role **Reviewer**.
+2. Click **Enter the house**, then switch **Live cloud** on. It is off by default.
+3. Optionally tick **Generate a new line** to make the cloud write a new spoken line.
+4. Click any scenario button. The scenario now asks the real backend (face search and speech) and
+   runs its answer on the same virtual doll. Step durations are labelled **Durations measured in
+   the browser**. The entry in **Simulated visits** carries the **Live cloud** label.
+   **The network is down** makes no cloud call and says "No cloud call: the network is down".
+5. If the cloud is busy you see "The cloud needs a rest. Try again in N seconds."; if it does not
+   answer within 10 seconds you see "The cloud did not answer". Click **Run in Simulation mode**
+   to continue without the cloud. A failed run adds no timeline entry.
+6. Real-doll areas (controls, face registration) show "This is someone's home" and stay locked.
+   The **Real visits** list shows illustrations instead of snapshots.
+7. Click **Sign out** when done.
 
 ## Development
 
@@ -190,6 +226,88 @@ Steps that only the owner can do (demo seeding, e-mail confirmation, voice liste
 model access, account steps, integration measurements, real-doll test) are listed in the section
 "Owner and manual steps" of
 [`.kiro/specs/cloud-judgement/tasks.md`](.kiro/specs/cloud-judgement/tasks.md).
+
+### Voice conversation (optional, off by default)
+
+After a `family` verdict the doll can hold a short spoken conversation in Japanese. The
+dashboard can also start one with a virtual doll. The audio goes through an AWS AppSync Events
+API to a Lambda function (`voice-session`) that talks to Amazon Nova Sonic on Amazon Bedrock.
+Voice is a P1 feature: the core loop never depends on it, and every session ends in the doll's
+normal cooldown.
+
+**Off by default.** Two switches must both be on:
+
+| Switch | Where | Default |
+|---|---|---|
+| `voiceEnabled` | CDK context in `cloud/cdk.context.json`; the kill switch of the whole feature (deploys `VoiceStack`) | `false` |
+| `conversation_enabled` | `config.toml` on the doll | `false` |
+
+`reviewerVoiceEnabled` (CDK context, default `false`) additionally lets the read-only reviewer
+account talk to the virtual doll in the browser.
+
+**Safety and privacy.**
+
+- **Nova Sonic has no guardrails.** The doll relies on its persona prompt, a text check of the
+  model output (blocked words, language), per-day caps, a session time limit and the kill switch.
+- **The face check at the start and the re-check during the conversation are the only proof that a
+  family member is present.** A photograph of a family member (a printed picture or a phone
+  screen) passes them. Do not treat the conversation as authentication.
+- Voice goes from the doll or the browser to Amazon Bedrock in the Tokyo Region
+  (`ap-northeast-1`). Nothing is stored: no audio, no transcript. Live subtitles are shown while
+  the session runs and then dropped. The persona prompt contains no family names.
+- The dashboard and the status report show when the microphone is active.
+
+**Owner steps.** The full list (O1 to O8) is in "Owner and manual steps" of
+[`.kiro/specs/voice-conversation/tasks.md`](.kiro/specs/voice-conversation/tasks.md). In short:
+
+1. **Lambda concurrency quota.** `voice-session` is deployed with reserved concurrency 3
+   (`maxConcurrent`). Lambda always keeps at least 10 unreserved concurrent executions in the
+   account. An account still at the default limit must request a quota increase before it deploys
+   `VoiceStack`, or the deployment fails. Check the current value with the Service Quotas page for
+   Lambda "Concurrent executions".
+2. **Opt in.** Set `voiceEnabled` to `true` in `cloud/cdk.context.json`, confirm Bedrock model
+   access to `amazon.nova-2-5-sonic` in `ap-northeast-1` (O2), and run `npx cdk deploy --all`. The
+   stack outputs add `VoiceHttpHost` and `VoiceRealtimeHost`.
+3. **Measure Japanese quality and message ordering (O3).** **Japanese is not officially
+   supported by Nova 2.5 Sonic**, so its quality is unverified until you listen to it. Run these
+   from your computer with your own AWS credentials. The first needs `boto3` and the Smithy
+   Bedrock runtime SDK (`aws_sdk_bedrock_runtime`); the second needs `pip install websockets` and
+   a test token. Neither is a dependency of `/device`.
+
+   ```
+   python3 scripts/check_sonic_japanese.py [--voice tiffany] [--model amazon.nova-2-5-sonic]
+   python3 scripts/check_appsync_ordering.py --http-host <VoiceHttpHost> --realtime-host <VoiceRealtimeHost> --channel <test channel>
+   ```
+
+   Listen to the WAV that the first script writes and choose the voice (`tiffany` or `matthew`).
+   The second script checks whether AppSync Events keeps audio chunks in order. Record the results
+   in `.kiro/specs/voice-conversation/design.md` where it says "pending owner measurement".
+   If the Japanese is not good enough, leave `voiceEnabled` off.
+4. **Cached lines.** Run `scripts/generate_voice_lines.py` again so the `conversation_trouble` and
+   `conversation_bye` lines exist on the doll.
+5. **Provision the doll again** with the AppSync host names (stack outputs; give both or neither),
+   copy the folder to the Pi and run `scripts/deploy_pi.sh`:
+
+   ```
+   scripts/provision_device.sh --thing warashi-01 --out ~/warashi-secrets/warashi-01 \
+       --policy <DevicePolicyName> \
+       --appsync-realtime-host <VoiceRealtimeHost> --appsync-http-host <VoiceHttpHost>
+   ```
+
+6. **Install `websockets` on the Pi (O8b).** The agent uses the OS package, not pip:
+
+   ```
+   sudo apt install python3-websockets
+   apt policy python3-websockets
+   python3 -c "import websockets; print(websockets.version.version)"
+   ```
+
+7. **Turn it on for the doll.** Set `conversation_enabled = true` in `config.toml` only after the
+   measurements above and the real-doll tests (O8) pass. If the doll echoes its own voice, set
+   `conversation_mute_mic_while_speaking = true`.
+
+The host names, tokens and certificates are never committed; they live in `warashi-aws.toml` and
+in the stack outputs.
 
 ### Limits to know
 

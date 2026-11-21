@@ -9,7 +9,7 @@ inclusion: always
 |---|---|
 | `/device` | Python 3 (the system Python of Raspberry Pi OS, 3.13.5 on the doll; code targets `>=3.13`) on a Pi Zero W: armv6l, 512 MB RAM, one core. gpiozero (lgpio backend), `rpicam-still`, ALSA `aplay` / `arecord`, paho-mqtt. Tests: pytest + Hypothesis, plus pytest-timeout (dev only) so a test that blocks on a fake fails instead of hanging CI. |
 | `/cloud` | AWS CDK v2 in TypeScript. IoT Core, Lambda (current Node.js LTS runtime), S3, Rekognition, Bedrock, Polly, DynamoDB, SNS, API Gateway, Cognito, CloudFront. Tests: vitest + fast-check. |
-| `/dashboard` | React + Vite + TypeScript. Tests: vitest + Testing Library + fast-check. |
+| `/dashboard` | React + Vite + TypeScript. Tests: vitest + jsdom + Testing Library (react, user-event) + fast-check. Lint: eslint + typescript-eslint. |
 | Contract | `docs/schema.md` — every event and command exchanged between the three parts. |
 
 Scoped steering adds detail: `hardware.md` (the physical doll), `cloud.md`, `dashboard.md`,
@@ -32,7 +32,8 @@ Scoped steering adds detail: `hardware.md` (the physical doll), `cloud.md`, `das
   API shapes are checked with the `aws-docs` MCP server and the page is cited in `design.md`.
 - **Small dependencies.** The Pi is tiny and slow, and reviewers read this code. Prefer the
   standard library and a few well-known packages. On the Pi, install with `apt` first
-  (`python3-gpiozero`, `python3-lgpio`, `python3-paho-mqtt`); avoid packages that need native
+  (`python3-gpiozero`, `python3-lgpio`, `python3-paho-mqtt`, and `python3-websockets` for the
+  voice session client); avoid packages that need native
   wheels unavailable for armv6l (for example `awscrt` / AWS IoT Device SDK v2, numpy-heavy stacks).
 - **No secrets in git.** Certificates, tokens, Wi-Fi details, account IDs, host names,
   personal names and face images never enter the repository. Use `*.example` files and

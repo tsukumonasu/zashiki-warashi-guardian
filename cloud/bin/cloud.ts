@@ -2,9 +2,9 @@
 /**
  * CDK app entry point (R19.1, R19.2, R19.5, R19.6, R25.2).
  *
- * Five stacks in dependency order, all in `ap-northeast-1`:
+ * Six stacks in dependency order, all in `ap-northeast-1`:
  *
- *   DataStack -> JudgementStack -> ApiStack -> WebStack
+ *   DataStack -> JudgementStack -> ApiStack -> VoiceStack -> WebStack
  *   BudgetStack (independent)
  *
  * Values that cross a stack boundary are passed as props, so CDK creates the exports and the
@@ -20,6 +20,7 @@ import { BudgetStack } from "../lib/budget-stack.js";
 import { loadContext } from "../lib/context.js";
 import { DataStack } from "../lib/data-stack.js";
 import { JudgementStack } from "../lib/judgement-stack.js";
+import { VoiceStack } from "../lib/voice-stack.js";
 import { WebStack } from "../lib/web-stack.js";
 
 /** Every stack of the app is deployed here (R19.6). Services that need another Region are listed in design.md. */
@@ -76,12 +77,27 @@ export function buildApp(app: App = new App()): App {
     demoCollectionId: data.demoCollectionId,
   });
 
+  // VoiceStack reads the API and authorizer ids of ApiStack and adds the `/conversations` routes to
+  // that API; ApiStack does not read VoiceStack, so the stacks stay acyclic.
+  const voice = new VoiceStack(app, "VoiceStack", {
+    env,
+    table: data.table,
+    iotDataEndpoint: judgement.iotEndpoint,
+    httpApiId: api.apiId,
+    authorizerId: api.authorizerId,
+    voiceEnabled: toBoolean(app.node.tryGetContext("voiceEnabled")),
+    tunables: voiceTunableContext(app),
+  });
+
   new WebStack(app, "WebStack", {
     env,
+    voiceHttpHost: voice.httpHost,
+    voiceRealtimeHost: voice.realtimeHost,
     apiUrl: api.apiUrl,
     apiId: api.apiId,
     userPoolId: api.userPoolId,
     userPoolClientId: api.userPoolClientId,
+    dataBucketName: data.bucket.bucketName,
   });
 
   new BudgetStack(app, "BudgetStack", { env });
@@ -99,6 +115,29 @@ function tunableContext(app: App): Record<string, unknown> {
     if (value !== undefined) out[key] = value;
   }
   return out;
+}
+
+/** Voice settings that `loadVoiceConfig` reads from context (`voiceEnabled` is passed on its own). */
+export const VOICE_TUNABLE_KEYS = [
+  "voiceModelId", "voiceId", "maxSeconds", "silenceSeconds", "noClientSeconds", "recheckSeconds",
+  "lookTimeoutSeconds", "maxLooksPerSession", "maxToolCalls", "maxGazeCommands", "gazeMinIntervalMs",
+  "voiceGazePanDeg", "voiceGazeTiltDeg", "chunkMs", "reorderWindow", "grantWindowSeconds",
+  "perUserPerDayFamily", "perUserPerDayReviewer", "deviceStartsPerDay", "globalPerDay", "maxConcurrent",
+  "reviewerVoiceEnabled",
+] as const;
+
+function voiceTunableContext(app: App): Record<string, string | number | boolean> {
+  const out: Record<string, string | number | boolean> = {};
+  for (const key of VOICE_TUNABLE_KEYS) {
+    const value: unknown = app.node.tryGetContext(key);
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") out[key] = value;
+  }
+  return out;
+}
+
+/** `-c voiceEnabled=true` arrives as the string "true"; anything else leaves the kill switch off. */
+function toBoolean(value: unknown): boolean {
+  return value === true || value === "true";
 }
 
 // Run only when started by the CDK CLI, not when a test imports `buildApp`.

@@ -56,7 +56,7 @@ describe("error codes equal docs/schema.md (R24.16, error half)", () => {
   const implemented = new Map<string, number>(Object.entries(ERROR_STATUS));
 
   it("matches the documented list exactly", () => {
-    expect(documented.size).toBe(8);
+    expect(documented.size).toBe(10);
     expect(diffErrors(implemented, documented)).toEqual([]);
     expect([...ERROR_CODES].sort()).toEqual([...documented.keys()].sort());
   });

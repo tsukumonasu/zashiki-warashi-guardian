@@ -65,7 +65,20 @@ const BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/
  */
 export type SnapshotEvent = Readonly<Record<string, unknown>> & { topicDeviceId?: unknown };
 
+/** Lifetime of a `LOOK#<requestId>` item: 10 minutes (voice-conversation design, data models). */
+export const LOOK_TTL_S = 600;
+
+/**
+ * Where a voice session finds the verdict of a look (`LOOK#<requestId>` / `RESULT`). Kept local
+ * to the judge so the shared ports stay unchanged.
+ */
+export interface LookStore {
+  putLook(requestId: string, verdict: Verdict, atMs: number, ttlS: number): Promise<void>;
+}
+
 export interface JudgeDeps {
+  /** Optional: without it, a `requestId` is ignored. */
+  looks?: LookStore;
   faces: FaceSearch;
   snapshots: SnapshotStore;
   bus: DeviceBus;
@@ -403,6 +416,17 @@ export async function handleSnapshot(event: SnapshotEvent, deps: JudgeDeps): Pro
     published = await publishWithLimit(deps, message.deviceId, command, snapshotId);
   } catch (error) {
     log("publish_failed", { snapshotId, errorName: errorName(error) });
+  }
+
+  // A snapshot that answers a `snapshot.request` also leaves its verdict for the voice session.
+  // A failure here never changes the verdict, the record or the notification.
+  const requestId = (message.data as { requestId?: string | null }).requestId;
+  if (typeof requestId === "string" && deps.looks !== undefined) {
+    try {
+      await deps.looks.putLook(requestId, judgement.verdict, deps.now(), LOOK_TTL_S);
+    } catch (error) {
+      log("look_write_failed", { snapshotId, errorName: errorName(error) });
+    }
   }
 
   const stored = await storeTask;

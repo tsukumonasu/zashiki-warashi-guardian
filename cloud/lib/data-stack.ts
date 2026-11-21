@@ -63,6 +63,8 @@ export class DataStack extends Stack {
         { id: "expire-audio", prefix: "audio/", expiration: Duration.days(1) },
         { id: "expire-faces-staging", prefix: "faces-staging/", expiration: Duration.days(1) },
       ],
+      // No CORS rule here on purpose: the CloudFront origin is unknown in this stack and a
+      // reference to WebStack would create a cycle. WebStack sets it (see "Web and API stack cycle").
     });
 
     this.table = new dynamodb.Table(this, "Table", {

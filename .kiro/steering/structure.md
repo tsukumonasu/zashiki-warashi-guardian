@@ -49,4 +49,26 @@ LICENSE  README.md  Makefile
 - `boto3` is allowed for `scripts/generate_voice_lines.py` only (Polly pre-generation on a
   laptop). It is never a dependency of `/device` and is never installed on the Pi.
 - `aws-cdk` (CLI, dev dependency of `/cloud`) runs `cdk synth` and `cdk deploy`.
+- `@smithy/signature-v4`, `@aws-crypto/sha256-js`, `@smithy/protocol-http`, `@smithy/types`
+  (dependencies of `/cloud`) sign the AppSync Events WebSocket and publish requests of the voice
+  session with IAM (SigV4); `@smithy/node-http-handler` gives the Bedrock bidirectional stream its
+  HTTP/2 handler; `@aws-sdk/credential-provider-node` supplies the Lambda role credentials to the signer.
 - `tsx` (dev dependency of `/cloud`) runs the TypeScript CDK app (`bin/`) without a build step.
+- `@types/node` (dev dependency of `/dashboard`) types the `node:fs` reads in tests that load `docs/` files, such as `test/fixtures.test.ts`.
+- `cloud/lambda/_shared/voice/` holds the pure voice modules (frame codec, session reducer, prompt,
+  language check) used by the voice Lambdas and the dashboard tests, so one copy defines the frames.
+- `cloud/lambda/voice-start/`, `voice-grant/`, `voice-authorizer/` and `voice-session/` are the four
+  voice Lambdas, one folder each with a thin handler and a pure core. `voice-session/adapters/` holds
+  the only code that imports the Bedrock and AppSync Events SDKs.
+- `device/warashi_agent/conversation/` is the doll's audio client for a voice session (microphone,
+  playback, WebSocket). It is an adapter: it makes no decisions, and the state machine owns them.
+- `dashboard/src/voice/` holds the browser audio client and the virtual doll's voice session, using
+  the same frames as the real doll.
+- `docs/fixtures/voice-v1/` holds one golden frame per frame type and direction, the scripted Sonic
+  streams, and `persona-markers.json` (the marker-phrase list that the prompt drift test checks
+  against `persona.md`), so the Python, TypeScript and dashboard tests read the same bytes.
+- `websockets` is the one new dependency of `/device`. On the Pi it comes from `apt`
+  (`python3-websockets`, owner step O8b); on a laptop it is a dev dependency for the tests. It is
+  pure Python, so it needs no native wheel for armv6l.
+- `aws_sdk_bedrock_runtime` (with `boto3`) is allowed for `scripts/check_sonic_japanese.py` only. It
+  runs on the owner's laptop, is imported lazily, and is never a dependency of `/device`.

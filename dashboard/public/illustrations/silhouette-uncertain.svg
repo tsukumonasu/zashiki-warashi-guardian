@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="t d">
+<title id="t">A shape in the mist</title>
+<desc id="d">A blurred figure half hidden in mist, hard to tell who it is.</desc>
+<rect width="240" height="240" fill="#1c2447"/>
+<circle cx="120" cy="120" r="96" fill="#f2b45a" opacity="0.25"/>
+<rect x="0" y="206" width="240" height="34" fill="#121833"/>
+<defs><filter id="b"><feGaussianBlur stdDeviation="5"/></filter></defs>
+<g filter="url(#b)"><g fill="#05070f" transform="translate(0 0) scale(1)"><circle cx="120" cy="82" r="22"/><path d="M84 206 C84 150 96 118 120 118 C144 118 156 150 156 206 Z"/></g>
+</g>
+<path d="M40 150 h160 M60 170 h120 M50 130 h140" stroke="#c3c8de" stroke-width="5" opacity="0.35" stroke-linecap="round"/>
+</svg>

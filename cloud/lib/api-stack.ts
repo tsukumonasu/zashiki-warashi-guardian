@@ -82,6 +82,8 @@ export class ApiStack extends Stack {
   /** Values for WebStack (R18.6). */
   readonly apiUrl: string;
   readonly apiId: string;
+  /** Id of the JWT authorizer, for routes that VoiceStack adds to the same API. */
+  readonly authorizerId: string;
   readonly userPoolId: string;
   readonly userPoolClientId: string;
 
@@ -106,10 +108,12 @@ export class ApiStack extends Stack {
         groupName: group,
       });
     }
-    // Public SPA client: no secret, SRP only, no hosted-UI flows.
+    // Public SPA client: no secret, no Cognito domain, no hosted-UI flows. SRP plus
+    // USER_PASSWORD_AUTH: the dashboard's own sign-in form posts the password to Cognito over TLS
+    // (dashboard-simulation task 2.1, R11.1).
     this.userPoolClient = this.userPool.addClient("SpaClient", {
       generateSecret: false,
-      authFlows: { userSrp: true },
+      authFlows: { userSrp: true, userPassword: true },
       preventUserExistenceErrors: true,
       accessTokenValidity: Duration.hours(1),
       idTokenValidity: Duration.hours(1),
@@ -305,6 +309,11 @@ export class ApiStack extends Stack {
         integration: new HttpLambdaIntegration(`${route.id}Integration`, route.fn),
       });
     }
+
+    // The voice routes (`/conversations`) are added by VoiceStack with the same authorizer. Their
+    // function lives there, and a route built here would make ApiStack and VoiceStack depend on
+    // each other (the Lambda permission and the integration URI point in opposite directions).
+    this.authorizerId = authorizer.authorizerId;
 
     // Route throttle for POST /simulate (R15.14). Best effort; hard counters are in DynamoDB (design C12).
     const stage = this.httpApi.defaultStage?.node.defaultChild as apigwv2.CfnStage;

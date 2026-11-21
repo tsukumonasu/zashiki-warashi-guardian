@@ -1,0 +1,94 @@
+/*
+ * Virtual doll styles (design: "Virtual doll and accessibility").
+ * Head, eyes and glow have separate transitions. Nothing here loops: the doll only moves when
+ * the state changes. Under Reduced_Motion (data-reduced="true", also set from the media query
+ * by the hook) the head and eyes jump and the lantern changes within 100 ms.
+ */
+.doll {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+}
+
+.doll__wall { fill: var(--color-night-raised); }
+.doll__shoji-frame { stroke: var(--color-night-line); stroke-width: 2; fill: none; }
+.doll__window { fill: var(--color-night); stroke: var(--color-night-line); stroke-width: 3; }
+.doll__moon { fill: var(--color-paper-dim); opacity: 0.8; }
+.doll__tatami { fill: #2b2a3d; }
+.doll__tatami-line { stroke: var(--color-night-line); stroke-width: 1.5; }
+
+.doll__kimono { fill: var(--color-ink); stroke: var(--color-night-line); stroke-width: 2; }
+.doll__obi { fill: var(--color-andon); opacity: 0.85; }
+.doll__collar { fill: none; stroke: var(--color-washi); stroke-width: 4; }
+
+.doll__head-shape { fill: var(--color-washi); stroke: var(--color-ink-soft); stroke-width: 2; }
+.doll__hair { fill: var(--color-ink); }
+.doll__cheek { fill: var(--color-andon); opacity: 0.25; }
+.doll__mouth { fill: none; stroke: var(--color-danger); stroke-width: 3; stroke-linecap: round; }
+
+.doll__head {
+  transform-box: fill-box;
+  transform-origin: 50% 90%;
+  transform: translate(var(--doll-pan-x, 0px), var(--doll-tilt-y, 0px))
+    scaleX(var(--doll-pan-scale, 1)) rotate(var(--doll-tilt-rot, 0deg));
+  transition: transform 90ms linear;
+}
+
+.doll__face {
+  transform: translateX(var(--doll-face-x, 0px));
+  transition: transform 90ms linear;
+}
+
+.doll__eye { opacity: 0; transition: opacity 250ms ease-in-out; }
+.doll__eye[data-active="true"] { opacity: 1; }
+.doll__eye-white { fill: #fffaf0; stroke: var(--color-ink); stroke-width: 2; }
+.doll__eye-pupil { fill: var(--color-ink); }
+.doll__eye-lid { fill: var(--color-washi); }
+.doll__eye-line { fill: none; stroke: var(--color-ink); stroke-width: 3; stroke-linecap: round; }
+
+.doll__andon-body { fill: var(--color-washi-shade); stroke: var(--color-ink-soft); stroke-width: 2; }
+.doll__andon-frame { stroke: var(--color-ink-soft); stroke-width: 2; }
+.doll__andon-light { fill: var(--color-andon); opacity: var(--doll-lantern, 0); transition: opacity var(--fade-lantern) ease-in-out; }
+.doll__glow {
+  fill: url(#doll-glow-gradient);
+  opacity: var(--doll-lantern, 0);
+  transition: opacity var(--fade-lantern) ease-in-out;
+  filter: blur(var(--doll-glow-blur, 0px));
+}
+
+.doll[data-reduced="true"] .doll__head,
+.doll[data-reduced="true"] .doll__face,
+.doll[data-reduced="true"] .doll__eye {
+  transition: none;
+}
+
+.doll[data-reduced="true"] .doll__glow,
+.doll[data-reduced="true"] .doll__andon-light {
+  transition: opacity 100ms linear;
+}
+
+/* Subtitle */
+.subtitle {
+  min-height: 4rem;
+  margin: var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  text-align: center;
+  color: var(--text-on-night);
+}
+.subtitle[data-empty="true"] { visibility: hidden; }
+.subtitle__ja { margin: 0; font-family: var(--font-display); font-size: var(--font-size-large); }
+.subtitle__en { margin: var(--space-1) 0 0; color: var(--text-dim-on-night); font-size: var(--font-size-base); }
+
+/* Visually hidden, still read by screen readers. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

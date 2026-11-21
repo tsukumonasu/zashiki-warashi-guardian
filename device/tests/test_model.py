@@ -85,6 +85,8 @@ SCHEMA_ENUMS: list[tuple[type[StrEnum], set[str]]] = [
             "manual",
             "cooldown_done",
             "error",
+            "conversation",
+            "conversation_done",
         },
     ),
     # encounter.ended.reason (the draft value "timeout" was removed)

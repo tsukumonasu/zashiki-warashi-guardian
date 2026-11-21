@@ -1,0 +1,44 @@
+{
+  "sampleId": "family_01",
+  "verdict": "family",
+  "confidence": 0.97,
+  "face": { "left": 0.38, "top": 0.22, "width": 0.24, "height": 0.36 },
+  "commands": [
+    {
+      "v": 1,
+      "id": "5a1f0c52-7d0e-4b0a-8f0d-1c2b3a4d5e01",
+      "ts": "2026-11-20T12:34:56.789Z",
+      "deviceId": "warashi-sim",
+      "encounterId": null,
+      "type": "judgement.result",
+      "data": {
+        "snapshotId": "sim-snapshot-family_01",
+        "verdict": "family",
+        "confidence": 0.97,
+        "face": { "left": 0.38, "top": 0.22, "width": 0.24, "height": 0.36 }
+      }
+    },
+    {
+      "v": 1,
+      "id": "5a1f0c52-7d0e-4b0a-8f0d-1c2b3a4d5e02",
+      "ts": "2026-11-20T12:34:56.790Z",
+      "deviceId": "warashi-sim",
+      "encounterId": null,
+      "type": "speak",
+      "data": {
+        "lineId": "greeting_family",
+        "audioUrl": null,
+        "ja": "おかえり。きょうも ぶじで よかった。",
+        "en": "Welcome home. I'm glad you're safe today."
+      }
+    }
+  ],
+  "speech": {
+    "lineId": "greeting_family",
+    "ja": "おかえり。きょうも ぶじで よかった。",
+    "en": "Welcome home. I'm glad you're safe today.",
+    "mp3Url": null,
+    "generated": false
+  },
+  "latencyMs": { "total": 640, "search": 310 }
+}

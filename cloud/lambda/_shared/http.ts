@@ -24,6 +24,8 @@ export const ERROR_STATUS = {
   not_found: 404,
   validation_failed: 400,
   consent_required: 409,
+  session_active: 409,
+  voice_unavailable: 503,
   face_count_invalid: 422,
   rate_limited: 429,
   internal: 500,

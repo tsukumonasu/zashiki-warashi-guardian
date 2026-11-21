@@ -40,7 +40,8 @@ class State(StrEnum):
     WARNING = "warning"
     UNCERTAIN = "uncertain"
     COOLDOWN = "cooldown"
-    # Defined by docs/schema.md for the P1 voice conversation; never entered in this spec.
+    # The P1 voice conversation (voice-conversation R11); entered only when
+    # ``conversation_enabled`` is true.
     CONVERSING = "conversing"
 
 
@@ -93,6 +94,9 @@ class Reason(StrEnum):
     MANUAL = "manual"
     COOLDOWN_DONE = "cooldown_done"
     ERROR = "error"
+    # voice-conversation S7: entered ``conversing`` / left it after a normal end.
+    CONVERSATION = "conversation"
+    CONVERSATION_DONE = "conversation_done"
 
 
 class EndReason(StrEnum):
@@ -281,6 +285,52 @@ class ModeSet(EventBase):
     mode: Mode
 
 
+@dataclass(frozen=True, kw_only=True)
+class ConversationStart(EventBase):
+    """Start a voice session (S4). ``token`` is a secret, hidden from ``repr()`` (R13.6).
+
+    ``max_s`` and ``silence_s`` are the command's ``maxSeconds`` and ``silenceSeconds``; the
+    State_Machine clamps ``max_s`` to ``conversation_max_s``. ``source`` is ``"family_verdict"``
+    or ``"manual"``.
+    """
+
+    ref_id: str
+    session_id: str
+    token: str = field(repr=False)
+    max_s: int
+    silence_s: int
+    source: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class ConversationEnd(EventBase):
+    """The cloud ends a session (S5). ``reason`` is a ``ConversationEndReason`` wire value."""
+
+    ref_id: str
+    session_id: str
+    reason: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class SnapshotRequest(EventBase):
+    """Take a snapshot for a voice session (S6); valid in ``conversing`` only."""
+
+    ref_id: str
+    request_id: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class ConversationFinished(EventBase):
+    """The conversation adapter ended, exactly once per session (R12.8).
+
+    Internal: never on the wire. ``reason`` is a ``ConversationEndReason`` wire value or
+    ``"adapter_failed"``.
+    """
+
+    session_id: str
+    reason: str
+
+
 InternalEvent = (
     Tick
     | PirRising
@@ -293,8 +343,18 @@ InternalEvent = (
     | CloudConnected
     | CloudDisconnected
     | AdapterError
+    | ConversationFinished
 )
-CommandEvent = JudgementResult | Speak | Gaze | Lantern | ModeSet
+CommandEvent = (
+    JudgementResult
+    | Speak
+    | Gaze
+    | Lantern
+    | ModeSet
+    | ConversationStart
+    | ConversationEnd
+    | SnapshotRequest
+)
 Event = InternalEvent | CommandEvent
 
 
@@ -378,6 +438,23 @@ class PublishStatus:
     data: StatusReport
 
 
+@dataclass(frozen=True, kw_only=True)
+class StartConversation:
+    """Start the conversation adapter (R11.5). ``token`` is hidden from ``repr()``."""
+
+    session_id: str
+    token: str = field(repr=False)
+    max_s: int
+    silence_s: int
+
+
+@dataclass(frozen=True, kw_only=True)
+class StopConversation:
+    """Stop the conversation adapter; safe to repeat (R11.8, R12.9)."""
+
+    session_id: str
+
+
 Action = (
     LanternFade
     | GazeTarget
@@ -387,4 +464,6 @@ Action = (
     | PlayAudioUrl
     | PublishEvent
     | PublishStatus
+    | StartConversation
+    | StopConversation
 )

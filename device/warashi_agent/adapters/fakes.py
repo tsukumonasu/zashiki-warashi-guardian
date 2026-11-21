@@ -35,6 +35,7 @@ from warashi_agent.model import (
     AudioFinished,
     CloudConnected,
     CloudDisconnected,
+    ConversationFinished,
     Event,
     PirFalling,
     PirRising,
@@ -42,6 +43,8 @@ from warashi_agent.model import (
     PlayLine,
     SnapshotFailed,
     SnapshotReady,
+    StartConversation,
+    StopConversation,
     TakeSnapshot,
 )
 from warashi_agent.timebase import Handle, Scheduler
@@ -642,3 +645,96 @@ class FakeCloudLink:
             post = self._post
         if post is not None:
             post(item)
+
+
+# --------------------------------------------------------------------------------------------
+# Voice conversation
+# --------------------------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ConversationOutcome:
+    """The scripted end of one voice session: after ``duration_s``, finish with ``reason``.
+
+    ``reason`` is a ``ConversationEndReason`` wire value or ``"adapter_failed"``.
+    """
+
+    duration_s: float = 60.0
+    reason: str = "silence"
+
+
+class FakeConversation:
+    """ConversationPort that records start and stop actions and posts one scripted end.
+
+    Why: state-machine and dispatcher tests need the adapter's contract (R12.8, R12.9) without
+    sockets or audio: exactly one ``ConversationFinished`` per session id, ``stop`` safe to
+    repeat, a stale stop changes nothing.
+
+    Outcomes queued with ``script()`` are used in order; once the queue is empty a session ends
+    after ``ConversationOutcome()`` defaults. ``StopConversation`` for the running session ends
+    it at once with reason ``"user"``. A new start while a session runs ends the old one first
+    with ``"error"``. ``OnceResult`` ensures a session id never ends twice. The token never
+    leaves ``started``, where ``repr()`` hides it.
+    """
+
+    def __init__(self, post: Post, scheduler: Scheduler) -> None:
+        self._post = post
+        self._scheduler = scheduler
+        self._lock = threading.Lock()
+        self._script: deque[ConversationOutcome] = deque()
+        self._current: tuple[str, Handle] | None = None
+        self._once = OnceResult()
+        self.started: list[StartConversation] = []
+        self.stopped: list[StopConversation] = []
+
+    def script(self, *outcomes: ConversationOutcome) -> None:
+        with self._lock:
+            self._script.extend(outcomes)
+
+    @property
+    def running(self) -> str | None:
+        """The session id still in progress, if any."""
+        with self._lock:
+            return self._current[0] if self._current is not None else None
+
+    def handle(self, action: StartConversation | StopConversation) -> None:
+        if isinstance(action, StartConversation):
+            self._end_current("error")
+            with self._lock:
+                self.started.append(action)
+                outcome = self._script.popleft() if self._script else ConversationOutcome()
+            session_id = action.session_id
+            handle = self._scheduler.call_later(
+                outcome.duration_s, lambda: self._finish(session_id, outcome.reason)
+            )
+            with self._lock:
+                self._current = (session_id, handle)
+        else:
+            with self._lock:
+                self.stopped.append(action)
+                current = self._current[0] if self._current is not None else None
+            if current == action.session_id:
+                self._end_current("user")
+
+    def stop(self) -> None:
+        """Idempotent: ends the running session, if any, with reason ``"user"``."""
+        self._end_current("user")
+
+    def _end_current(self, reason: str) -> None:
+        with self._lock:
+            current, self._current = self._current, None
+        if current is None:
+            return
+        session_id, handle = current
+        handle.cancel()
+        self._emit(session_id, reason)
+
+    def _finish(self, session_id: str, reason: str) -> None:
+        with self._lock:
+            if self._current is not None and self._current[0] == session_id:
+                self._current = None
+        self._emit(session_id, reason)
+
+    def _emit(self, session_id: str, reason: str) -> None:
+        if self._once.claim(session_id):
+            self._post(ConversationFinished(session_id=session_id, reason=reason))
