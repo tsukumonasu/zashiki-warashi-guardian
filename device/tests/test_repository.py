@@ -67,3 +67,14 @@ def test_gitignore_covers_local_files(path: str) -> None:
 )
 def test_gitignore_keeps_committed_files_tracked(path: str) -> None:
     assert not _git_check_ignore(path), f"{path} must not be git-ignored"
+
+
+def test_systemd_unit_orders_after_time_sync_and_has_no_secrets() -> None:
+    """TLS needs a correct clock, so the unit waits for time sync (cloud-judgement R23.15)."""
+    unit = REPO_ROOT / "device" / "systemd" / "warashi-agent.service"
+    lines = unit.read_text(encoding="utf-8").splitlines()
+    assert "After=network-online.target time-sync.target sound.target" in lines
+    assert "Wants=network-online.target time-sync.target" in lines
+    text = "\n".join(lines).lower()
+    for forbidden in ("endpoint", "-----begin", ".pem", "iot.amazonaws"):
+        assert forbidden not in text

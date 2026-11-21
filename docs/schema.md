@@ -5,9 +5,10 @@ Single source of truth for everything exchanged between the doll (`/device`), th
 
 > Status: **draft v1, refined by the `device-core-loop` design**
 > (`.kiro/specs/device-core-loop/design.md`, section "docs/schema.md Changes"). Each change is
-> marked with its reason next to it. Refine it again in `cloud-judgement` once AWS limits are
-> verified. From now on, change this file first and keep code and tests in all three parts in
-> sync with it.
+> marked with its reason next to it. The `cloud-judgement` design
+> (`.kiro/specs/cloud-judgement/design.md`) verified the AWS limits, clarified a few cloud-side
+> rules and defined the HTTP API below. No event or command field changed, so `v` stays 1. From
+> now on, change this file first and keep code and tests in all three parts in sync with it.
 
 ## Transport
 AWS IoT Core, MQTT over TLS, QoS 1. `<id>` is the device id, for example `warashi-01`.
@@ -81,11 +82,27 @@ Notes on the event fields:
   longer text. *Reason:* receivers can link an error to the message that caused it and handle
   codes without parsing text.
 
-Snapshot size: the whole MQTT message must stay under the AWS IoT Core message size limit
-(128 KB at the time of writing — **verify in the AWS documentation**; the `cloud-judgement`
-spec does this). The device therefore keeps the raw JPEG at or below 90,000 bytes (640×480,
-reduced quality if needed) before base64-encoding it. *Reason:* the limit is kept until the
-cloud spec verifies the broker limit.
+Snapshot size: the AWS IoT Core MQTT publish payload limit is **128 KB and cannot be raised**
+(verified in the AWS IoT Core quotas, `cloud-judgement` design). The device keeps the raw JPEG at
+or below 90,000 bytes (640×480, reduced quality if needed) before base64-encoding it. Worst case:
+90,000 bytes become 120,000 base64 characters, and with the envelope the message stays below
+128,000 bytes. Raising the JPEG cap beyond about 95,000 bytes would break this bound and needs a
+new transport (pre-signed S3 upload). *Reason:* the broker limit is now verified, and the bound is
+enforced by a test.
+
+Cloud receiver rules (added by `cloud-judgement`):
+
+- **Topic check.** A cloud receiver drops an event or status message whose `deviceId` differs from
+  the `<id>` segment of the topic it arrived on. *Reason:* `deviceId` is written by the device.
+- **`judgement.result.confidence`.** For `family` it is the best face similarity divided by 100.
+  For `stranger` it is the face-detection confidence of the searched face, not a probability that
+  the person is a stranger. *Reason:* keeps the number meaningful for the device's accept
+  thresholds. For `uncertain` it is the face-detection confidence divided by 100, or 0 when no
+  face confidence is available or the search failed. For `no_face` it is 1 and `face` is `null`.
+  Always a number from 0 to 1. *Reason:* the number stays within the documented range for every
+  verdict, and a failure never produces a made-up score.
+- **Stored events.** In every record the cloud stores or returns, `snapshot.captured` has
+  `jpegBase64` removed and gains `hasImage: true`. *Reason:* keeps images out of the event log.
 
 ### `state.changed` reasons
 | `reason` | Meaning |
@@ -187,6 +204,14 @@ Notes on the status fields:
   status stays independent of encounters.
 - **`micActive`.** `false` while no feature records audio (no feature of `device-core-loop`
   does). *Reason:* makes the privacy indicator exact.
+- **`status.offline` timing.** The broker publishes the last will that the device registered at
+  connect time, so its `ts` is the connect time. Receivers use their own arrival time for it and
+  never its `ts`. AWS does not guarantee the order of will messages across reconnects; a later
+  `status.report` therefore overrides an earlier offline mark. *Reason:* avoids a false "offline"
+  after a quick reconnect.
+- **Session.** The device connects with a clean MQTT session and subscribes again on every
+  connect. Commands sent while it is offline are lost, never replayed. *Reason:* a replayed
+  `speak` or `gaze` would act on a visit that has ended.
 
 ## Device-internal events (not on the wire)
 These events exist only inside the device, as inputs to its state machine. They are never
@@ -222,5 +247,155 @@ published on MQTT, never appear in envelopes, and are not part of the contract t
   within its duplicate window (see "Duplicates and extra fields").
 
 ## HTTP API (dashboard ⇄ cloud)
-To be defined in the `cloud-judgement` design. Encounter records returned by the API reuse
-the envelope and the types above so the timeline and the simulation share one model.
+Defined by the `cloud-judgement` design. Encounter records reuse the envelope and the types
+above so the timeline and the simulation share one model.
+
+### Conventions
+- **Base URL and settings.** The dashboard reads `/config.json` from its own origin at start-up:
+  `{ "apiUrl", "region", "userPoolId", "userPoolClientId", "illustrationBase" }`. Nothing is
+  compiled in.
+- **Auth.** `Authorization: Bearer <Cognito access token>`. The cloud derives the role from the
+  `cognito:groups` claim: `family`, `reviewer`. If both groups are present, `reviewer` applies. No
+  group means no access.
+- **Format.** JSON, UTF-8. Timestamps are UTC ISO 8601 with milliseconds. Ids are UUIDs except
+  `sampleId`, which matches `[a-z0-9_-]{1,64}`.
+- **Errors.** `{ "error": { "code": string, "message": string } }`. Codes: `unauthorized` (401),
+  `forbidden` (403), `not_found` (404), `validation_failed` (400), `consent_required` (409),
+  `face_count_invalid` (422), `rate_limited` (429, with `Retry-After` seconds), `internal` (500).
+  Messages are at most 200 characters and never contain image data, face ids, names or pre-signed
+  URLs. `Retry-After` is a whole number of seconds from 1 to 86,400. *Reason:* the error list is
+  checked against the implementation (see "Fixtures and contract checks").
+- **Every route requires a valid Cognito token.** A missing, malformed, expired or foreign token
+  gives `401 unauthorized`; a token without a role, or a role not allowed for the route, gives
+  `403 forbidden`. Neither has a side effect. The role comes only from the token claims, never from
+  the body, query or headers. A route not in the matrix is denied for both roles.
+- **Validation.** Malformed JSON, a missing or wrongly typed field, a value outside its range or a
+  body larger than 1,048,576 bytes gives `400 validation_failed` and changes nothing.
+- **CORS.** The API answers cross-origin requests only from the dashboard origin.
+- **Role matrix.** `F` family, `R` reviewer.
+
+| Route | F | R | Notes |
+|---|---|---|---|
+| `GET /me` | yes | yes | |
+| `GET /samples` | yes | yes | |
+| `GET /encounters` | full | redacted | |
+| `GET /encounters/{id}` | full | redacted | |
+| `GET /device/status` | yes | yes | |
+| `POST /simulate` | yes | yes | rate limited |
+| `POST /commands` | yes | no | |
+| `GET /faces` | yes | no | |
+| `POST /faces/upload` | yes | no | |
+| `POST /faces` | yes | no | |
+| `DELETE /faces/{memberId}` | yes | no | |
+
+### Routes
+`GET /me` → `{ "role": "family" | "reviewer", "consentNoticeVersion": string, "limits": { "simulatePerHour": int, "generatePerHour": int } }`.
+Each limit is an integer of at least 1.
+
+`GET /samples` → `{ "samples": [ { "sampleId": string, "label": "family" | "stranger" | "no_face" | "uncertain" } ] }`.
+Labels are the expected outcome shown in the dashboard. They never contain names.
+
+`GET /encounters?limit=20&cursor=<opaque>` → `{ "items": [Encounter], "nextCursor": string | null }`.
+`limit` is an integer from 1 to 50 (default 20). Newest first. Items past their expiry are never
+returned. A `limit` outside 1 to 50 or a `cursor` this API did not issue gives `400 validation_failed`.
+
+`GET /encounters/{id}` → `Encounter` with `events` filled, in time order. An unknown or expired id
+gives `404 not_found`. When the owner sets `reviewerRealEncounters` to `hidden`, `reviewer` gets an
+empty list with `nextCursor: null` and `404 not_found` for every id. *Reason:* lets the owner hide
+real visits from the public demo account.
+
+`GET /device/status?deviceId=warashi-01` → `{ "deviceId", "online": boolean, "lastSeenAt": ts | null, "status": StatusReportData | null }`.
+`StatusReportData` is the `data` of `status.report`, including `cameraActive` and `micActive`.
+`online` is false when the last `status.offline` arrived after the last `status.report`, or when no
+report arrived within 3 × `status_interval_s`.
+
+`POST /simulate` body `{ "sampleId": string, "generate": boolean }`. `generate` is optional and
+defaults to `false`; a non-boolean value, or a `sampleId` that is missing, malformed or not in the
+sample manifest, gives `400 validation_failed`. Any other body field is ignored; no image is ever
+accepted. Over a rate limit it gives `429 rate_limited`; a failed search or speech generation gives
+`500 internal` with no partial result. Success returns 200 with
+`{ "sampleId", "verdict", "confidence", "face", "commands": [Envelope], "speech": Speech | null, "latencyMs": { "total": int, "search": int } }`.
+`latencyMs.total` and `latencyMs.search` are integer milliseconds with `search` ≤ `total`.
+`commands` holds the `judgement.result` and the `speak` that the doll would act on, in that order (envelopes use
+`deviceId: "warashi-sim"`, `encounterId: null`). `Speech` is
+`{ "lineId": string | null, "ja": string, "en": string, "mp3Url": string | null, "generated": boolean }`;
+`mp3Url` is a pre-signed URL valid for 5 minutes. Nothing is published to a doll and no encounter
+is stored.
+
+`POST /commands` body `{ "deviceId": string, "command": { "type": "speak" | "gaze" | "lantern" | "mode.set", "data": object } }`
+→ `202 { "id": uuid, "deviceOnline": boolean }`. `data` follows "Commands (cloud → device)", with
+`speak` limited to `lineId` (a cached line); `audioUrl` is rejected with `validation_failed`.
+The cloud clamps `lantern.level` to 0..1, `lantern.fadeMs` to 0..10000, `gaze.panDeg` to -60..60
+and `gaze.tiltDeg` to -30..30 (the widest limits the device config accepts), and publishes with
+QoS 1 to `warashi/<deviceId>/commands` with `encounterId: null`. `deviceId` is 1 to 64 characters of
+`[A-Za-z0-9_-]`. `speak` needs a `lineId` from the line catalog. An unknown `type`, a missing or
+non-finite number, or a `mode` other than `guard` or `sleep` gives `400 validation_failed` and
+publishes nothing. An offline doll still gets one publish and `deviceOnline: false`; the command is
+never stored or replayed. A failed publish gives `500 internal` without a retry. *Reason:* the
+dashboard cannot make the doll move beyond what the hardware rules allow, and a late command
+never acts on a visit that has ended.
+
+`GET /faces` → `{ "members": [ { "memberId": uuid, "displayName": string, "createdAt": ts, "consentVersion": string, "faceCount": int } ] }`
+
+`POST /faces/upload` → `{ "url": string, "fields": object, "stagingKey": string, "expiresInS": 300 }`
+(pre-signed POST, JPEG or PNG, at most 5,000,000 bytes).
+
+`POST /faces` body `{ "stagingKey": string, "displayName": string (1..40), "memberId": uuid | null, "consent": { "noticeVersion": string, "accepted": true } }`
+→ `201 { "memberId": uuid, "faceCount": int }`. `consent.noticeVersion` must equal
+`consentNoticeVersion` from `GET /me` and `accepted` must be `true`, otherwise `409 consent_required`.
+`displayName` outside 1..40 characters gives `400 validation_failed`. The photo must contain
+exactly one face, otherwise `422 face_count_invalid` (faces indexed from that photo are removed).
+The staging object is deleted in every case. A given `memberId` adds another photo of the same
+person and keeps the existing `displayName`; an unknown `memberId` gives `404 not_found`. The
+face is indexed with an opaque member id, never a name. `GET /faces` never returns face ids. Every
+`/faces` route gives `403 forbidden` to `reviewer`.
+
+`DELETE /faces/{memberId}` → `204`. Deletes the face vectors and the member record.
+
+### Encounter record
+```json
+{
+  "encounterId": "c1d2e3f4-0000-4000-8000-000000000001",
+  "deviceId": "warashi-01",
+  "startedAt": "2026-11-20T12:34:56.789Z",
+  "endedAt": "2026-11-20T12:35:30.100Z",
+  "state": "cooldown",
+  "verdict": "stranger",
+  "confidence": 0.97,
+  "reaction": { "kind": "stranger", "lineId": "stranger_first", "offline": false },
+  "notified": true,
+  "snapshot": { "url": "https://example.invalid/signed", "expiresAt": "2026-11-20T12:40:00.000Z" },
+  "illustration": null,
+  "events": []
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `state` | Last `state.changed.to`, or `null`. |
+| `verdict`, `confidence` | From the cloud's `judgement.result`, or `null` when none was sent (offline reaction). |
+| `reaction` | Data of the last `reaction.performed`, or `null`. |
+| `notified` | True when a stranger notification was sent for this encounter. |
+| `snapshot` | Family only: a pre-signed GET URL valid for 5 minutes, or `null` when the image expired or never existed. Always `null` for `reviewer`. |
+| `illustration` | Reviewer only: `silhouette-family`, `silhouette-stranger`, `silhouette-none` or `silhouette-uncertain`; `null` for `family`. |
+| `events` | `[]` in list responses. In `GET /encounters/{id}` the envelopes in time order, with the `jpegBase64` rule above. |
+
+`illustration` follows the verdict: `family` → `silhouette-family`, `stranger` →
+`silhouette-stranger`, `no_face` → `silhouette-none`, `uncertain` or `null` → `silhouette-uncertain`.
+
+For `reviewer` the record also has no face box, no member data and no image reference of any kind
+at any depth. In its `events`, `hasImage`, `jpegBase64` and `face` are removed and every other
+field, the order and the count stay unchanged. *Reason:* a public demo account must never see
+inside the household. A `family` record is the stored record plus `snapshot`.
+
+### Fixtures and contract checks
+`docs/fixtures/schema-v1/` holds **one golden message per type**, at least one file for each event,
+command and status type listed in this document (including `status.offline`). The Python and the
+TypeScript tests both decode every fixture to `valid` and re-encode it to a semantically equal
+value (key order ignored). A type without a fixture, or a fixture without a type, fails the tests
+and names the type or file.
+
+The route table and the error code list in "HTTP API" are also checked by tests: the routes and
+codes implemented in `/cloud` must equal the role matrix and the error list above, and a missing or
+extra entry fails the tests and is named. *Reason:* this document stays the single source of truth,
+and drift is caught by a test instead of by a reviewer.

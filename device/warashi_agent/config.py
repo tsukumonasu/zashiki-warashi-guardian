@@ -22,6 +22,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import math
+import os
 import re
 import tomllib
 from collections.abc import Callable, Mapping
@@ -147,11 +148,31 @@ class PrivacyConfig:
 
 
 @dataclass(frozen=True, kw_only=True)
+class AwsConfig:
+    """`[aws]`: how the doll reaches AWS IoT Core (cloud-judgement R23.2, R23.3, R23.5).
+
+    With `enabled = false` (the default) the doll runs on its local link and every other key
+    is only type-checked. The endpoint and the three file paths are private to the owner's Pi,
+    so they are hidden from `repr()` and from rejection messages.
+    """
+
+    enabled: bool = False
+    endpoint: str = field(default="", repr=False)
+    port: int = 8883
+    ca_file: str = field(default="", repr=False)
+    cert_file: str = field(default="", repr=False)
+    key_file: str = field(default="", repr=False)
+    keepalive_s: int = 60
+    reconnect_min_s: float = 1.0
+    reconnect_max_s: float = 60.0
+
+
+@dataclass(frozen=True, kw_only=True)
 class Config:
     """The validated contents of config.toml.
 
-    `aws` is kept opaque as `(key, value)` pairs: the section is reserved for the
-    `cloud-judgement` spec and this spec never reads it (R21.7).
+    `aws` is validated separately from the other sections because some of its rules apply
+    only when `aws.enabled` is true (see `_validate_aws`).
     """
 
     device: DeviceConfig = field(default_factory=DeviceConfig)
@@ -165,7 +186,7 @@ class Config:
     audio: AudioConfig = field(default_factory=AudioConfig)
     messages: MessagesConfig = field(default_factory=MessagesConfig)
     privacy: PrivacyConfig = field(default_factory=PrivacyConfig)
-    aws: tuple[tuple[str, object], ...] = ()
+    aws: AwsConfig = field(default_factory=AwsConfig)
 
     # Derived values (Glossary). They live here so the State_Machine, the Config_Loader's
     # cross-key rules (R25.7) and the property tests share one definition of each bound.
@@ -238,7 +259,8 @@ _SECTIONS: dict[str, type] = {
     "privacy": PrivacyConfig,
 }
 
-# The section reserved for the cloud-judgement spec: accepted in any form, never validated.
+# `[aws]` is not in `_SECTIONS`: its rules depend on `aws.enabled` and, optionally, on the
+# file system, so `_validate_aws` handles it.
 AWS_SECTION = "aws"
 
 # Sections whose values are never echoed in a rejection message. The owner may list family
@@ -668,31 +690,100 @@ def _convert(kind: Kind, value: object) -> tuple[bool, object]:
     return False, None  # pragma: no cover - every Kind is handled above
 
 
-def _freeze(value: object) -> object:
-    """A hashable copy of a TOML value: tables become (key, value) pairs, arrays tuples.
+_HOSTNAME = re.compile(r"[A-Za-z0-9]([A-Za-z0-9.-]{0,251}[A-Za-z0-9])?")
+_AWS_PATH_KEYS = ("ca_file", "cert_file", "key_file")
+# Values of these keys are never echoed: the endpoint and paths belong to the owner's Pi.
+_AWS_HIDDEN_KEYS = frozenset({"endpoint", *_AWS_PATH_KEYS})
+_AWS_RECONNECT_TEXT = "number, 0 < value <= 3600"
 
-    Config must stay hashable because it lives in the Machine_State.
+# key -> (kind, single-key check, allowed text). Defaults come from `AwsConfig`.
+_AWS_SPECS: dict[str, tuple[Kind, Callable[[Any], bool], str]] = {
+    "enabled": ("bool", _always, "boolean"),
+    "endpoint": ("str", _always, "string"),
+    "port": ("int", _in_range(1, 65535), "integer, 1 <= value <= 65535"),
+    "ca_file": ("str", _always, "string (path)"),
+    "cert_file": ("str", _always, "string (path)"),
+    "key_file": ("str", _always, "string (path)"),
+    "keepalive_s": ("int", _in_range(30, 1200), "integer, 30 <= value <= 1200"),
+    "reconnect_min_s": ("float", _in_range(0, 3600, lo_open=True), _AWS_RECONNECT_TEXT),
+    "reconnect_max_s": ("float", _in_range(0, 3600, lo_open=True), _AWS_RECONNECT_TEXT),
+}
+
+
+def _aws_violation(key: str, value: object, allowed: str) -> Violation:
+    shown = None if key in _AWS_HIDDEN_KEYS else _show(value)
+    return Violation(key=f"aws.{key}", value=shown, allowed=allowed)
+
+
+def _is_readable_file(path: str) -> bool:
+    return os.path.isfile(path) and os.access(path, os.R_OK)
+
+
+def _validate_aws(body: object, *, check_files: bool) -> tuple[AwsConfig | None, list[Violation]]:
+    """Validate the `[aws]` table (cloud-judgement R23.2, R23.3, R23.5).
+
+    Missing keys take the `AwsConfig` defaults. Every key is type- and range-checked, also
+    when `enabled` is false. Only when `enabled` is true must the endpoint be a bare host name
+    and the three paths be set; with `check_files` each must also name a readable file. A
+    laptop run with `--fake` has no certificates, so the loader sets `check_files` false there.
     """
-    if isinstance(value, Mapping):
-        return tuple((str(k), _freeze(v)) for k, v in value.items())
-    if isinstance(value, list | tuple):
-        return tuple(_freeze(v) for v in value)
-    return value
+    if not isinstance(body, Mapping):
+        return None, [Violation(key=AWS_SECTION, value=None, allowed="a table [aws]")]
+    violations: list[Violation] = []
+    typed: dict[str, Any] = {}
+    for key in body:
+        if key not in _AWS_SPECS:
+            violations.append(
+                Violation(key=f"aws.{key}", value=None, allowed="no such key in [aws]")
+            )
+    for key, (kind, check, allowed) in _AWS_SPECS.items():
+        default = getattr(AwsConfig(), key)
+        if key not in body:
+            typed[key] = default
+            continue
+        ok, stored = _convert(kind, body[key])
+        if ok and check(stored):
+            typed[key] = stored
+        else:
+            violations.append(_aws_violation(key, body[key], allowed))
+    if {"reconnect_min_s", "reconnect_max_s"} <= typed.keys() and (
+        typed["reconnect_min_s"] > typed["reconnect_max_s"]
+    ):
+        violations.append(
+            Violation(
+                key="aws.reconnect_min_s, aws.reconnect_max_s",
+                value=f"{typed['reconnect_min_s']!r}, {typed['reconnect_max_s']!r}",
+                allowed="reconnect_min_s <= reconnect_max_s",
+            )
+        )
+    if typed.get("enabled") is True:
+        endpoint = typed.get("endpoint")
+        if endpoint is not None and _HOSTNAME.fullmatch(endpoint) is None:
+            violations.append(
+                _aws_violation(
+                    "endpoint",
+                    endpoint,
+                    "host name without scheme or port (required when enabled)",
+                )
+            )
+        for key in _AWS_PATH_KEYS:
+            path = typed.get(key)
+            if path is None:
+                continue
+            if path == "":
+                violations.append(
+                    _aws_violation(key, path, "non-empty path (required when enabled)")
+                )
+            elif check_files and not _is_readable_file(path):
+                violations.append(_aws_violation(key, path, "path of an existing readable file"))
+    if violations:
+        return None, violations
+    return AwsConfig(**typed), []
 
 
-def _freeze_aws(value: object) -> tuple[tuple[str, object], ...]:
-    """Store `[aws]` opaquely (R21.7).
-
-    A table keeps its keys in file order with frozen values. Any other TOML value (for
-    example a top-level `aws = 1`) is kept as a single pair under the empty key, so nothing
-    is lost and nothing is interpreted.
-    """
-    if isinstance(value, Mapping):
-        return tuple((str(k), _freeze(v)) for k, v in value.items())
-    return (("", _freeze(value)),)
-
-
-def validate_mapping(mapping: Mapping[str, object]) -> Config | ConfigRejected:
+def validate_mapping(
+    mapping: Mapping[str, object], *, check_files: bool = False
+) -> Config | ConfigRejected:
     """Validate the `tomllib` mapping of config.toml and build the Config.
 
     Pure and total: any mapping gives a result, nothing raises, and every violation is
@@ -705,8 +796,9 @@ def validate_mapping(mapping: Mapping[str, object]) -> Config | ConfigRejected:
     3. Ranges, pins and the other key-relative bounds (R25.2 to R25.6).
     4. The cross-key timing rules of R25.7, each only when all its keys passed 1 to 3.
 
-    Missing keys take the dataclass defaults (R25.1); `[aws]` is accepted in any form and
-    kept opaque (R21.7).
+    Missing keys take the dataclass defaults (R25.1). `[aws]` is validated by `_validate_aws`;
+    `check_files` turns on its file-existence checks, which need the file system, so the
+    default keeps this function pure.
     """
     violations: list[Violation] = []
     failed: set[str] = set()
@@ -786,9 +878,14 @@ def validate_mapping(mapping: Mapping[str, object]) -> Config | ConfigRejected:
         if not _holds(rule, typed):
             violations.append(_cross_violation(rule.keys, raw, typed, rule.allowed))
 
+    aws = AwsConfig()
+    if AWS_SECTION in mapping:
+        checked, aws_violations = _validate_aws(mapping[AWS_SECTION], check_files=check_files)
+        violations.extend(aws_violations)
+        if checked is not None:
+            aws = checked
     if violations:
         return ConfigRejected(violations=tuple(violations))
-    aws = _freeze_aws(mapping[AWS_SECTION]) if AWS_SECTION in mapping else ()
     return _build(typed, aws)
 
 
@@ -817,7 +914,7 @@ def _cross_violation(
     return Violation(key=", ".join(names), value=shown, allowed=allowed)
 
 
-def _build(typed: Mapping[str, object], aws: tuple[tuple[str, object], ...]) -> Config:
+def _build(typed: Mapping[str, object], aws: AwsConfig) -> Config:
     """Build the frozen Config from values that passed every rule."""
     sections = {
         section: cls(**{f.name: typed[f"{section}.{f.name}"] for f in dataclasses.fields(cls)})
@@ -853,7 +950,7 @@ def load_config(path: Path | str, *, fake: bool) -> Config | ConfigRejected:
     except tomllib.TOMLDecodeError as exc:
         # tomllib messages name the rule and the position, never the file's content.
         return _file_problem(path, f"not valid TOML ({exc})")
-    return validate_mapping(mapping)
+    return validate_mapping(mapping, check_files=not fake)
 
 
 def _file_problem(path: Path, cause: str) -> ConfigRejected:

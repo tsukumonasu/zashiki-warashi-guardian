@@ -35,6 +35,7 @@ from hypothesis import strategies as st
 
 from warashi_agent.config import (
     AudioConfig,
+    AwsConfig,
     CameraConfig,
     Config,
     DeviceConfig,
@@ -263,10 +264,8 @@ def as_mapping(cfg: Config) -> dict[str, dict[str, object]]:
     """The `tomllib` mapping of a config.toml that sets every key of `cfg` explicitly.
 
     Sections and keys use the Glossary names, which equal the dataclass field names. Tuples
-    become lists, as TOML arrays do. `[aws]` appears only when `cfg.aws` is non-empty, as a
-    table of its `(key, value)` pairs. That round-trips through the Config_Loader for scalar
-    values; the loader stores nested tables and arrays frozen as tuples, which this function
-    does not thaw (`valid_configs()` never sets `aws`).
+    become lists, as TOML arrays do. `[aws]` appears only when `cfg.aws` differs from the
+    default (`valid_configs()` never sets it).
     """
     mapping: dict[str, dict[str, object]] = {}
     for f in dataclasses.fields(cfg):
@@ -276,8 +275,8 @@ def as_mapping(cfg: Config) -> dict[str, dict[str, object]]:
         mapping[f.name] = {
             k.name: _toml_value(getattr(section, k.name)) for k in dataclasses.fields(section)
         }
-    if cfg.aws:
-        mapping["aws"] = dict(cfg.aws)
+    if cfg.aws != AwsConfig():
+        mapping["aws"] = dataclasses.asdict(cfg.aws)
     return mapping
 
 

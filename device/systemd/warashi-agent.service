@@ -1,8 +1,8 @@
 # Template. scripts/deploy_pi.sh replaces @WORKDIR@ and @USER@ when it installs the unit.
 [Unit]
 Description=Zashiki-Warashi Guardian device agent
-After=network-online.target sound.target
-Wants=network-online.target
+After=network-online.target time-sync.target sound.target
+Wants=network-online.target time-sync.target
 
 [Service]
 Type=simple

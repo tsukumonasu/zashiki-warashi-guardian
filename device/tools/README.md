@@ -51,6 +51,19 @@ python3 warashi_check.py demo   # presence → lantern → turn → snapshot →
 - Photos (`check_*.jpg`, `demo_*.jpg`) are saved in the current directory and are
   git-ignored because they may show faces.
 
+## check_cloud.py: cloud link check (no hardware needed)
+
+```
+python3 check_cloud.py [--config config.toml] [--timeout 10] [--no-command]
+```
+
+Uses the real `MqttCloudLink` and the `[aws]` section of `config.toml`. It waits up to 10 s
+each for `cloud.connected` and for a command (send any command to the doll while it waits,
+for example `mode.set` guard), publishes one `status.report`, and prints `PASS`, or `FAIL <step>`
+with a hint (clock sync and certificate checks for a failed connect). Needs `python3-paho-mqtt`.
+It never prints the endpoint, file paths, key material or payloads. Its unit test is
+`tests/test_check_cloud_tool.py`.
+
 ## Safety notes (from `.kiro/steering/hardware.md`)
 
 - **180° positional servos only.** A 360° continuous-rotation servo does not stop at an

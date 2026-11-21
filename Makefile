@@ -14,7 +14,7 @@
 PYTHON    ?= python3.13
 DEVICE_PY ?= .venv/bin/python
 
-.PHONY: setup test lint test-device lint-device fake deploy
+.PHONY: setup test lint test-device lint-device test-cloud lint-cloud fake deploy
 
 # HYPOTHESIS_PROFILE needs no recipe code: make exports command-line and environment
 # variables to recipes, and it stays unset (pytest default) when the caller omits it.
@@ -22,9 +22,16 @@ DEVICE_PY ?= .venv/bin/python
 setup:
 	cd device && $(PYTHON) -m venv .venv && .venv/bin/pip install -e ".[dev]"
 
-test: test-device
+test: test-device test-cloud
 
-lint: lint-device
+lint: lint-device lint-cloud
+
+test-cloud:
+	cd cloud && npx vitest --run
+
+lint-cloud:
+	cd cloud && npx eslint .
+	cd cloud && npx tsc --noEmit
 
 test-device:
 	cd device && $(DEVICE_PY) -m pytest

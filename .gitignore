@@ -18,6 +18,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 cdk.out/
+cdk.context.json
+cloud/node_modules/
 
 # ----- OS and editors -----
 .DS_Store
@@ -29,6 +31,8 @@ cdk.out/
 config.toml
 # Generated voice audio (rebuilt by scripts/generate_voice_lines.*).
 device/warashi_agent/voice/*.wav
+# Hash sidecar of scripts/generate_voice_lines.py (skips unchanged lines).
+device/warashi_agent/voice/.voice-hashes.json
 # Last head pose saved by the device at runtime.
 last_pose.json
 .env
@@ -44,3 +48,6 @@ last_pose.json
 check_*.jpg
 demo_*.jpg
 warashi_limits.txt
+
+# ----- Integration test measurements (latency harness output, may hold account details) -----
+cloud/.integration-out/

@@ -1,0 +1,9 @@
+{
+  "app": "npx tsx bin/cloud.ts",
+  "watch": { "include": ["**"], "exclude": ["node_modules", "cdk.out", "test", "**/*.md"] },
+  "context": {
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/core:defaultCrossStackReferences": "strong",
+    "@aws-cdk/core:target-partitions": ["aws"]
+  }
+}

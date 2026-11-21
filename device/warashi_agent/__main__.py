@@ -39,7 +39,13 @@ from typing import Final, Protocol, TextIO, runtime_checkable
 from warashi_agent import cli, selftest
 from warashi_agent.adapters.audio import VOICE_DIR, AudioAdapter
 from warashi_agent.adapters.camera import CameraAdapter
-from warashi_agent.adapters.cloud import CloudLink, CloudPost, LocalCloudLink
+from warashi_agent.adapters.cloud import (
+    CloudLink,
+    CloudPost,
+    LocalCloudLink,
+    MqttCloudLink,
+    PahoClientFactory,
+)
 from warashi_agent.adapters.fakes import (
     FakeAudio,
     FakeCamera,
@@ -61,7 +67,7 @@ from warashi_agent.adapters.ports import (
 from warashi_agent.adapters.servo import GpiozeroServoFactory, ServoAdapter
 from warashi_agent.config import Config, ConfigRejected, format_rejection, load_config
 from warashi_agent.dispatcher import Adapters, Dispatcher
-from warashi_agent.messages import Envelope, ErrorCode, ErrorReported
+from warashi_agent.messages import Envelope, ErrorCode, ErrorReported, encode
 from warashi_agent.model import Action, Event, TakeSnapshot
 from warashi_agent.redact import format_action, format_envelope
 from warashi_agent.state_machine import initial_state
@@ -164,11 +170,24 @@ class Factories:
     wait: Callable[[float], None] = time.sleep
 
 
+def select_real_cloud(config: Config, scheduler: Scheduler) -> CloudLink:
+    """``[aws].enabled`` picks the MQTT link, otherwise the local one (cloud-judgement R23.2).
+
+    Building the link only stores settings: paho is imported, files are read and the network
+    is touched in ``start()``, on the link's own thread, so startup never blocks here. The log
+    carries the choice only, never the endpoint or a file path.
+    """
+    if not config.aws.enabled:
+        return LocalCloudLink()
+    _log.info("cloud link: MQTT (AWS IoT Core)")
+    return MqttCloudLink(config.aws, config.device.id, PahoClientFactory(), encode, _log)
+
+
 def real_factories() -> Factories:
-    """Real adapters and the Local_Cloud_Link (normal mode and ``--selftest``)."""
+    """Real adapters; the cloud link follows ``[aws].enabled`` (normal mode, ``--selftest``)."""
     return Factories(
         scheduler=lambda: ThreadScheduler(MonotonicClock()),
-        cloud=lambda config, scheduler: LocalCloudLink(),
+        cloud=select_real_cloud,
         servo=lambda config, post, scheduler: ServoAdapter(
             config, post, scheduler, GpiozeroServoFactory()
         ),

@@ -6,7 +6,8 @@ default fails here (R25.1). The derived bounds use the numbers the Glossary stat
 defaults (R10.2).
 
 The loader tests cover the file problems of R25.11 and R25.13, the message format of R25.9,
-each R25.7 cross-key rule at its exact boundary, and the opaque `[aws]` section of R21.7.
+each R25.7 cross-key rule at its exact boundary, and the typed `[aws]` section of
+cloud-judgement R23.2, R23.3 and R23.5.
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ from warashi_agent.config import (
 
 TOL = 1e-9
 
-# section -> key -> default, from the Glossary table. `aws` is absent by default (R21.7).
+# section -> key -> default, from the Glossary table. `aws` is the disabled AwsConfig by default.
 GLOSSARY_DEFAULTS: dict[str, object] = {
     "device": {"id": "warashi-01"},
     "pins": {"pir_pin": 17, "pan_pin": 18, "tilt_pin": 13, "lantern_pin": 23},
@@ -80,7 +81,17 @@ GLOSSARY_DEFAULTS: dict[str, object] = {
     "audio": {"audio_device": "plughw:CARD=Device,DEV=0"},
     "messages": {"dedup_window_size": 256},
     "privacy": {"blocked_words": ()},
-    "aws": (),
+    "aws": {
+        "enabled": False,
+        "endpoint": "",
+        "port": 8883,
+        "ca_file": "",
+        "cert_file": "",
+        "key_file": "",
+        "keepalive_s": 60,
+        "reconnect_min_s": 1,
+        "reconnect_max_s": 60,
+    },
 }
 
 
@@ -376,43 +387,148 @@ def test_timing_rule_with_wrong_type_does_not_raise() -> None:
     assert set(_violation_keys(result)) == {"timing.cooldown_s", "timing.glide_timeout_s"}
 
 
-# --- [aws] (R21.7, R25.8) --------------------------------------------------------------------
+# --- [aws] (cloud-judgement R23.2, R23.3, R23.5) ---------------------------------------------
+
+AWS_SECRET = "ZQXJ-private-value"
 
 
-def test_config_without_aws_section_is_accepted() -> None:
-    assert _accepted(validate_mapping({})) == Config()
+def _enabled_aws(tmp_path: Path, **overrides: object) -> dict[str, object]:
+    """An enabled `[aws]` table whose three files exist, with placeholder content only."""
+    files = {}
+    for key in ("ca_file", "cert_file", "key_file"):
+        path = tmp_path / key
+        path.write_text("placeholder", encoding="utf-8")
+        files[key] = str(path)
+    return {"enabled": True, "endpoint": "placeholder.invalid", **files, **overrides}
 
 
-def test_aws_table_with_arbitrary_content_is_accepted(tmp_path: Path) -> None:
+def test_config_without_aws_section_is_disabled() -> None:
+    cfg = _accepted(validate_mapping({}))
+    assert cfg == Config()
+    assert cfg.aws.enabled is False
+
+
+def test_enabled_aws_table_is_typed(tmp_path: Path) -> None:
+    table = _enabled_aws(tmp_path, port=443, keepalive_s=30, reconnect_min_s=2, reconnect_max_s=90)
+    cfg = _accepted(validate_mapping({"aws": table}, check_files=True))
+    assert cfg.aws.enabled is True
+    assert cfg.aws.endpoint == "placeholder.invalid"
+    assert cfg.aws.port == 443
+    assert cfg.aws.keepalive_s == 30
+    assert cfg.aws.reconnect_min_s == 2.0
+    assert type(cfg.aws.reconnect_min_s) is float
+    assert cfg.aws.reconnect_max_s == 90.0
+    hash(cfg)
+
+
+def test_aws_table_loads_from_a_toml_file(tmp_path: Path) -> None:
+    table = _enabled_aws(tmp_path)
+    path = tmp_path / "config.toml"
+    lines = ["[aws]"] + [
+        f"{k} = {str(v).lower() if isinstance(v, bool) else repr(v)}" for k, v in table.items()
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    cfg = _accepted(load_config(path, fake=False))
+    assert cfg.aws.enabled is True
+    assert cfg.aws.cert_file == table["cert_file"]
+
+
+def test_aws_endpoint_and_paths_are_hidden_from_repr(tmp_path: Path) -> None:
+    table = _enabled_aws(tmp_path, endpoint=AWS_SECRET)
+    cfg = _accepted(validate_mapping({"aws": table}))
+    text = repr(cfg)
+    assert AWS_SECRET not in text
+    assert str(tmp_path) not in text
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("enabled", "yes"),
+        ("endpoint", 5),
+        ("port", 8883.0),
+        ("port", True),
+        ("port", 0),
+        ("port", 65536),
+        ("ca_file", 1),
+        ("keepalive_s", 29),
+        ("keepalive_s", 1201),
+        ("keepalive_s", 60.5),
+        ("reconnect_min_s", 0),
+        ("reconnect_min_s", float("nan")),
+        ("reconnect_max_s", 3601),
+        ("reconnect_max_s", "60"),
+    ],
+)
+def test_aws_value_out_of_type_or_range_is_rejected_even_when_disabled(
+    key: str, value: object
+) -> None:
+    result = validate_mapping({"aws": {"enabled": False, key: value}})
+    if key == "enabled":
+        result = validate_mapping({"aws": {key: value}})
+    assert _violation_keys(result) == [f"aws.{key}"]
+
+
+@pytest.mark.parametrize(("low", "high", "ok"), [(5, 5, True), (5, 4.9, False), (1, 60, True)])
+def test_aws_reconnect_min_must_not_exceed_max(low: float, high: float, ok: bool) -> None:
+    result = validate_mapping({"aws": {"reconnect_min_s": low, "reconnect_max_s": high}})
+    if ok:
+        _accepted(result)
+    else:
+        assert _violation_keys(result) == ["aws.reconnect_min_s, aws.reconnect_max_s"]
+
+
+def test_aws_unknown_key_and_non_table_are_rejected_without_values() -> None:
+    result = validate_mapping({"aws": {"secret_key": AWS_SECRET}})
+    assert _violation_keys(result) == ["aws.secret_key"]
+    assert AWS_SECRET not in format_rejection(_rejected(result))
+    result = validate_mapping({"aws": AWS_SECRET})
+    assert _violation_keys(result) == ["aws"]
+    assert AWS_SECRET not in format_rejection(_rejected(result))
+
+
+def test_disabled_aws_skips_endpoint_and_file_checks() -> None:
+    table = {"enabled": False, "endpoint": "not a host!", "ca_file": "/nonexistent/ca.pem"}
+    cfg = _accepted(validate_mapping({"aws": table}, check_files=True))
+    assert cfg.aws.enabled is False
+
+
+@pytest.mark.parametrize("endpoint", ["", "https://placeholder.invalid", "host:8883", "a b", "-x"])
+def test_enabled_aws_rejects_a_bad_endpoint(tmp_path: Path, endpoint: str) -> None:
+    table = _enabled_aws(tmp_path, endpoint=endpoint)
+    result = validate_mapping({"aws": table})
+    assert _violation_keys(result) == ["aws.endpoint"]
+    assert endpoint not in format_rejection(_rejected(result)) or endpoint == ""
+
+
+def test_enabled_aws_requires_the_three_paths() -> None:
+    result = validate_mapping({"aws": {"enabled": True, "endpoint": "placeholder.invalid"}})
+    assert _violation_keys(result) == ["aws.ca_file", "aws.cert_file", "aws.key_file"]
+
+
+def test_enabled_aws_checks_files_only_when_asked(tmp_path: Path) -> None:
+    table = _enabled_aws(tmp_path)
+    missing = str(tmp_path / "gone.pem")
+    table["cert_file"] = missing
+    _accepted(validate_mapping({"aws": table}))  # pure mode: no file system access
+    result = validate_mapping({"aws": table}, check_files=True)
+    assert _violation_keys(result) == ["aws.cert_file"]
+    assert missing not in format_rejection(_rejected(result))
+    table["cert_file"] = str(tmp_path)  # a directory is not a file
+    assert _violation_keys(validate_mapping({"aws": table}, check_files=True)) == ["aws.cert_file"]
+
+
+def test_load_config_skips_file_checks_with_fake(tmp_path: Path) -> None:
     path = tmp_path / "config.toml"
     path.write_text(
-        "\n".join(
-            [
-                "[aws]",
-                'endpoint = "placeholder.invalid"',
-                "port = 8883",
-                "ratio = nan",
-                "flags = [true, 1, 'two', [3.5]]",
-                "inline = { a = 1, b = { c = [] } }",
-                "[aws.nested.deeper]",
-                "when = 1979-05-27T07:32:00Z",
-                "",
-            ]
-        ),
+        '[aws]\nenabled = true\nendpoint = "placeholder.invalid"\n'
+        'ca_file = "/nonexistent/ca"\ncert_file = "/nonexistent/cert"\n'
+        'key_file = "/nonexistent/key"\n',
         encoding="utf-8",
     )
-    cfg = _accepted(load_config(path, fake=False))
-    assert dataclasses.replace(cfg, aws=()) == Config()
-    expected_keys = ["endpoint", "port", "ratio", "flags", "inline", "nested"]
-    assert [key for key, _ in cfg.aws] == expected_keys
-    assert dict(cfg.aws)["endpoint"] == "placeholder.invalid"
-    hash(cfg)  # the opaque section is frozen, so the Config stays hashable
-
-
-@pytest.mark.parametrize("value", [1, "text", [1, 2], {}], ids=["int", "str", "list", "empty"])
-def test_aws_in_any_form_is_accepted(value: object) -> None:
-    cfg = _accepted(validate_mapping({"aws": value}))
-    assert dataclasses.replace(cfg, aws=()) == Config()
+    assert _accepted(load_config(path, fake=True)).aws.enabled is True
+    result = load_config(path, fake=False)
+    assert _violation_keys(result) == ["aws.ca_file", "aws.cert_file", "aws.key_file"]
 
 
 def test_unknown_section_outside_aws_is_rejected() -> None:
@@ -440,14 +556,16 @@ def test_example_config_loads_without_violation() -> None:
 
 def test_example_config_mentions_every_glossary_key() -> None:
     # GLOSSARY_DEFAULTS is transcribed by hand from the Glossary, so this does not depend on
-    # the loader's own key list. `aws` is reserved and only appears as a commented section.
+    # the loader's own key list. `[aws]` is off by default, so its keys appear commented out.
     text = EXAMPLE_CONFIG.read_text(encoding="utf-8")
     missing = [
         f"{section}.{key}"
         for section, keys in GLOSSARY_DEFAULTS.items()
         if isinstance(keys, dict)
         for key in keys
-        if not re.search(rf"^{re.escape(key)}\s*=", text, re.MULTILINE)
+        if not re.search(
+            rf"^{'# ' if section == 'aws' else ''}{re.escape(key)}\s*=", text, re.MULTILINE
+        )
     ]
     assert missing == []
     for section in GLOSSARY_DEFAULTS:

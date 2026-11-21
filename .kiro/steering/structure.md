@@ -42,3 +42,11 @@ LICENSE  README.md  Makefile
 - Adapters are thin and make no decisions. Decisions live in the pure modules.
 - `device/` runs on a laptop with `--fake`; the dashboard simulation runs with no backend.
 - A new top-level folder or a new dependency needs one line here or in `tech.md` saying why.
+- `cloud/lambda/_shared/` holds pure modules (message codec, envelope checks, clamping) used by
+  more than one Lambda, so each function bundles one copy instead of duplicating code.
+- `docs/fixtures/schema-v1/` holds golden messages for every event, command and status type, so the
+  Python and TypeScript tests check the same bytes against `docs/schema.md`.
+- `boto3` is allowed for `scripts/generate_voice_lines.py` only (Polly pre-generation on a
+  laptop). It is never a dependency of `/device` and is never installed on the Pi.
+- `aws-cdk` (CLI, dev dependency of `/cloud`) runs `cdk synth` and `cdk deploy`.
+- `tsx` (dev dependency of `/cloud`) runs the TypeScript CDK app (`bin/`) without a build step.

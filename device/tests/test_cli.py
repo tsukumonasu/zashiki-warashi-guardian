@@ -188,3 +188,39 @@ def test_fake_mode_subprocess_smoke(tmp_path: Path) -> None:
     assert "LanternFade" in result.stdout
     assert "GazeTarget" in result.stdout
     assert "state.changed" in result.stdout
+
+
+# ============================================================================================
+# Cloud link selection (cloud-judgement R23.2)
+# ============================================================================================
+
+
+def _aws_config(*, enabled: bool):  # type: ignore[no-untyped-def]
+    from warashi_agent.config import AwsConfig, Config
+
+    return Config(aws=AwsConfig(enabled=enabled, endpoint="example.invalid"))
+
+
+def _scheduler() -> ManualScheduler:
+    return ManualScheduler(ManualClock(0.0))
+
+
+def test_real_factories_use_local_link_when_aws_is_disabled() -> None:
+    from warashi_agent.adapters.cloud import LocalCloudLink
+
+    link = entry.real_factories().cloud(_aws_config(enabled=False), _scheduler())
+    assert isinstance(link, LocalCloudLink)
+
+
+def test_real_factories_use_mqtt_link_when_aws_is_enabled_without_touching_the_network() -> None:
+    from warashi_agent.adapters.cloud import MqttCloudLink
+
+    link = entry.real_factories().cloud(_aws_config(enabled=True), _scheduler())
+    assert isinstance(link, MqttCloudLink)  # built, not started: no paho import, no connect
+
+
+def test_fake_factories_use_fake_link_even_when_aws_is_enabled() -> None:
+    from warashi_agent.adapters.fakes import FakeCloudLink
+
+    link = entry.fake_factories().cloud(_aws_config(enabled=True), _scheduler())
+    assert isinstance(link, FakeCloudLink)

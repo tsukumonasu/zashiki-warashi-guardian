@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "id": "0b8f6c1e-3a52-4d0f-9d53-2f1f3c1f7a0b",
+  "ts": "2026-11-20T12:34:56.789Z",
+  "deviceId": "warashi-01",
+  "encounterId": null,
+  "type": "mode.set",
+  "data": {
+    "mode": "guard"
+  }
+}

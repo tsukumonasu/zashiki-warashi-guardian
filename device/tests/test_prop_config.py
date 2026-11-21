@@ -18,7 +18,7 @@ Readings of the requirements that the oracle encodes:
   every key it uses counts as violating, because R25.9 names every key involved.
 - The R25.7 rules are evaluated only when none of their keys broke an earlier rule (R25.7).
   An infinite Sweep_Time (a subnormal `glide_step_deg`) breaks the rule instead of raising.
-- `[aws]` is ignored in any form (R21.7).
+- A valid `[aws]` table does not change the verdict on the other sections (R21.7, R23.5).
 
 The test then checks that an accepted mapping fills every missing key with its Glossary default
 (R25.1), that a rejection message names every key the oracle found violating (R25.9), and that
@@ -566,7 +566,8 @@ def unknown_section(draw: st.DrawFn, case: Case) -> None:
 
 
 def aws_section(draw: st.DrawFn, case: Case) -> None:
-    case.mapping["aws"] = draw(any_toml)
+    """A valid `[aws]` table; the oracle ignores it, `test_config.py` covers its own rules."""
+    case.mapping["aws"] = {"enabled": False, "port": draw(st.integers(1, 65535))}
 
 
 def non_table_section(draw: st.DrawFn, case: Case) -> None:
@@ -685,7 +686,7 @@ def test_validate_mapping_matches_the_glossary_oracle(case: Case) -> None:
         got = getattr(getattr(result, section), key)
         assert _same(want, got, rule.kind), f"{name}: expected {want!r}, got {got!r}"
     if "aws" not in case.mapping:
-        assert result.aws == ()
+        assert result.aws.enabled is False  # `[aws]` is off unless the file turns it on
 
 
 def test_float_jpeg_max_bytes_is_a_type_violation() -> None:

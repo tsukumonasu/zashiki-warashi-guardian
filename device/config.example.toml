@@ -1,6 +1,6 @@
 # Copy to config.toml on the Pi (config.toml is git-ignored and must never be committed).
-# Every key is optional; a missing key takes the default shown here. Unknown keys outside
-# [aws] are rejected. Keep Wi-Fi details, host names and certificates out of this file.
+# Every key is optional; a missing key takes the default shown here. Unknown sections and keys
+# are rejected. Keep Wi-Fi details, host names and certificates out of this file.
 
 [device]
 id = "warashi-01"                 # deviceId in every envelope: 1-64 chars of a-z, 0-9, -
@@ -69,4 +69,15 @@ dedup_window_size = 256           # remembered command ids: 16-4096
 blocked_words = []                # words no voice line may contain; put family names in the local config.toml only
 
 # [aws]
-# Reserved for the cloud-judgement spec. Placeholders only; real values stay on the Pi.
+# Optional. Off by default: the doll then runs on its local link. Placeholders only; the real
+# endpoint and certificate paths stay in the config.toml on the Pi. `scripts/provision_device.sh`
+# writes a matching `warashi-aws.toml` you can paste here.
+# enabled = false                 # true selects the AWS IoT Core link
+# endpoint = "<your-iot-endpoint>"   # host name only, no scheme or port; required when enabled
+# port = 8883                     # 1-65535
+# ca_file = "<path to AmazonRootCA1.pem>"       # readable file; required when enabled
+# cert_file = "<path to device certificate>"    # readable file; required when enabled
+# key_file = "<path to device private key>"     # readable file; required when enabled
+# keepalive_s = 60                # 30-1200
+# reconnect_min_s = 1             # first retry delay, 0 < value <= 3600
+# reconnect_max_s = 60            # delay cap, >= reconnect_min_s
