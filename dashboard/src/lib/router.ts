@@ -1,8 +1,8 @@
 // Minimal hash router: #/, #/house, #/timeline, #/family, #/help. No react-router.
 
-export type Route = "/" | "/house" | "/timeline" | "/family" | "/help";
+export type Route = "/" | "/house" | "/doll" | "/timeline" | "/family" | "/help";
 
-const ROUTES: readonly Route[] = ["/", "/house", "/timeline", "/family", "/help"];
+const ROUTES: readonly Route[] = ["/", "/house", "/doll", "/timeline", "/family", "/help"];
 
 /** Maps a location hash to a route; anything unknown falls back to "/". */
 export function parseHash(hash: string): Route {

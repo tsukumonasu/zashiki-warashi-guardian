@@ -505,3 +505,9 @@ svg {
   line-height: 1.5;
   text-align: left;
 }
+.real-doll__locked {
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--color-night-line);
+  border-radius: 1rem;
+}

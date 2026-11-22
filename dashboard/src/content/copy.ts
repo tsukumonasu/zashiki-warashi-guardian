@@ -63,6 +63,12 @@ export const EN = {
     },
   },
 
+  realDollPage: {
+    intro:
+      "This is the control room for the real doll: the one running on a Raspberry Pi in someone's home. Check how she is, and move her, from here.",
+    signInNeeded: "Sign in as family (top right) to see and control the real doll.",
+    needFamily: "Only the family can control the real doll. You can still watch her state here.",
+  },
   tips: {
     simulation:
       "A virtual doll in your browser. You can try how the doll reacts to visitors without owning the real one. It never uses your real camera or microphone.",
@@ -248,7 +254,7 @@ export const EN = {
   shell: {
     infoLabel: "What is this?",
     skipToContent: "Skip to content",
-    nav: { landing: "Home", house: "Web simulation", timeline: "Today's diary", family: "Residents", help: "Help" },
+    nav: { landing: "Home", house: "Web simulation", doll: "Real doll", timeline: "Today's diary", family: "Residents", help: "Help" },
     mute: "Mute sound",
     unmute: "Sound on",
     soundOn: "Sound: on",

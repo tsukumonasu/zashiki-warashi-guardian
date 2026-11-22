@@ -57,6 +57,12 @@ export const JA: Copy = {
     },
   },
 
+  realDollPage: {
+    intro:
+      "ラズパイで動いている、本物の人形の管理画面です。人形の状態を確認したり、ここから動かしたりできます。",
+    signInNeeded: "本物の人形を見たり動かしたりするには、右上から家族としてサインインしてください。",
+    needFamily: "本物の人形を動かせるのは家族だけです。状態は見ることができます。",
+  },
   tips: {
     simulation: "ブラウザ上の仮想の人形です。本物の人形がなくても、訪問者への反応の流れを試せます。実際のカメラやマイクは使いません。",
     realDoll: "お手元にある本物の人形の状態と操作です。家族としてサインインすると使えます。",
@@ -238,7 +244,7 @@ export const JA: Copy = {
   shell: {
     infoLabel: "これは何?",
     skipToContent: "本文へ移動",
-    nav: { landing: "ホーム", house: "WEBシミュレーション", timeline: "今日の日記", family: "住人設定", help: "ヘルプ" },
+    nav: { landing: "ホーム", house: "WEBシミュレーション", doll: "本物の人形", timeline: "今日の日記", family: "住人設定", help: "ヘルプ" },
     mute: "音を消す",
     unmute: "音を出す",
     soundOn: "音: オン",

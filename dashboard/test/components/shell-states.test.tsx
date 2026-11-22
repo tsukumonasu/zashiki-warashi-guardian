@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../src/App";
 import { COPY } from "../../src/content/copy";
 import { FamilyPage } from "../../src/pages/Family";
+import { RealDollPage } from "../../src/pages/RealDoll";
 import type { ScenarioId } from "../../src/simulation/types";
 import { FakeApiClient } from "../helpers/FakeApiClient";
 import { renderScenarioHouse } from "./scenarioHarness";
@@ -93,18 +94,43 @@ describe("Offline banner", () => {
     expect(screen.queryByText(COPY.shell.offlineBanner)).toBeNull();
   });
 
-  it("shows the banner and disables the real-doll controls when navigator.onLine is false", async () => {
+  it("shows the banner in the shell when navigator.onLine is false", async () => {
     setOnLine(false);
-    const { container } = render(<App />);
+    render(<App />);
     await act(async () => undefined);
     expect(screen.getByText(COPY.shell.offlineBanner)).toBeTruthy();
-    const group = container.querySelector("fieldset.real-doll__group") as HTMLFieldSetElement;
+  });
+  it("disables the real-doll controls on the real-doll page when offline", () => {
+    render(
+      <RealDollPage
+        api={new FakeApiClient()}
+        role="family"
+        online={false}
+        cloudAvailable={false}
+        voice={null}
+        deviceResponse={null}
+      />,
+    );
+    const group = document.querySelector("fieldset.real-doll__group") as HTMLFieldSetElement;
     expect(group.disabled).toBe(true);
     const buttons = Array.from(group.querySelectorAll("button"));
     expect(buttons.length).toBeGreaterThan(0);
     for (const b of buttons) expect(b.matches(":disabled")).toBe(true);
   });
-
+  it("shows a guest one sign-in note and no locked buttons on the real-doll page", () => {
+    render(
+      <RealDollPage
+        api={new FakeApiClient()}
+        role="visitor"
+        online
+        cloudAvailable
+        voice={null}
+        deviceResponse={null}
+      />,
+    );
+    expect(screen.getByText(COPY.realDollPage.signInNeeded)).toBeTruthy();
+    expect(screen.queryAllByRole("button", { name: /./ }).filter((b) => b.className.includes("locked"))).toHaveLength(0);
+  });
   it("disables the Live cloud switch in House when offline and enables it when online", () => {
     const api = new FakeApiClient();
     renderScenarioHouse({ api, role: "family", online: false });

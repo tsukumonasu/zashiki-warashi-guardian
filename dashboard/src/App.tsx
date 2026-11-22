@@ -12,9 +12,6 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccountMenu } from "./components/AccountMenu";
-import { ControlPanel } from "./components/ControlPanel";
-import { DevicePanel } from "./components/DevicePanel";
-import { InfoTip } from "./components/InfoTip";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PrivacyIndicator } from "./components/PrivacyIndicator";
 import { TalkPanel } from "./components/TalkPanel";
@@ -30,6 +27,7 @@ import { loadSettings, type Settings, type SettingsResult } from "./lib/settings
 import { FamilyPage } from "./pages/Family";
 import { Help } from "./pages/Help";
 import { House } from "./pages/House";
+import { RealDollPage } from "./pages/RealDoll";
 import { Landing } from "./pages/Landing";
 import { Timeline } from "./pages/Timeline";
 import type { SimEncounter } from "./simulation/types";
@@ -38,6 +36,7 @@ import type { SimEncounter } from "./simulation/types";
 function navItems(): { route: Route; label: string }[] {
   return [
     { route: "/house", label: COPY.shell.nav.house },
+    { route: "/doll", label: COPY.shell.nav.doll },
     { route: "/timeline", label: COPY.shell.nav.timeline },
     { route: "/family", label: COPY.shell.nav.family },
     { route: "/help", label: COPY.shell.nav.help },
@@ -372,20 +371,20 @@ export function App() {
               role={cloudAvailable ? role : "visitor"}
               onEncounters={setSimulated}
             />
-            <section className="real-doll" aria-labelledby="real-doll-heading">
-              <h2 id="real-doll-heading">
-                {COPY.shell.realDollHeading}
-                <InfoTip text={COPY.tips.realDoll} />
-              </h2>
-              <fieldset className="real-doll__group" disabled={!online}>
-                <DevicePanel role={role} response={deviceStatus.response} />
-                <ControlPanel api={api} role={role} deviceId={DEVICE_ID} />
-              </fieldset>
-            </section>
             {cloudAvailable && (
-              <TalkPanel api={api} role={role} deviceId={DEVICE_ID} voice={voice} online={online} />
+              <TalkPanel api={api} role={role} deviceId={DEVICE_ID} voice={voice} online={online} targets="virtual" />
             )}
           </div>
+          {route === "/doll" && (
+            <RealDollPage
+              api={api}
+              role={role}
+              online={online}
+              cloudAvailable={cloudAvailable}
+              voice={voice}
+              deviceResponse={deviceStatus.response}
+            />
+          )}
           {route === "/timeline" && (
             <main className="page">
               <Timeline

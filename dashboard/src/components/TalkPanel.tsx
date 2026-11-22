@@ -23,6 +23,8 @@ export interface TalkPanelProps {
   /** Injected for tests. */
   createTransport?: () => VoiceTransport;
   createAudio?: () => AudioIO;
+  /** Which buttons to offer: the browser doll, the real doll, or both (default). */
+  targets?: "virtual" | "real" | "both";
 }
 
 /** Why the Talk button is disabled, or null when talking is allowed (Requirement 13.10). */
@@ -67,6 +69,7 @@ export function TalkPanel({
   lookVerdict,
   createTransport,
   createAudio,
+  targets = "both",
 }: TalkPanelProps) {
   const session = useVoice({ api, deviceId, onCommand, lookVerdict, createTransport, createAudio });
   const lastTarget = useRef<"real" | "virtual">("virtual");
@@ -86,6 +89,7 @@ export function TalkPanel({
 
       {!busy && (
         <div className="talk-panel__actions">
+          {targets !== "real" && (
           <button
             type="button"
             className="button"
@@ -98,7 +102,8 @@ export function TalkPanel({
           >
             {COPY.talk.talk}
           </button>
-          {role === "family" && (
+          )}
+          {role === "family" && targets !== "virtual" && (
             <button
               type="button"
               className="button"
