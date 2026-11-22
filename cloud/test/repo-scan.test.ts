@@ -124,8 +124,11 @@ const RULES: readonly Rule[] = [
 
 const IMAGE_EXT = /\.(jpe?g|png|gif|webp|bmp|heic|tiff?)$/i;
 const AUDIO_EXT = /\.(wav|mp3|pcm|ogg|opus|m4a|flac|aac)$/i;
-/** The generated voice lines. Git ignores it; the exception only keeps the rule honest. */
-const VOICE_FOLDER = /^device\/warashi_agent\/voice\//;
+/**
+ * The generated voice lines (Polly text-to-speech, not recordings of people) and the copy that
+ * `scripts/export_voice_catalog.py` makes for the dashboard.
+ */
+const VOICE_FOLDER = /^(device\/warashi_agent\/voice|dashboard\/public\/audio)\//;
 const SAMPLE_OR_FACE_PATH = /(^|\/)(samples?|faces?|selfies?)\//i;
 
 function isExampleFile(file: string): boolean {

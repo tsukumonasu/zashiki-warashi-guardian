@@ -4,103 +4,103 @@
     "category": "family",
     "ja": "おかえり。きょうも ぶじで よかった。",
     "en": "Welcome home. I'm glad you're safe today.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 2755,
+    "audio": "audio/greeting_family.wav"
   },
   {
     "id": "greeting_family_late",
     "category": "family",
     "ja": "もう おそいよ。はやく おやすみ。",
     "en": "It's late. Go to sleep soon.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 2680,
+    "audio": "audio/greeting_family_late.wav"
   },
   {
     "id": "greeting_family_waited",
     "category": "family",
     "ja": "あ、かえってきた。ずっと まってたよ。",
     "en": "Oh, you're back. I was waiting for you.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 2868,
+    "audio": "audio/greeting_family_waited.wav"
   },
   {
     "id": "greeting_family_lantern",
     "category": "family",
     "ja": "あかり、ともしておいたよ。おかえり。",
     "en": "I kept the lantern lit for you. Welcome home.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 2905,
+    "audio": "audio/greeting_family_lantern.wav"
   },
   {
     "id": "warning_stranger_first",
     "category": "stranger",
     "ja": "……だあれ？ このいえの ひとじゃ ないね。",
     "en": "...Who are you? You don't belong to this house.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 2668,
+    "audio": "audio/warning_stranger_first.wav"
   },
   {
     "id": "warning_stranger_watching",
     "category": "stranger",
     "ja": "……ずっと、みているよ。",
     "en": "...I have been watching, all along.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 1475,
+    "audio": "audio/warning_stranger_watching.wav"
   },
   {
     "id": "warning_stranger_house",
     "category": "stranger",
     "ja": "……ここは、わたしの いえだよ。",
     "en": "...This house is mine.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 1888,
+    "audio": "audio/warning_stranger_house.wav"
   },
   {
     "id": "warning_stranger_footsteps",
     "category": "stranger",
     "ja": "……しらない あしおとが する。",
     "en": "...Those are footsteps I do not know.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 1675,
+    "audio": "audio/warning_stranger_footsteps.wav"
   },
   {
     "id": "uncertain",
     "category": "uncertain",
     "ja": "……だれか、いるの？",
     "en": "...Is someone there?",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 1200,
+    "audio": "audio/uncertain.wav"
   },
   {
     "id": "uncertain_shadow",
     "category": "uncertain",
     "ja": "……いま、かげが うごいた？",
     "en": "...Did a shadow just move?",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 1600,
+    "audio": "audio/uncertain_shadow.wav"
   },
   {
     "id": "uncertain_wind",
     "category": "uncertain",
     "ja": "……かぜの おと、かな。",
     "en": "...Was that only the wind?",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 1438,
+    "audio": "audio/uncertain_wind.wav"
   },
   {
     "id": "conversation_trouble",
     "category": "family",
     "ja": "うまく きこえないの。また あとでね。",
     "en": "I can't hear well. Let's talk later.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 3068,
+    "audio": "audio/conversation_trouble.wav"
   },
   {
     "id": "conversation_bye",
     "category": "family",
     "ja": "じゃあね。また おはなし しようね。",
     "en": "Goodbye for now. Let's talk again.",
-    "durationMs": null,
-    "audio": null
+    "durationMs": 2605,
+    "audio": "audio/conversation_bye.wav"
   }
 ]
