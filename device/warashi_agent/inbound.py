@@ -116,7 +116,12 @@ def to_command_event(env: Envelope) -> CommandEvent:
                 face=data.face,
             )
         case SpeakData():
-            return Speak(ref_id=env.id, line_id=data.line_id, audio_url=data.audio_url)
+            return Speak(
+                ref_id=env.id,
+                line_id=data.line_id,
+                audio_url=data.audio_url,
+                remote=data.remote is True,
+            )
         case GazeData():
             return Gaze(ref_id=env.id, pan_deg=data.pan_deg, tilt_deg=data.tilt_deg)
         case LanternData():
@@ -138,7 +143,9 @@ def to_command_event(env: Envelope) -> CommandEvent:
                 ref_id=env.id, session_id=data.session_id, reason=data.reason.value
             )
         case WireSnapshotRequest():
-            return SnapshotRequest(ref_id=env.id, request_id=data.request_id)
+            return SnapshotRequest(
+                ref_id=env.id, request_id=data.request_id, purpose=data.purpose or "look"
+            )
     raise ValueError(f"{env.type} is not a command type")
 
 

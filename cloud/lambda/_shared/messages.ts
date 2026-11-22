@@ -50,7 +50,14 @@ export type CommandData = {
     confidence: number;
     face: FaceBox | null;
   };
-  speak: { lineId: string | null; audioUrl: string | null; ja: string; en: string };
+  speak: {
+    lineId: string | null;
+    audioUrl: string | null;
+    ja: string;
+    en: string;
+    /** Typed by the family (remote-actions R3). Honoured only with `audioUrl`. Omitted means false. */
+    remote?: boolean;
+  };
   gaze: { panDeg: number; tiltDeg: number };
   lantern: { level: number; fadeMs: number };
   "mode.set": { mode: "guard" | "sleep" };
@@ -62,7 +69,8 @@ export type CommandData = {
     source: "family_verdict" | "manual";
   };
   "conversation.end": { sessionId: string; reason: ConversationEndReason };
-  "snapshot.request": { requestId: string };
+  /** `purpose` is optional (default "look"); "photo" wakes a sleeping doll for one picture (R2). */
+  "snapshot.request": { requestId: string; purpose?: "look" | "photo" };
 };
 export type ConversationEndReason =
   | "silence"
@@ -134,6 +142,7 @@ const REASONS = [
   "error",
   "conversation",
   "conversation_done",
+  "photo_done",
 ] as const;
 const END_REASONS = [
   "silence",
@@ -211,6 +220,14 @@ const REGISTRY: Readonly<Record<string, TypeSpec>> = Object.freeze({
         pattern: ID_PATTERN,
         omitWhenNull: true,
       },
+      {
+        name: "purpose",
+        kind: "enum",
+        allowed: ["judge", "photo"],
+        nullable: true,
+        required: false,
+        omitWhenNull: true,
+      },
     ],
   },
   "state.changed": {
@@ -243,7 +260,13 @@ const REGISTRY: Readonly<Record<string, TypeSpec>> = Object.freeze({
     ],
   },
   speak: {
-    fields: [str("lineId", true), str("audioUrl", true), str("ja"), str("en")],
+    fields: [
+      str("lineId", true),
+      str("audioUrl", true),
+      str("ja"),
+      str("en"),
+      { name: "remote", kind: "bool", nullable: true, required: false, omitWhenNull: true },
+    ],
     rule: (d) =>
       (d["lineId"] === null) === (d["audioUrl"] === null)
         ? "data: speak needs exactly one of lineId and audioUrl"
@@ -262,7 +285,19 @@ const REGISTRY: Readonly<Record<string, TypeSpec>> = Object.freeze({
     ],
   },
   "conversation.end": { fields: [id64("sessionId"), enumOf("reason", END_REASONS)] },
-  "snapshot.request": { fields: [id64("requestId")] },
+  "snapshot.request": {
+    fields: [
+      id64("requestId"),
+      {
+        name: "purpose",
+        kind: "enum",
+        allowed: ["look", "photo"],
+        nullable: true,
+        required: false,
+        omitWhenNull: true,
+      },
+    ],
+  },
   // Status (device -> cloud)
   "status.report": {
     fields: [
@@ -591,7 +626,13 @@ function clampCommand(type: CommandType, data: CommandData[CommandType]): unknow
       if ((d.lineId === null) === (d.audioUrl === null)) {
         throw new RangeError("speak needs exactly one of lineId and audioUrl");
       }
-      return { lineId: d.lineId, audioUrl: d.audioUrl, ja: d.ja, en: d.en };
+      return {
+        lineId: d.lineId,
+        audioUrl: d.audioUrl,
+        ja: d.ja,
+        en: d.en,
+        ...(d.remote === true ? { remote: true } : {}),
+      };
     }
     case "mode.set":
       return { mode: (data as CommandData["mode.set"]).mode };
@@ -619,7 +660,10 @@ function clampCommand(type: CommandType, data: CommandData[CommandType]): unknow
     case "snapshot.request": {
       const d = data as CommandData["snapshot.request"];
       checkId(d.requestId, "snapshot.request.requestId");
-      return { requestId: d.requestId };
+      return {
+        requestId: d.requestId,
+        ...(d.purpose === "photo" ? { purpose: "photo" as const } : {}),
+      };
     }
   }
 }

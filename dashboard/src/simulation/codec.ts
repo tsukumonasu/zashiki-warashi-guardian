@@ -64,6 +64,7 @@ const DATA_FIELDS: Record<SchemaMessage["type"], readonly Field[]> = {
     ["tiltDeg", N],
     ["jpegBase64", S],
     ["requestId", SN, true],
+    ["purpose", E(["judge", "photo"]), true],
   ],
   "state.changed": [
     ["from", E(STATES)],
@@ -92,6 +93,7 @@ const DATA_FIELDS: Record<SchemaMessage["type"], readonly Field[]> = {
     ["audioUrl", SN],
     ["ja", S],
     ["en", S],
+    ["remote", B, true],
   ],
   gaze: [
     ["panDeg", N],
@@ -118,7 +120,10 @@ const DATA_FIELDS: Record<SchemaMessage["type"], readonly Field[]> = {
     ["sessionId", S],
     ["reason", E(CONVERSATION_END_REASONS)],
   ],
-  "snapshot.request": [["requestId", S]],
+  "snapshot.request": [
+    ["requestId", S],
+    ["purpose", E(["look", "photo"]), true],
+  ],
   "status.report": [
     ["state", E(STATES)],
     ["mode", E(MODES)],

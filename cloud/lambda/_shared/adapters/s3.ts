@@ -58,6 +58,8 @@ function isMissingObject(err: unknown): boolean {
 /** Prefix of the generated simulation audio written by `api-simulate`. */
 export const AUDIO_PREFIX = "audio/sim/";
 
+/** Prefix of the WAV files that `POST /say` makes for the real doll (expires after one day). */
+export const SAY_AUDIO_PREFIX = "audio/say/";
 /** A key must sit under `prefix` and contain no empty or dot segments. */
 function assertKeyUnder(prefix: string, key: string): void {
   const segments = key.split("/");
@@ -79,6 +81,10 @@ export function createSnapshotStore(options: S3AdapterOptions = {}): SnapshotSto
 export function createAudioStore(options: S3AdapterOptions = {}): SnapshotStore {
   return createPrefixedStore(options, AUDIO_PREFIX);
 }
+/** Same behavior, limited to `audio/say/`: the typed speech of `POST /say` (remote-actions R6). */
+export function createSayAudioStore(options: S3AdapterOptions = {}): SnapshotStore {
+  return createPrefixedStore(options, SAY_AUDIO_PREFIX);
+}
 
 function createPrefixedStore(options: S3AdapterOptions, prefix: string): SnapshotStore {
   const assertSnapshotKey = (key: string): void => {
@@ -93,7 +99,7 @@ function createPrefixedStore(options: S3AdapterOptions, prefix: string): Snapsho
      * client side (for example a timeout after the bytes were sent) the object might still have
      * been created, so a best-effort delete runs and its own failure is ignored (R2.8).
      */
-    async put(key: string, jpeg: Uint8Array): Promise<void> {
+    async put(key: string, jpeg: Uint8Array, contentType = "image/jpeg"): Promise<void> {
       assertSnapshotKey(key);
       try {
         await client.send(
@@ -101,7 +107,7 @@ function createPrefixedStore(options: S3AdapterOptions, prefix: string): Snapsho
             Bucket: bucket,
             Key: key,
             Body: jpeg,
-            ContentType: "image/jpeg",
+            ContentType: contentType,
           }),
         );
       } catch (err) {

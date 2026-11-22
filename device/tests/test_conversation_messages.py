@@ -118,12 +118,16 @@ def test_snapshot_request_decodes_request_id() -> None:
 
 def test_snapshot_captured_request_id_defaults_to_none_and_is_omitted() -> None:
     original = _fixture("snapshot.captured")
-    assert "requestId" not in original["data"]
+    # The golden fixture is a photo (it carries both optional fields); drop them for this test.
+    del original["data"]["requestId"]
+    del original["data"]["purpose"]
     result = _decode(original)
     assert isinstance(result, Valid)
     assert isinstance(result.message.data, SnapshotCaptured)
     assert result.message.data.request_id is None
+    assert result.message.data.purpose is None
     assert "requestId" not in json.loads(encode(result.message))["data"]
+    assert "purpose" not in json.loads(encode(result.message))["data"]
 
 
 def test_snapshot_captured_request_id_round_trips() -> None:

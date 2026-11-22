@@ -6,6 +6,7 @@
   "encounterId": null,
   "type": "snapshot.request",
   "data": {
-    "requestId": "00000000-0000-4000-8000-000000000001"
+    "requestId": "00000000-0000-4000-8000-000000000001",
+    "purpose": "photo"
   }
 }

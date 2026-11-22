@@ -84,6 +84,7 @@ export class ApiStack extends Stack {
   readonly apiSimulate: lambda.IFunction;
   readonly apiAdmin: lambda.IFunction;
   readonly apiCommands: lambda.IFunction;
+  readonly apiSay: lambda.IFunction;
   /** Values for WebStack (R18.6). */
   readonly apiUrl: string;
   readonly apiId: string;
@@ -175,7 +176,7 @@ export class ApiStack extends Stack {
     const read = makeFunction("ApiRead", "api-read", {
       timeoutS: DEFAULT_TIMEOUT_S,
       environment: { ...baseEnv, ...voiceEnv, WARASHI_SIGNER_FUNCTION_NAME: signer.functionName },
-      description: "GET /me, /samples, /encounters, /encounters/{id}, /device/status",
+      description: "GET /me, /samples, /encounters, /encounters/{id}, /device/status, /photos/{requestId}",
     });
     read.addToRolePolicy(
       new iam.PolicyStatement({
@@ -278,7 +279,7 @@ export class ApiStack extends Stack {
     const commands = makeFunction("ApiCommands", "api-admin", {
       timeoutS: COMMANDS_TIMEOUT_S,
       environment: { ...baseEnv, IOT_DATA_ENDPOINT: props.iotDataEndpoint },
-      description: "POST /commands (family only), answers within 3 seconds",
+      description: "POST /commands and POST /photos (family only), answer within 3 seconds",
     });
     commands.addToRolePolicy(
       new iam.PolicyStatement({
@@ -288,6 +289,39 @@ export class ApiStack extends Stack {
     );
     props.table.grantReadWriteData(commands);
     this.apiCommands = commands;
+    // ---- POST /say (family only): typed speech for the real doll (remote-actions R6) ----
+    const say = makeFunction("ApiSay", "api-say", {
+      timeoutS: DEFAULT_TIMEOUT_S,
+      environment: {
+        ...baseEnv,
+        IOT_DATA_ENDPOINT: props.iotDataEndpoint,
+        WARASHI_POLLY_VOICE_ID: props.pollyVoiceId ?? DEFAULT_POLLY_VOICE_ID,
+        WARASHI_BLOCKED_WORDS: (props.blockedWords ?? []).join(","),
+      },
+      description: "POST /say (family only): typed Japanese text, spoken by the real doll",
+    });
+    say.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["iot:Publish"],
+        resources: [this.formatArn({ service: "iot", resource: "topic", resourceName: "warashi/*/commands" })],
+      }),
+    );
+    say.addToRolePolicy(
+      new iam.PolicyStatement({
+        // polly:SynthesizeSpeech supports no resource-level scope except lexicons, which we do not use.
+        actions: ["polly:SynthesizeSpeech"],
+        resources: ["*"],
+      }),
+    );
+    say.addToRolePolicy(
+      new iam.PolicyStatement({
+        // PutObject writes the WAV, GetObject lets the pre-signed URL work. Expires after one day.
+        actions: ["s3:PutObject", "s3:GetObject"],
+        resources: [props.bucket.arnForObjects("audio/say/*")],
+      }),
+    );
+    props.table.grantReadWriteData(say);
+    this.apiSay = say;
 
     // ---- HTTP API: no corsPreflight here (WebStack sets it), JWT authorizer on every route ----
     const authorizer = new HttpUserPoolAuthorizer("UserPoolAuthorizer", this.userPool, {
@@ -307,6 +341,9 @@ export class ApiStack extends Stack {
       { id: "DeviceStatus", path: "/device/status", methods: [apigwv2.HttpMethod.GET], fn: read },
       { id: "Simulate", path: "/simulate", methods: [apigwv2.HttpMethod.POST], fn: simulate },
       { id: "Commands", path: "/commands", methods: [apigwv2.HttpMethod.POST], fn: commands },
+      { id: "PhotosRequest", path: "/photos", methods: [apigwv2.HttpMethod.POST], fn: commands },
+      { id: "PhotosRead", path: "/photos/{requestId}", methods: [apigwv2.HttpMethod.GET], fn: read },
+      { id: "Say", path: "/say", methods: [apigwv2.HttpMethod.POST], fn: say },
       { id: "FacesList", path: "/faces", methods: [apigwv2.HttpMethod.GET], fn: admin },
       { id: "FacesCreate", path: "/faces", methods: [apigwv2.HttpMethod.POST], fn: admin },
       { id: "FacesUpload", path: "/faces/upload", methods: [apigwv2.HttpMethod.POST], fn: admin },

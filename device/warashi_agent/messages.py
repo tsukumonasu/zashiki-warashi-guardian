@@ -128,6 +128,7 @@ class SnapshotCaptured:
     tilt_deg: float
     jpeg_base64: str = field(repr=False)
     request_id: str | None = None  # set only when answering a snapshot.request (S3)
+    purpose: str | None = None  # "photo" for a remote photo; None means "judge" (R1)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -217,6 +218,7 @@ class SpeakData:
     audio_url: str | None = field(repr=False)
     ja: str = field(repr=False)
     en: str = field(repr=False)
+    remote: bool | None = None  # R3: typed by the family; None means false
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -276,6 +278,7 @@ class SnapshotRequest:
 
     TYPE: ClassVar[str] = "snapshot.request"
     request_id: str
+    purpose: str | None = None  # "look" (default) or "photo" (R2)
 
 
 # Status (device -> cloud)
@@ -475,6 +478,15 @@ _TYPE_SPECS: tuple[TypeSpec, ...] = (
                 pattern=ID_PATTERN,
                 omit_if_none=True,
             ),
+            FieldSpec(
+                wire_name="purpose",
+                attribute="purpose",
+                kind="enum",
+                nullable=True,
+                required=False,
+                allowed_values=("judge", "photo"),
+                omit_if_none=True,
+            ),
         ),
     ),
     TypeSpec(
@@ -563,6 +575,14 @@ _TYPE_SPECS: tuple[TypeSpec, ...] = (
             _str("audioUrl", "audio_url", nullable=True),
             _str("ja", "ja"),
             _str("en", "en"),
+            FieldSpec(
+                wire_name="remote",
+                attribute="remote",
+                kind="bool",
+                nullable=True,
+                required=False,
+                omit_if_none=True,
+            ),
         ),
         rule=_speak_rule,
     ),
@@ -625,7 +645,18 @@ _TYPE_SPECS: tuple[TypeSpec, ...] = (
         type=SnapshotRequest.TYPE,
         direction="command",
         payload=SnapshotRequest,
-        fields=(_id("requestId", "request_id"),),
+        fields=(
+            _id("requestId", "request_id"),
+            FieldSpec(
+                wire_name="purpose",
+                attribute="purpose",
+                kind="enum",
+                nullable=True,
+                required=False,
+                allowed_values=("look", "photo"),
+                omit_if_none=True,
+            ),
+        ),
     ),
     # Status
     TypeSpec(

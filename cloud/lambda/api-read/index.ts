@@ -24,10 +24,12 @@ import {
   type RouteContext,
   type RouteResult,
 } from "../_shared/api-glue.js";
+import { createPhotoReader } from "../_shared/adapters/photos.js";
 import { loadConfig } from "../_shared/config.js";
 import { loadVoiceConfig } from "../_shared/voice/config.js";
 import { createHealthStore, createReadCounter } from "../voice-session/adapters/voice-dynamo.js";
 import { meVoice } from "../voice-start/voice-start-core.js";
+import { handleGetPhoto } from "./photos-core.js";
 import {
   handleDeviceStatus,
   handleGetEncounter,
@@ -56,6 +58,7 @@ const voiceDeps = {
   now: Date.now,
 };
 
+const photos = createPhotoReader();
 function readRequest({ request, role }: RouteContext): ReadRequest {
   return { role, query: request.query, pathParameters: request.pathParameters };
 }
@@ -82,5 +85,12 @@ export const handler = createApiHandler({
     "GET /encounters": json(handleListEncounters),
     "GET /encounters/{id}": json(handleGetEncounter),
     "GET /device/status": json(handleDeviceStatus),
+    "GET /photos/{requestId}": async (context: RouteContext): Promise<RouteResult> =>
+      ok(
+        await handleGetPhoto(
+          { role: context.role, pathParameters: context.request.pathParameters },
+          { photos, signer: base.signer, nowMs: context.nowMs },
+        ),
+      ),
   },
 });

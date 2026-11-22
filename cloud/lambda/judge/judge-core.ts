@@ -25,6 +25,7 @@ import type {
   DeviceBus,
   FaceSearch,
   Notifier,
+  PhotoStore,
   Repository,
   SnapshotStore,
   StateStore,
@@ -79,6 +80,8 @@ export interface LookStore {
 export interface JudgeDeps {
   /** Optional: without it, a `requestId` is ignored. */
   looks?: LookStore;
+  /** Optional: without it, a remote photo is ignored (remote-actions R4). */
+  photos?: PhotoStore;
   faces: FaceSearch;
   snapshots: SnapshotStore;
   bus: DeviceBus;
@@ -103,6 +106,7 @@ export interface JudgeDeps {
 export type JudgeResult =
   | { outcome: "ignored"; reason: string }
   | { outcome: "duplicate" }
+  | { outcome: "photo"; stored: boolean }
   | {
       outcome: "judged";
       verdict: Verdict;
@@ -329,6 +333,69 @@ export async function notifyOnce(
 }
 
 // ---------------------------------------------------------------------------------------------
+// Remote photo
+// ---------------------------------------------------------------------------------------------
+/**
+ * Stores the picture and leaves an index item for `GET /photos/{requestId}`. No face search, no
+ * `judgement.result`, no notification: the family asked for a picture, it is not a visitor.
+ * The index item is written only after the object is stored, so `ready` always has a picture.
+ */
+async function storePhoto(
+  message: Envelope,
+  jpeg: Uint8Array,
+  key: string,
+  requestId: string,
+  deps: JudgeDeps,
+): Promise<JudgeResult> {
+  try {
+    await deps.snapshots.put(key, jpeg);
+  } catch (error) {
+    log("photo_store_failed", { requestId, errorName: errorName(error) });
+    return { outcome: "photo", stored: false };
+  }
+  const nowMs = deps.now();
+  try {
+    await deps.photos?.putPhoto({
+      requestId,
+      deviceId: message.deviceId,
+      snapshotKey: key,
+      atMs: nowMs,
+      ttl: Math.floor(nowMs / 1000) + deps.config.snapshotExpiryDays * 86_400,
+    });
+  } catch (error) {
+    log("photo_index_failed", { requestId, errorName: errorName(error) });
+    return { outcome: "photo", stored: false };
+  }
+  // The encounter of the photo also keeps the picture, so the family sees it in the timeline.
+  const encounterId = message.encounterId;
+  if (encounterId !== null) {
+    try {
+      const ttlS = ITEM_TTL_DAYS * 86_400;
+      await deps.repository.createEncounterIfAbsent(
+        {
+          encounterId,
+          deviceId: message.deviceId,
+          startedAt: message.ts,
+          endedAt: null,
+          state: null,
+          verdict: null,
+          confidence: null,
+          reaction: null,
+          notified: false,
+          snapshotKey: null,
+          errorCount: 0,
+        },
+        ttlS,
+      );
+      await deps.repository.updateEncounter(encounterId, { snapshotKey: key });
+    } catch (error) {
+      log("photo_record_failed", { requestId, errorName: errorName(error) });
+    }
+  }
+  log("photo_stored", { requestId });
+  return { outcome: "photo", stored: true };
+}
+// ---------------------------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------------------------
 
@@ -367,6 +434,16 @@ export async function handleSnapshot(event: SnapshotEvent, deps: JudgeDeps): Pro
     return { outcome: "ignored", reason: jpeg.reason };
   }
   const snapshotId = data.snapshotId;
+  // A remote photo is stored and indexed, never judged (remote-actions R1, R4).
+  const extra = message.data as { purpose?: string | null; requestId?: string | null };
+  let photoRequestId: string | null = null;
+  if (extra.purpose === "photo") {
+    if (typeof extra.requestId !== "string" || deps.photos === undefined) {
+      log("snapshot_ignored", { id: message.id, reason: "photo_without_request" });
+      return { outcome: "ignored", reason: "photo_without_request" };
+    }
+    photoRequestId = extra.requestId;
+  }
   if (!SNAPSHOT_ID_PATTERN.test(snapshotId)) {
     // The id becomes part of an S3 key and of the claim key, so odd characters are refused.
     log("snapshot_ignored", { id: message.id, reason: "bad_snapshot_id" });
@@ -382,6 +459,9 @@ export async function handleSnapshot(event: SnapshotEvent, deps: JudgeDeps): Pro
 
   const startedMs = deps.now();
   const key = snapshotKeyFor(message.deviceId, message.ts, snapshotId, startedMs);
+  if (photoRequestId !== null) {
+    return storePhoto(message, jpeg.bytes, key, photoRequestId, deps);
+  }
   const storeTask = deps.snapshots.put(key, jpeg.bytes).then(
     () => true,
     (error: unknown) => {

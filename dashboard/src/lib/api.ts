@@ -107,6 +107,13 @@ export interface CommandResponse {
   id: string;
   deviceOnline: boolean;
 }
+/** `POST /photos` (remote-actions R4). */
+export interface PhotoRequestResponse {
+  requestId: string;
+  deviceOnline: boolean;
+}
+/** `GET /photos/{requestId}` (remote-actions R5). */
+export type PhotoStatus = { status: "pending" } | { status: "ready"; url: string; expiresAt: string };
 export interface FaceMember {
   memberId: string;
   displayName: string;
@@ -174,6 +181,11 @@ export interface ApiClient {
   deviceStatus(deviceId: string): Promise<ApiResult<DeviceStatusResponse>>;
   simulate(sampleId: string, generate: boolean): Promise<ApiResult<SimulateResponse>>;
   command(deviceId: string, command: OutgoingCommand): Promise<ApiResult<CommandResponse>>;
+  /** Asks the doll for one photo. The picture is fetched later with `photo`. */
+  photoRequest(deviceId: string): Promise<ApiResult<PhotoRequestResponse>>;
+  photo(requestId: string): Promise<ApiResult<PhotoStatus>>;
+  /** Makes the doll say typed Japanese text (`POST /say`). */
+  say(deviceId: string, text: string): Promise<ApiResult<CommandResponse>>;
   faces(): Promise<ApiResult<{ members: FaceMember[] }>>;
   faceUpload(): Promise<ApiResult<FaceUploadTicket>>;
   faceRegister(body: FaceRegisterBody): Promise<ApiResult<FaceRegisterResponse>>;
@@ -264,6 +276,13 @@ const isSimulate: Guard<SimulateResponse> = (v): v is SimulateResponse =>
 
 const isCommandResponse: Guard<CommandResponse> = (v): v is CommandResponse =>
   isObj(v) && isStr(v.id) && isBool(v.deviceOnline);
+
+const isPhotoRequest: Guard<PhotoRequestResponse> = (v): v is PhotoRequestResponse =>
+  isObj(v) && isStr(v.requestId) && isBool(v.deviceOnline);
+
+const isPhotoStatus: Guard<PhotoStatus> = (v): v is PhotoStatus =>
+  isObj(v) &&
+  (v.status === "pending" || (v.status === "ready" && isStr(v.url) && isStr(v.expiresAt)));
 
 const isFaces: Guard<{ members: FaceMember[] }> = (v): v is { members: FaceMember[] } =>
   isObj(v) &&
@@ -387,6 +406,9 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
     deviceStatus: (deviceId) => call("GET", `/device/status?deviceId=${enc(deviceId)}`, isDeviceStatus),
     simulate: (sampleId, generate) => call("POST", "/simulate", isSimulate, { sampleId, generate }),
     command: (deviceId, command) => call("POST", "/commands", isCommandResponse, { deviceId, command }),
+    photoRequest: (deviceId) => call("POST", "/photos", isPhotoRequest, { deviceId }),
+    photo: (requestId) => call("GET", `/photos/${enc(requestId)}`, isPhotoStatus),
+    say: (deviceId, text) => call("POST", "/say", isCommandResponse, { deviceId, text }),
     faces: () => call("GET", "/faces", isFaces),
     faceUpload: () => call("POST", "/faces/upload", isUploadTicket, {}),
     faceRegister: (body) => call("POST", "/faces", isRegister, body),

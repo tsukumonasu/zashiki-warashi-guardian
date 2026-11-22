@@ -16,7 +16,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { createRepository } from "../_shared/adapters/dynamo.js";
+import { createRepository, createStateStore } from "../_shared/adapters/dynamo.js";
 import { createIotBus } from "../_shared/adapters/iot-bus.js";
 import { createRekognitionFaceSearch } from "../_shared/adapters/rekognition.js";
 import { createFaceStaging, createSampleSource } from "../_shared/adapters/s3.js";
@@ -33,6 +33,7 @@ import { parseJsonBody } from "../_shared/http.js";
 import type { VoiceLine } from "../_shared/lines.js";
 import voiceLines from "../_shared/voice-lines.json" with { type: "json" };
 import { handlePostCommand } from "./commands-core.js";
+import { handlePostPhoto } from "./photos-core.js";
 import {
   handleDeleteFace,
   handleFaceUpload,
@@ -48,6 +49,7 @@ const DEFAULT_COLLECTION_ID = "warashi-household";
 const config = loadConfig(process.env);
 const repository = createRepository({ samples: createSampleSource() });
 const bus = createIotBus();
+const state = createStateStore();
 const faces = createRekognitionFaceSearch();
 const staging = createFaceStaging();
 const collectionId = process.env["WARASHI_HOUSEHOLD_COLLECTION_ID"] || DEFAULT_COLLECTION_ID;
@@ -63,6 +65,16 @@ async function postCommand({ request, role, nowMs }: RouteContext): Promise<Rout
   };
 }
 
+async function postPhoto({ request, role, userSub, nowMs }: RouteContext): Promise<RouteResult> {
+  const body = parseJsonBody(request);
+  return {
+    status: 202,
+    body: await handlePostPhoto(
+      { role, userSub, body },
+      { bus, repository, state, config, newId: randomUUID, nowMs },
+    ),
+  };
+}
 function facesRequest({ request, role, userSub }: RouteContext, withBody: boolean): FacesRequest {
   return {
     role,
@@ -81,6 +93,7 @@ export const handler = createApiHandler({
   now: Date.now,
   routes: {
     "POST /commands": postCommand,
+    "POST /photos": postPhoto,
     "GET /faces": async (c) => ok(await handleListFaces(facesRequest(c, false), facesDeps(c))),
     "POST /faces/upload": async (c) => ok(await handleFaceUpload(facesRequest(c, false), facesDeps(c))),
     "POST /faces": async (c) => ({ status: 201, body: await handleRegisterFace(facesRequest(c, true), facesDeps(c)) }),

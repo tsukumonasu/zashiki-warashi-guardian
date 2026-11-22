@@ -27,6 +27,7 @@ export const REASONS = [
   "error",
   "conversation",
   "conversation_done",
+  "photo_done",
 ] as const;
 export type Reason = (typeof REASONS)[number];
 
@@ -122,6 +123,8 @@ export type SnapshotCaptured = Msg<
     jpegBase64: string;
     /** Set only for a snapshot that answers a `snapshot.request`; absent means null. */
     requestId?: string | null;
+    /** `photo` marks a remote photo that is only stored; absent means `judge`. */
+    purpose?: "judge" | "photo";
   }
 >;
 export type StateChanged = Msg<"state.changed", { from: State; to: State; reason: Reason }>;
@@ -147,7 +150,7 @@ export type JudgementResult = Msg<
 >;
 export type Speak = Msg<
   "speak",
-  { lineId: string | null; audioUrl: string | null; ja: string; en: string }
+  { lineId: string | null; audioUrl: string | null; ja: string; en: string; remote?: boolean }
 >;
 export type Gaze = Msg<"gaze", { panDeg: number; tiltDeg: number }>;
 export type Lantern = Msg<"lantern", { level: number; fadeMs: number }>;
@@ -168,7 +171,10 @@ export type ConversationEnd = Msg<
   "conversation.end",
   { sessionId: string; reason: ConversationEndReason }
 >;
-export type SnapshotRequest = Msg<"snapshot.request", { requestId: string }>;
+export type SnapshotRequest = Msg<
+  "snapshot.request",
+  { requestId: string; purpose?: "look" | "photo" }
+>;
 
 // Status (device -> cloud)
 export type StatusReport = Msg<"status.report", StatusReportData>;

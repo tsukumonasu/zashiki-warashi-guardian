@@ -97,6 +97,8 @@ class Reason(StrEnum):
     # voice-conversation S7: entered ``conversing`` / left it after a normal end.
     CONVERSATION = "conversation"
     CONVERSATION_DONE = "conversation_done"
+    # remote-actions R2: a remote photo was taken and sent.
+    PHOTO_DONE = "photo_done"
 
 
 class EndReason(StrEnum):
@@ -257,6 +259,8 @@ class Speak(EventBase):
     ref_id: str
     line_id: str | None
     audio_url: str | None = field(repr=False)
+    # remote-actions R3: the family typed this text; play it in any state but ``conversing``.
+    remote: bool = False
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -313,10 +317,15 @@ class ConversationEnd(EventBase):
 
 @dataclass(frozen=True, kw_only=True)
 class SnapshotRequest(EventBase):
-    """Take a snapshot for a voice session (S6); valid in ``conversing`` only."""
+    """Take a snapshot (S6, remote-actions R2).
+
+    ``purpose`` ``"look"`` is for a voice session and valid in ``conversing`` only; ``"photo"``
+    wakes a sleeping doll for one picture.
+    """
 
     ref_id: str
     request_id: str
+    purpose: str = "look"
 
 
 @dataclass(frozen=True, kw_only=True)

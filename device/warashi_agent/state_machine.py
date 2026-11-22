@@ -311,6 +311,9 @@ class Encounter:
     scans_run: int = 0  # scan attempts run in this Encounter (R6.1, R6.5)
     reacted: bool = False  # reaction.performed was published (R7.8)
     conversation_requested: bool = False  # conversation.requested was sent (R11, S1)
+    # Set for a remote photo (remote-actions R2): the id of the ``snapshot.request`` that started
+    # this Encounter. Such an Encounter takes one picture and rests; it never asks for a Verdict.
+    photo_request_id: str | None = None
 
     def with_verdict(self, accepted: AcceptedVerdict) -> Encounter:
         """Record ``accepted`` unless a final Accepted_Verdict is already set (R4.6).
@@ -749,6 +752,11 @@ def _with_pir_level(ms: MachineState, high: bool) -> MachineState:
 # --------------------------------------------------------------------------------------------
 
 
+def _is_photo(ms: MachineState) -> bool:
+    """True while the Encounter is a remote photo (remote-actions R2)."""
+    return ms.encounter is not None and ms.encounter.photo_request_id is not None
+
+
 def on_pir_rising_sleeping(ctx: StepContext) -> MachineState:
     """``pir.rising`` in ``sleeping``: start an Encounter when the doll may (R2.1).
 
@@ -763,7 +771,14 @@ def on_pir_rising_sleeping(ctx: StepContext) -> MachineState:
     return enter_waking(ctx, ms)
 
 
-def enter_waking(ctx: StepContext, ms: MachineState) -> MachineState:
+def enter_waking(
+    ctx: StepContext,
+    ms: MachineState,
+    *,
+    source: Literal["pir", "manual"] = "pir",
+    reason: Reason = Reason.PRESENCE,
+    photo_request_id: str | None = None,
+) -> MachineState:
     """Start the Encounter and enter ``waking`` with reason ``presence`` (R2.1, R2.2).
 
     The Encounter is created before ``state.changed`` so that the announcement already
@@ -772,8 +787,10 @@ def enter_waking(ctx: StepContext, ms: MachineState) -> MachineState:
     motion of the Encounter, and it happens only in response to the PIR edge (hardware.md).
     """
     encounter = ctx.begin_encounter()
-    ctx.change_state(State.WAKING, Reason.PRESENCE)
-    ctx.publish(PresenceDetected(source="pir"))
+    if photo_request_id is not None:
+        encounter = dataclasses.replace(encounter, photo_request_id=photo_request_id)
+    ctx.change_state(State.WAKING, reason)
+    ctx.publish(PresenceDetected(source=source))
     lantern = ms.config.lantern
     ctx.fade_lantern(lantern.lantern_wake_level, lantern.lantern_fade_in_ms)
     motion = ctx.gaze_to(0.0, 0.0)
@@ -826,6 +843,9 @@ def leave_waking(ctx: StepContext, ms: MachineState, reason: Reason) -> MachineS
     """
     if ms.cloud_connected:
         return enter_seeking(ctx, ms, reason)
+    if _is_photo(ms):
+        # A photo cannot reach the cloud, so there is nothing to take; go back to rest quietly.
+        return enter_cooldown(ctx, ms, Reason.OFFLINE)
     return leave_waking_disconnected(ctx, ms)
 
 
@@ -881,6 +901,7 @@ def on_snapshot_ready_seeking(ctx: StepContext) -> MachineState:
     attempt = ms.encounter.attempt if ms.encounter is not None else None
     if attempt is None or event.snapshot_id != attempt.snapshot_id:
         return ms
+    photo_id = ms.encounter.photo_request_id if ms.encounter is not None else None
     ctx.publish(
         SnapshotCaptured(
             snapshot_id=attempt.snapshot_id,
@@ -889,8 +910,13 @@ def on_snapshot_ready_seeking(ctx: StepContext) -> MachineState:
             pan_deg=attempt.pan_deg,
             tilt_deg=attempt.tilt_deg,
             jpeg_base64=base64.b64encode(event.jpeg).decode("ascii"),
+            request_id=photo_id,
+            purpose="photo" if photo_id is not None else None,
         )
     )
+    if photo_id is not None:
+        # One picture is all a remote photo needs: no Verdict, no Reaction (remote-actions R2).
+        return enter_cooldown(ctx, ms, Reason.PHOTO_DONE)
     return ms
 
 
@@ -929,6 +955,8 @@ def on_snapshot_failed_seeking(ctx: StepContext) -> MachineState:
     failed_id = _as(ctx.event, SnapshotFailed).snapshot_id
     if pending_scan or attempt is None or failed_id != attempt.snapshot_id:
         return ms
+    if _is_photo(ms):
+        return enter_cooldown(ctx, ms, Reason.ERROR)
     return enter_uncertain(ctx, ms, offline=True, reason=Reason.ERROR)
 
 
@@ -955,6 +983,8 @@ def on_cloud_disconnected_seeking(ctx: StepContext) -> MachineState:
     would otherwise end with a ``TakeSnapshot`` while disconnected.
     """
     ms = _with_connectivity(ctx.ms, False)
+    if _is_photo(ms):
+        return enter_cooldown(ctx, ms, Reason.OFFLINE)
     return enter_uncertain(ctx, ms, offline=True, reason=Reason.OFFLINE)
 
 
@@ -1107,6 +1137,8 @@ def on_tick_seeking(ctx: StepContext) -> MachineState:
     attempt = _as(ms.encounter, Encounter).attempt
     if attempt is None or attempt.verdict_processed or ctx.now < attempt.deadline:
         return ms
+    if _is_photo(ms):
+        return enter_cooldown(ctx, ms, Reason.TIMEOUT)
     return enter_uncertain(ctx, ms, offline=True, reason=Reason.TIMEOUT)
 
 
@@ -1643,7 +1675,7 @@ def on_speak(ctx: StepContext) -> MachineState:
             return reject(ctx, ErrorCode.UNKNOWN_LINE)
         if not permitted(line.category, situation):
             return reject(ctx, ErrorCode.SPEAK_REJECTED)
-    elif situation is not Category.FAMILY:
+    elif situation is not Category.FAMILY and not cmd.remote:
         return reject(ctx, ErrorCode.SPEAK_REJECTED)
     if isinstance(ms.phase, WarningPhase) and ms.phase.line is None:
         return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
@@ -1651,7 +1683,7 @@ def on_speak(ctx: StepContext) -> MachineState:
         return reject(ctx, ErrorCode.AUDIO_BUSY)
     if line is not None:
         return emit_play_line(ctx, ms, line)
-    return emit_play_audio_url(ctx, ms, _as(cmd.audio_url, str))
+    return emit_play_audio_url(ctx, ms, _as(cmd.audio_url, str), remote=cmd.remote)
 
 
 def emit_play_line(ctx: StepContext, ms: MachineState, line: VoiceLine) -> MachineState:
@@ -1666,14 +1698,16 @@ def emit_play_line(ctx: StepContext, ms: MachineState, line: VoiceLine) -> Machi
     return dataclasses.replace(ms, audio=(*ms.audio, pending))
 
 
-def emit_play_audio_url(ctx: StepContext, ms: MachineState, url: str) -> MachineState:
+def emit_play_audio_url(
+    ctx: StepContext, ms: MachineState, url: str, *, remote: bool = False
+) -> MachineState:
     """Download and play a WAV for ``speak``; only reached in Situation_Category ``family``.
 
     Generated audio may hold a family nickname, so ``on_speak`` lets it through only after a
     ``family`` Accepted_Verdict (R13.2, R13.3). The busy window adds the download bound to
     the playback bound, because the Audio_Adapter first downloads, then plays (R12.6).
     """
-    if situation_category(ms) is not Category.FAMILY:
+    if situation_category(ms) is not Category.FAMILY and not remote:
         raise ValueError("PlayAudioUrl outside Situation_Category family")
     timing = ms.config.timing
     play_id = ctx.new_id("play")
@@ -1996,7 +2030,7 @@ def on_snapshot_request_conversing(ctx: StepContext) -> MachineState:
     """``snapshot.request`` in ``conversing``: take one snapshot for the session (R11.15)."""
     ms, cmd = ctx.ms, _as(ctx.event, SnapshotRequest)
     phase = _as(ms.phase, Conversing)
-    if phase.look is not None:
+    if cmd.purpose != "look" or phase.look is not None:
         return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
     snapshot_id = ctx.new_id("snap")
     ctx.emit(TakeSnapshot(snapshot_id=snapshot_id))
@@ -2009,6 +2043,21 @@ def on_snapshot_request_conversing(ctx: StepContext) -> MachineState:
         deadline=ctx.now + ms.config.timing.verdict_timeout_s,
     )
     return dataclasses.replace(ms, phase=dataclasses.replace(phase, look=look))
+
+
+def on_snapshot_request_sleeping(ctx: StepContext) -> MachineState:
+    """``snapshot.request`` in ``sleeping``: a ``photo`` wakes the doll for one picture (R2).
+
+    The doll starts a manual Encounter exactly like a PIR visit (lantern first, then a slow glide
+    to center, because the camera is weak in the dark and the head must not jump), whatever the
+    Mode: the owner asked for it. A ``look`` is for a voice session and is rejected here.
+    """
+    ms, cmd = ctx.ms, _as(ctx.event, SnapshotRequest)
+    if cmd.purpose != "photo":
+        return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+    return enter_waking(
+        ctx, ms, source="manual", reason=Reason.MANUAL, photo_request_id=cmd.request_id
+    )
 
 
 def on_snapshot_request_other(ctx: StepContext) -> MachineState:
@@ -2114,6 +2163,8 @@ STATE_HANDLERS: Mapping[tuple[State, type], Handler] = MappingProxyType(
         (State.COOLDOWN, Tick): on_tick_cooldown,
         # Voice conversation (voice-conversation task 15.2).
         (State.SLEEPING, ConversationStart): on_conversation_start_sleeping,
+        # Remote photo (remote-actions R2).
+        (State.SLEEPING, SnapshotRequest): on_snapshot_request_sleeping,
         (State.GREETING, ConversationStart): on_conversation_start_greeting,
         (State.CONVERSING, ConversationStart): on_conversation_start_conversing,
         (State.CONVERSING, ConversationEnd): on_conversation_end_conversing,

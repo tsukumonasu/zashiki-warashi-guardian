@@ -172,6 +172,8 @@ export class FakeSnapshotStore implements SnapshotStore {
   readonly objects = new Map<string, Uint8Array>();
   readonly putCalls: string[] = [];
   readonly signCalls: { key: string; ttlS: number }[] = [];
+  /** Content type given to each `put`, by key (`undefined` when the caller gave none). */
+  readonly contentTypes = new Map<string, string | undefined>();
   /** Errors for the next `put` calls, taken in order. */
   private readonly putFailures: Error[] = [];
 
@@ -180,8 +182,9 @@ export class FakeSnapshotStore implements SnapshotStore {
     return this;
   }
 
-  async put(key: string, jpeg: Uint8Array): Promise<void> {
+  async put(key: string, jpeg: Uint8Array, contentType?: string): Promise<void> {
     this.putCalls.push(key);
+    this.contentTypes.set(key, contentType);
     const failure = this.putFailures.shift();
     if (failure !== undefined) throw failure;
     this.objects.set(key, jpeg.slice());

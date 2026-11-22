@@ -238,3 +238,50 @@ describe("api client", () => {
     for (const s of spies) expect(s).not.toHaveBeenCalled();
   });
 });
+
+describe("remote actions", () => {
+  const call = (h: Harness): [string, RequestInit] => h.fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+
+  it("POST /photos sends the device id and checks the answer", async () => {
+    const h = harness(async () => res(202, { requestId: "req-1", deviceOnline: true }));
+    const r = await createApiClient(h.deps).photoRequest("warashi-01");
+    expect(r).toEqual({ ok: true, value: { requestId: "req-1", deviceOnline: true } });
+    const [url, init] = call(h);
+    expect(url).toBe("https://api.example.invalid/photos");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ deviceId: "warashi-01" });
+  });
+
+  it("GET /photos/{id} accepts pending and ready, and refuses anything else", async () => {
+    const pending = harness(async () => res(200, { status: "pending" }));
+    expect(await createApiClient(pending.deps).photo("req 1")).toEqual({ ok: true, value: { status: "pending" } });
+    expect(call(pending)[0]).toBe("https://api.example.invalid/photos/req%201");
+
+    const ready = harness(async () => res(200, { status: "ready", url: "https://x.invalid/p", expiresAt: "t" }));
+    expect((await createApiClient(ready.deps).photo("r")).ok).toBe(true);
+
+    for (const body of [{ status: "ready" }, { status: "done" }, {}, null]) {
+      const bad = harness(async () => res(200, body));
+      expect((await createApiClient(bad.deps).photo("r")).ok, JSON.stringify(body)).toBe(false);
+    }
+  });
+
+  it("POST /say sends the text and maps a refusal", async () => {
+    const h = harness(async () => res(202, { id: "cmd-1", deviceOnline: false }));
+    const r = await createApiClient(h.deps).say("warashi-01", "こんにちは");
+    expect(r).toEqual({ ok: true, value: { id: "cmd-1", deviceOnline: false } });
+    expect(JSON.parse(call(h)[1].body as string)).toEqual({ deviceId: "warashi-01", text: "こんにちは" });
+
+    const refused = harness(async () => res(400, { error: { code: "validation_failed", message: "no" } }));
+    const bad = await createApiClient(refused.deps).say("warashi-01", "ころす");
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) expect(bad.error.code).toBe("validation_failed");
+  });
+
+  it("does not call the API when signed out", async () => {
+    const h = harness(async () => res(200, {}), null);
+    const r = await createApiClient(h.deps).say("warashi-01", "x");
+    expect(r.ok).toBe(false);
+    expect(h.fetchMock).not.toHaveBeenCalled();
+  });
+});

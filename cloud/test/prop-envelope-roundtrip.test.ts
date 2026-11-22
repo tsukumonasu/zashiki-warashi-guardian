@@ -31,7 +31,7 @@ const STATES = [
 ] as const;
 const REASONS = [
   "presence", "arrived", "verdict", "no_face", "timeout", "offline", "audio_done", "manual",
-  "cooldown_done", "error", "conversation", "conversation_done",
+  "cooldown_done", "error", "conversation", "conversation_done", "photo_done",
 ] as const;
 const ERROR_CODES = [
   "unknown_type", "unsupported_version", "malformed_message", "wrong_device", "speak_rejected",
@@ -55,8 +55,8 @@ const faceBox = fc.record({
 });
 
 const speakData = fc.oneof(
-  fc.record({ lineId: text, audioUrl: fc.constant(null), ja: text, en: text }),
-  fc.record({ lineId: fc.constant(null), audioUrl: text, ja: text, en: text }),
+  fc.record({ lineId: text, audioUrl: fc.constant(null), ja: text, en: text, remote: fc.boolean() }),
+  fc.record({ lineId: fc.constant(null), audioUrl: text, ja: text, en: text, remote: fc.boolean() }),
 );
 
 const DATA_BY_TYPE: Record<string, fc.Arbitrary<unknown>> = {
@@ -69,6 +69,7 @@ const DATA_BY_TYPE: Record<string, fc.Arbitrary<unknown>> = {
     tiltDeg: finiteNumber,
     jpegBase64: fc.base64String({ maxLength: 200 }),
     requestId: voiceId,
+    purpose: fc.constantFrom("judge", "photo"),
   }),
   "state.changed": fc.record({
     from: fc.constantFrom(...STATES),
@@ -121,7 +122,7 @@ const DATA_BY_TYPE: Record<string, fc.Arbitrary<unknown>> = {
     source: fc.constantFrom("family_verdict", "manual"),
   }),
   "conversation.end": fc.record({ sessionId: voiceId, reason: fc.constantFrom(...END_REASONS) }),
-  "snapshot.request": fc.record({ requestId: voiceId }),
+  "snapshot.request": fc.record({ requestId: voiceId, purpose: fc.constantFrom("look", "photo") }),
   "status.offline": fc.constant({}),
 };
 

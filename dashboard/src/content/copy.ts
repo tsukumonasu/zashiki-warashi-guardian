@@ -166,6 +166,33 @@ export const EN = {
     lockedControls: "This is someone's home. Only the family can call the doll.",
   },
 
+  remote: {
+    heading: "Remote actions",
+    photoHeading: "Take a photo",
+    photoTip:
+      "The doll wakes, lights her lantern, takes one picture and goes back to rest. Only the family can see it, and it is deleted after a few days. The camera indicator at the top shows while she is looking.",
+    photoNote: "This uses the real camera for a moment.",
+    photoButton: "Take a photo",
+    photoWaiting: "Waiting for the photo…",
+    photoReady: "Here is the photo.",
+    photoAlt: "The photo the doll just took",
+    photoTimeout: "No photo arrived. The doll may be out of reach. Try again.",
+    photoFailed: "The request could not be sent. Try again.",
+    sayHeading: "Make the doll speak",
+    sayTip:
+      "Type a Japanese line and the doll says it aloud, even when she is asleep. The cloud checks the text first: up to 60 characters, no Latin letters, no emoji and no frightening words.",
+    sayLabel: "What should the doll say? (Japanese, up to 60 characters)",
+    sayWarning:
+      "She speaks out loud to whoever is near her, a guest or a stranger too. Do not type names or private details.",
+    sayButton: "Say it",
+    saySent: "Sent. The doll is saying it.",
+    sayInvalid:
+      "That text cannot be spoken. Use Japanese only, up to 60 characters, with no Latin letters, emoji or frightening words.",
+    sayFailed: "The message could not be sent. Try again.",
+    offline: "The doll is offline. The request was not stored and will not play later.",
+    limited: (seconds: number): string => `Too many requests. Try again in ${seconds} seconds.`,
+  },
+
   family: {
     lockedFaces: "This is someone's home. Only the family can manage faces.",
     register: "Register",

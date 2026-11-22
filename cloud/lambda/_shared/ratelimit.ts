@@ -50,6 +50,10 @@ export function retryAfterSeconds(nowMs: number, windowMs: number): number {
   return Math.min(MAX_RETRY_AFTER_S, Math.max(MIN_RETRY_AFTER_S, seconds));
 }
 
+/** Per-user hourly counter key of a remote action (`photo` or `say`, remote-actions R4, R6). */
+export function remoteHourKey(kind: "photo" | "say", userSub: string, hourBucket: number): string {
+  return `RATE#${kind}#${userSub}#${hourBucket}`;
+}
 /** The part of `StateStore` the guard needs. */
 export type CounterPort = Pick<StateStore, "incrementCounter" | "releaseCounter">;
 
@@ -113,4 +117,21 @@ async function releaseAll(keys: string[], state: CounterPort): Promise<void> {
   for (const key of keys) {
     await state.releaseCounter(key);
   }
+}
+
+/**
+ * Counts one remote action of `userSub` in the current hour. A rejected request leaves the
+ * counter as it was (the store only increments while inside the limit).
+ */
+export async function guardRemote(
+  kind: "photo" | "say",
+  userSub: string,
+  limit: number,
+  nowMs: number,
+  state: Pick<CounterPort, "incrementCounter">,
+): Promise<GuardResult> {
+  const key = remoteHourKey(kind, userSub, bucketOf(nowMs, HOUR_MS));
+  const result = await state.incrementCounter(key, limit, HOUR_TTL_S);
+  if (result.allowed && withinLimit(result.count, limit)) return { allowed: true };
+  return { allowed: false, retryAfterS: retryAfterSeconds(nowMs, HOUR_MS) };
 }

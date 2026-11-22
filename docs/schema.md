@@ -13,7 +13,9 @@ Single source of truth for everything exchanged between the doll (`/device`), th
 > The `voice-conversation` design (`.kiro/specs/voice-conversation/design.md`, rows S1 to S21)
 > added the conversation events, commands, states, the "Voice session channels" section and the
 > `/conversations` routes; `v` stays 1 because every change adds a type, an optional field or an
-> enumeration value. From now on, change this file first and keep code and tests in all three parts in sync with it.
+> enumeration value. The `remote-actions` change (remote photo and typed speech from the dashboard) added optional
+fields, one `state.changed` reason and three HTTP routes; `v` stays 1. From now on, change this
+file first and keep code and tests in all three parts in sync with it.
 
 ## Transport
 AWS IoT Core, MQTT over TLS, QoS 1. `<id>` is the device id, for example `warashi-01`.
@@ -67,7 +69,7 @@ the current encounter.
 | `type` | `data` | Meaning |
 |---|---|---|
 | `presence.detected` | `{ "source": "pir" \| "sound" \| "manual" }` | A new encounter starts. |
-| `snapshot.captured` | `{ "snapshotId": string, "width": int, "height": int, "panDeg": number, "tiltDeg": number, "jpegBase64": string, "requestId": string \| null }` | A snapshot taken at the given head angles. Asks the cloud for a verdict. `requestId` is optional (default `null`) and set only when the snapshot answers a `snapshot.request` (S3). |
+| `snapshot.captured` | `{ "snapshotId": string, "width": int, "height": int, "panDeg": number, "tiltDeg": number, "jpegBase64": string, "requestId": string \| null, "purpose": "judge" \| "photo" }` | A snapshot taken at the given head angles. Asks the cloud for a verdict. `requestId` is optional (default `null`) and set only when the snapshot answers a `snapshot.request` (S3). `purpose` is optional (default `"judge"`); `"photo"` marks a snapshot that only has to be stored: the cloud does not search faces, sends no `judgement.result` and sends no notification (R1). |
 | `state.changed` | `{ "from": State, "to": State, "reason": Reason }` | State machine transition. `reason` is one of the values in "`state.changed` reasons" below. |
 | `reaction.performed` | `{ "kind": "family" \| "stranger" \| "uncertain", "lineId": string \| null, "offline": boolean }` | What the doll actually did. `offline` is true when it reacted without a verdict. |
 | `encounter.ended` | `{ "reason": "cooldown" \| "manual" \| "error" }` | The encounter is over. |
@@ -84,6 +86,8 @@ Changes from `voice-conversation` (S1 to S3):
   `requestId: string | null` (default `null`). It is set only for a snapshot that answers a
   `snapshot.request`. *Reason:* lets the `judge` Lambda store a result under the id that the
   session waits for.
+- **R1 `snapshot.captured.purpose`.** Optional, `"judge"` (default) or `"photo"`. *Reason:* a photo
+  that the family asked for must not be judged, notified or counted as a visitor.
 - **`ConversationEndReason`** is one of `silence`, `limit`, `stranger`, `user`, `manual`,
   `language`, `unsafe_output`, `error`, `no_client`, `offline`. *Reason:* one enumeration for the
   doll, the cloud and the dashboard.
@@ -139,6 +143,7 @@ Cloud receiver rules (added by `cloud-judgement`):
 | `error` | A snapshot failed, no voice line of the needed category was available, or the device restarted after an internal error. |
 | `conversation` | The doll entered `conversing` (S7). |
 | `conversation_done` | The doll left `conversing` after a normal end (S7). |
+| `photo_done` | A remote photo was taken and sent, so the doll goes back to rest (R2). |
 
 *Reason (S7):* the timeline can show why the doll entered or left a conversation.
 
@@ -158,6 +163,11 @@ The device sets `reason` by the **first row whose transition and cause both matc
 | `conversing` → `cooldown` | adapter failure | `error` |
 | `conversing` → `cooldown` | `conversing` deadline | `timeout` |
 | `sleeping` → `conversing` | `conversation.start` with `source: "manual"` | `conversation` |
+| `sleeping` → `waking` | `snapshot.request` with `purpose: "photo"` | `manual` |
+| `waking` → `cooldown` | cloud disconnected when leaving `waking` for a photo | `offline` |
+| `seeking` → `cooldown` | the photo snapshot was published | `photo_done` |
+| `seeking` → `cooldown` | `snapshot.failed` for the photo | `error` |
+| `seeking` → `cooldown` | photo snapshot deadline | `timeout` |
 | `greeting` → `conversing` | audio done with a pending conversation grant | `conversation` |
 | `waking` → `uncertain` | cloud disconnected when leaving `waking`, whatever the leaving cause | `offline` |
 | `waking` → `seeking` | `servo.arrived` and lantern fade-in elapsed | `arrived` |
@@ -172,6 +182,10 @@ The device sets `reason` by the **first row whose transition and cause both matc
 | `greeting`, `warning` or `uncertain` → `cooldown` | no voice line of the needed category | `error` |
 | `greeting`, `warning` or `uncertain` → `cooldown` | `audio.finished` or `audio.failed` | `audio_done` |
 | `greeting`, `warning` or `uncertain` → `cooldown` | audio deadline | `timeout` |
+
+*Reason (R2):* a remote photo is a short manual encounter: `sleeping` → `waking` → `seeking` →
+`cooldown` → `sleeping`, with `presence.detected` `source: "manual"`, no `judgement.result`, no
+reaction and no voice line. The `waking` → `seeking` rows of the table above also apply to it.
 
 *Reason (S8):* one reason per cause. The conversation rows sit after the `manual` row of the other
 states; the row for "any state other than `sleeping` → `sleeping`" is unchanged. A `stranger`
@@ -191,7 +205,7 @@ The device publishes `error.reported` only with these codes.
 | `wrong_device` | device, inbound check | `deviceId` differs from the device's own id | message `id` |
 | `speak_rejected` | device, state machine | `audioUrl` while the accepted verdict is not `family`, or a `lineId` whose category is not permitted for the current situation | command `id` |
 | `audio_busy` | device, state machine | `speak` while earlier audio is unfinished | command `id` |
-| `command_rejected_state` | device, state machine | `gaze` or `lantern` in `sleeping` or `cooldown`; `speak` during the silent stare before the stranger line | command `id` |
+| `command_rejected_state` | device, state machine | `gaze` or `lantern` in `sleeping` or `cooldown`; `speak` during the silent stare before the stranger line; `snapshot.request` with `purpose: "photo"` outside `sleeping` | command `id` |
 | `unknown_line` | device, state machine | `speak.lineId` is not a cached voice line | command `id` |
 | `voice_line_missing` | device, state machine | no cached voice line of the reaction's category | `null` |
 | `voice_line_invalid` | device, startup | a voice line was rejected, or the voice manifest is missing or invalid | `null` |
@@ -215,13 +229,13 @@ outstanding, and a `conversation.start` the doll cannot accept (S11).
 | `type` | `data` | Meaning |
 |---|---|---|
 | `judgement.result` | `{ "snapshotId": string, "verdict": "family" \| "stranger" \| "no_face" \| "uncertain", "confidence": number, "face": { "left": number, "top": number, "width": number, "height": number } \| null }` | Verdict for one snapshot. `confidence` and the face box are fractions 0..1 of the image. Never contains a name. |
-| `speak` | `{ "lineId": string \| null, "audioUrl": string \| null, "ja": string, "en": string }` | Say a line: exactly one of `lineId` (cached on the device) or `audioUrl` (short-lived HTTPS URL to a WAV file) is set. |
+| `speak` | `{ "lineId": string \| null, "audioUrl": string \| null, "ja": string, "en": string, "remote": boolean }` | Say a line: exactly one of `lineId` (cached on the device) or `audioUrl` (short-lived HTTPS URL to a WAV file) is set. `remote` is optional (default `false`); see "`speak.remote`" below. |
 | `gaze` | `{ "panDeg": number, "tiltDeg": number }` | Look in a direction. The device clamps to its calibrated limits and moves slowly. |
 | `lantern` | `{ "level": number, "fadeMs": int }` | Lantern brightness 0..1 with a fade time. |
 | `mode.set` | `{ "mode": "guard" \| "sleep" }` | `sleep` ignores presence until set back to `guard`. |
 | `conversation.start` | `{ "sessionId": string, "token": string, "maxSeconds": int, "silenceSeconds": int, "source": "family_verdict" \| "manual" }` | Start the doll's audio client for a voice session. `token` is a secret: the device never logs it and never publishes it. |
 | `conversation.end` | `{ "sessionId": string, "reason": ConversationEndReason }` | The cloud ends a session. Safe to receive twice and for an unknown session. |
-| `snapshot.request` | `{ "requestId": string }` | Take a snapshot for a voice session. Valid in `conversing` only; elsewhere the device answers `command_rejected_state`. The doll answers with a `snapshot.captured` that carries the same `requestId`. |
+| `snapshot.request` | `{ "requestId": string, "purpose": "look" \| "photo" }` | Take a snapshot. `purpose` is optional (default `"look"`). A `look` is valid in `conversing` only (voice session). A `photo` is valid in `sleeping` only: the doll wakes, takes one picture and goes back to rest (R2). Elsewhere the device answers `command_rejected_state`. The doll answers with a `snapshot.captured` that carries the same `requestId` (and `purpose: "photo"` for a photo). |
 
 Changes from `voice-conversation` (S4 to S6):
 
@@ -242,6 +256,13 @@ Notes on the command fields:
   accepted verdict is `family`, and otherwise rejects it with `speak_rejected`. A `speak` with
   both or neither of `lineId` and `audioUrl` set is malformed. *Reason:* bounds the download
   size and makes the privacy rule enforceable on the device.
+- **`speak.remote`.** Optional boolean, default `false`, honoured only together with `audioUrl`. When
+  `true`, the family typed this text on the dashboard; the device plays the WAV in any state except
+  `conversing`, without the `family` verdict check, and still enforces the size limit, the
+  download timeout and `audio_busy`. When `false`, the rule above applies unchanged. *Reason
+  (R3):* the owner wants to warn or greet through the doll while nobody is recognised. The text is
+  checked in the cloud (length, no threat word, no Latin letter, no emoji) before it is
+  synthesized.
 - **Out-of-range numbers.** The device clamps `lantern.level` to 0..1, `lantern.fadeMs` to
   0..10000 and the `judgement.result` face box fields to 0..1. `gaze` angles must be finite and
   are clamped to the calibrated limits. Finite numbers outside these ranges are valid, not
@@ -303,7 +324,7 @@ published on MQTT, never appear in envelopes, and are not part of the contract t
   toward larger image x (the doll's right); positive tilt looks up. Mounting direction is a
   device configuration concern (`pan_invert`, `tilt_invert`), not part of the contract.
 - **Privacy:** names never appear in `judgement.result`, `status.report` or any event. The
-  text of a `speak` command may contain a family nickname only when the verdict was `family`.
+  text of a `speak` command may contain a family nickname only when the verdict was `family`. A `remote` `speak` is typed by a family member, who is then responsible for what it says; the dashboard warns about this.
   The device discards `data` fields this document does not define. Voice transcripts and audio
   are never stored, and no tool result, prompt or frame contains a name (S14).
 - **Voice-line catalog:** the device's `voice/lines.toml` (ids, categories, `ja`, `en`) is the
@@ -416,6 +437,9 @@ above so the timeline and the simulation share one model.
 | `POST /faces/upload` | yes | no | |
 | `POST /faces` | yes | no | |
 | `DELETE /faces/{memberId}` | yes | no | |
+| `POST /photos` | yes | no | family only; asks the doll for one photo |
+| `GET /photos/{requestId}` | yes | no | family only |
+| `POST /say` | yes | no | family only; rate limited |
 | `POST /conversations` | yes | only when `reviewerVoiceEnabled` | reviewer: browser client and virtual target only; otherwise `403 forbidden` |
 | `GET /conversations/{sessionId}` | owner | owner | a non-owner gets `404 not_found` |
 | `DELETE /conversations/{sessionId}` | owner | owner | a non-owner gets `404 not_found` |
@@ -479,6 +503,28 @@ publishes nothing. An offline doll still gets one publish and `deviceOnline: fal
 never stored or replayed. A failed publish gives `500 internal` without a retry. *Reason:* the
 dashboard cannot make the doll move beyond what the hardware rules allow, and a late command
 never acts on a visit that has ended.
+
+`POST /photos` body `{ "deviceId": string }` → `202 { "requestId": uuid, "deviceOnline": boolean }` (R4).
+The cloud publishes `snapshot.request` with `purpose: "photo"` and the new `requestId` to
+`warashi/<deviceId>/commands` and stores nothing yet. An offline doll still gets one publish
+and `deviceOnline: false`. `deviceId` follows the rule of `POST /commands`. Over the hourly limit it
+gives `429 rate_limited`. `reviewer` gets `403 forbidden`.
+
+`GET /photos/{requestId}` → `{ "status": "pending" }` or
+`{ "status": "ready", "url": string, "expiresAt": ts }` (R5). `url` is a pre-signed GET valid for
+5 minutes; `ready` appears when the doll's `snapshot.captured` with `purpose: "photo"` and that
+`requestId` was stored. An id that was never asked for, or whose picture has expired, stays
+`pending` (the dashboard stops asking after a timeout). The picture expires with the other
+snapshots (a few days). `reviewer` gets `403 forbidden`; the response never carries a name.
+
+`POST /say` body `{ "deviceId": string, "text": string }` → `202 { "id": uuid, "deviceOnline": boolean }` (R6).
+`text` is 1 to 60 characters (code points) and at most three sentences, with no Latin letter, no
+emoji and no threat word; otherwise `400 validation_failed` and nothing is sent. The cloud
+synthesizes a 16 kHz mono 16-bit PCM WAV with Polly (Japanese), stores it under the expiring
+`audio/` prefix and publishes `speak` with `audioUrl` (5-minute URL), `remote: true`, `lineId: null`,
+`ja` set to the text and `en` set to the fixed subtitle `A message from the family.`; it never
+stores the text. Over the hourly limit it gives `429 rate_limited`; a failed synthesis gives
+`500 internal`. `reviewer` gets `403 forbidden`.
 
 `GET /faces` → `{ "members": [ { "memberId": uuid, "displayName": string, "createdAt": ts, "consentVersion": string, "faceCount": int } ] }`
 

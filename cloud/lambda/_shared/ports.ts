@@ -36,11 +36,30 @@ export interface FaceSearch {
 }
 
 export interface SnapshotStore {
-  put(key: string, jpeg: Uint8Array): Promise<void>;
+  /** `contentType` defaults to `image/jpeg`; the audio store passes `audio/wav`. */
+  put(key: string, bytes: Uint8Array, contentType?: string): Promise<void>;
   /** Pre-signed GET URL. Never log it in full. */
   signGet(key: string, ttlS: number): Promise<string>;
 }
 
+/** A remote photo that reached the cloud (`PHOTO#<requestId>`, remote-actions R5). */
+export interface PhotoRecord {
+  requestId: string;
+  deviceId: string;
+  /** S3 key under `snapshots/`, so the photo expires with the other snapshots. */
+  snapshotKey: string;
+  atMs: number;
+  /** DynamoDB TTL, epoch seconds. */
+  ttl: number;
+}
+/** Where the judge leaves a remote photo. */
+export interface PhotoStore {
+  putPhoto(photo: PhotoRecord): Promise<void>;
+}
+/** Where `GET /photos/{requestId}` finds it. Resolves `null` for an unknown id. */
+export interface PhotoReader {
+  getPhoto(requestId: string): Promise<PhotoRecord | null>;
+}
 export interface DeviceBus {
   /** Publish with QoS 1 to `warashi/<deviceId>/commands`. */
   publish(deviceId: string, envelope: Envelope): Promise<void>;

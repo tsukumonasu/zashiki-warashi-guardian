@@ -148,6 +148,7 @@ describe("version and type rules (R24.2 to R24.5)", () => {
         "en",
         "ja",
         "lineId",
+        "remote",
       ]);
     }
   });
@@ -311,7 +312,11 @@ describe("voice conversation types (R16.1, R16.3)", () => {
   };
 
   it("snapshot.captured requestId is optional and defaults to null", () => {
-    expect(dataOf(readFixture("snapshot.captured.json"))["requestId"]).toBeNull();
+    const plain = readFixture("snapshot.captured.json") as { data: Record<string, unknown> };
+    delete plain.data["requestId"];
+    delete plain.data["purpose"];
+    expect(dataOf(plain)["requestId"]).toBeNull();
+    expect(dataOf(plain)["purpose"]).toBeNull();
     const withId = withData("snapshot.captured.json", { requestId: "req-1" });
     expect(dataOf(withId)["requestId"]).toBe("req-1");
     const decoded = decode(withId);

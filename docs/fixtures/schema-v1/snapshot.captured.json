@@ -11,6 +11,8 @@
     "height": 480,
     "panDeg": 0.0,
     "tiltDeg": 0.0,
-    "jpegBase64": "/9j/4AAQSkZJRgABAQAAAQABAAD/2Q=="
+    "jpegBase64": "/9j/4AAQSkZJRgABAQAAAQABAAD/2Q==",
+    "requestId": "00000000-0000-4000-8000-000000000001",
+    "purpose": "photo"
   }
 }

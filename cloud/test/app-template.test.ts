@@ -113,6 +113,7 @@ const WILDCARD_RESOURCE_EXCEPTIONS: Array<{ role: RegExp; action: string; why: s
   { role: /^JudgeServiceRole/, action: "rekognition:DetectFaces", why: "DetectFaces has no resource type" },
   { role: /^ApiSimulateServiceRole/, action: "rekognition:DetectFaces", why: "DetectFaces has no resource type" },
   { role: /^ApiSimulateServiceRole/, action: "polly:SynthesizeSpeech", why: "the lexicon is the only resource type; none is used" },
+  { role: /^ApiSayServiceRole/, action: "polly:SynthesizeSpeech", why: "the lexicon is the only resource type; none is used" },
   { role: /^CustomCDKBucketDeployment/, action: "cloudfront:CreateInvalidation", why: "BucketDeployment construct emits `*`" },
   { role: /^CustomCDKBucketDeployment/, action: "cloudfront:GetInvalidation", why: "BucketDeployment construct emits `*`" },
 ];

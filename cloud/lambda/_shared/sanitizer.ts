@@ -74,19 +74,23 @@ function countSentences(text: string): number {
  * `blockedWords` entries are compared case-insensitively after Unicode normalization;
  * empty entries are ignored.
  */
-export function sanitizeLine(text: string, blockedWords: readonly string[]): string | null {
+export function sanitizeLine(
+  text: string,
+  blockedWords: readonly string[],
+  limits: { maxChars?: number; maxSentences?: number } = {},
+): string | null {
   if (typeof text !== "string") {
     return null;
   }
   const line = text.trim();
   const length = Array.from(line).length;
-  if (length < 1 || length > MAX_LINE_CHARS) {
+  if (length < 1 || length > (limits.maxChars ?? MAX_LINE_CHARS)) {
     return null;
   }
   if (LATIN_LETTER.test(line) || EMOJI.test(line)) {
     return null;
   }
-  if (countSentences(line) > MAX_SENTENCES) {
+  if (countSentences(line) > (limits.maxSentences ?? MAX_SENTENCES)) {
     return null;
   }
   const normalized = normalizeForMatch(line);

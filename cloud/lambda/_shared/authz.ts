@@ -16,6 +16,9 @@ export type RouteKey =
   | "GET /device/status"
   | "POST /simulate"
   | "POST /commands"
+  | "POST /photos"
+  | "GET /photos/{requestId}"
+  | "POST /say"
   | "GET /faces"
   | "POST /faces/upload"
   | "POST /faces"
@@ -33,6 +36,9 @@ const FAMILY_ROUTES: ReadonlySet<string> = new Set<RouteKey>([
   "GET /device/status",
   "POST /simulate",
   "POST /commands",
+  "POST /photos",
+  "GET /photos/{requestId}",
+  "POST /say",
   "GET /faces",
   "POST /faces/upload",
   "POST /faces",

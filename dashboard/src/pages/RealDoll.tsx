@@ -1,6 +1,7 @@
 import { ControlPanel } from "../components/ControlPanel";
 import { DevicePanel, type DevicePanelProps } from "../components/DevicePanel";
 import { InfoTip } from "../components/InfoTip";
+import { RemoteActions } from "../components/RemoteActions";
 import { TalkPanel } from "../components/TalkPanel";
 import { COPY } from "../content/copy";
 import { DEVICE_ID } from "../hooks/useDeviceStatus";
@@ -40,6 +41,7 @@ export function RealDollPage({ api, role, online, cloudAvailable, voice, deviceR
             <DevicePanel role={role} response={deviceResponse} />
             <ControlPanel api={api} role={role} deviceId={DEVICE_ID} />
           </fieldset>
+          {caps.controls && <RemoteActions api={api} deviceId={DEVICE_ID} />}
           {cloudAvailable && (
             <TalkPanel api={api} role={role} deviceId={DEVICE_ID} voice={voice} online={online} targets="real" />
           )}

@@ -83,6 +83,9 @@ describe("ApiStack", () => {
         "GET /device/status",
         "POST /simulate",
         "POST /commands",
+        "POST /photos",
+        "GET /photos/{requestId}",
+        "POST /say",
         "GET /faces",
         "POST /faces",
         "POST /faces/upload",
@@ -107,18 +110,18 @@ describe("ApiStack", () => {
     });
   });
 
-  it("creates five Lambdas on nodejs24.x, each with its own role and a 14-day log group (R20.7, R25.5)", () => {
+  it("creates six Lambdas on nodejs24.x, each with its own role and a 14-day log group (R20.7, R25.5)", () => {
     const fns = Object.values(template.findResources("AWS::Lambda::Function"));
-    expect(fns).toHaveLength(5);
+    expect(fns).toHaveLength(6);
     const roles = new Set<string>();
     for (const fn of fns) {
       const props = fn["Properties"] as { Runtime: string; Role: { "Fn::GetAtt": string[] } };
       expect(props.Runtime).toBe("nodejs24.x");
       roles.add(props.Role["Fn::GetAtt"][0]!);
     }
-    expect(roles.size).toBe(5);
+    expect(roles.size).toBe(6);
     const groups = Object.values(template.findResources("AWS::Logs::LogGroup"));
-    expect(groups).toHaveLength(5);
+    expect(groups).toHaveLength(6);
     for (const group of groups) expect((group["Properties"] as { RetentionInDays: number }).RetentionInDays).toBe(14);
   });
 

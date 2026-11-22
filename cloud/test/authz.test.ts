@@ -54,6 +54,9 @@ const ALL_ROUTES = [
   "GET /device/status",
   "POST /simulate",
   "POST /commands",
+  "POST /photos",
+  "GET /photos/{requestId}",
+  "POST /say",
   "GET /faces",
   "POST /faces/upload",
   "POST /faces",
@@ -64,6 +67,9 @@ const ALL_ROUTES = [
 ];
 const REVIEWER_DENIED = [
   "POST /commands",
+  "POST /photos",
+  "GET /photos/{requestId}",
+  "POST /say",
   "GET /faces",
   "POST /faces/upload",
   "POST /faces",
