@@ -4,11 +4,17 @@
  *   time by the `precacheListPlugin` in vite.config.ts; in dev it stays `["/"]`.
  * - After the page loads it posts the URLs it fetched (hashed build files); they are added too,
  *   because a worker installed during the first load does not see that load's requests.
- * - Same-origin GET of a cached file: cache first. `/config.json`: network first, cache fallback.
+ * - Page loads (`navigate`, `/`, `/index.html`): network first, cached `/` when offline. The
+ *   page names the hashed bundle of the current build, so a cache-first page would keep a
+ *   browser on an old build after every deployment.
+ * - Other same-origin GETs (hashed build files, fonts, audio): cache first.
+ *   `/config.json`: network first, cache fallback.
  * - Cross-origin requests (API, Cognito, S3) and non-GET requests are never touched.
  */
 const PRECACHE_URLS = /*__PRECACHE_LIST__*/ ["/"] /*__END_PRECACHE_LIST__*/;
-const CACHE_NAME = "warashi-dashboard-v1";
+// Bumped from v1, whose cache-first page pinned browsers to an old build; `activate` deletes it.
+const CACHE_NAME = "warashi-dashboard-v2";
+const SHELL_PATH = "/";
 const CONFIG_PATH = "/config.json";
 
 /** Returns the same-origin path (with search) of a URL, or null for anything else. */
@@ -85,17 +91,24 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(networkFirst(request));
     return;
   }
+  if (request.mode === "navigate" || url.pathname === SHELL_PATH || url.pathname === "/index.html") {
+    event.respondWith(networkFirst(request, SHELL_PATH));
+    return;
+  }
   event.respondWith(cacheFirst(request));
 });
 
-async function networkFirst(request) {
+/** Network first. A page is stored and served under `cacheKey` ("/"), because the hash router
+ * lives entirely on "/" and a navigation URL can carry a query string. */
+async function networkFirst(request, cacheKey) {
   const cache = await caches.open(CACHE_NAME);
+  const key = cacheKey ?? request;
   try {
     const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
+    if (response.ok) await cache.put(key, response.clone());
     return response;
   } catch (error) {
-    const cached = await cache.match(request);
+    const cached = await cache.match(key);
     if (cached) return cached;
     throw error;
   }
