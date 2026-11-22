@@ -1,13 +1,18 @@
 /**
  * Every fixed UI string of the dashboard, in one place (Requirement 18.5).
  *
- * The wording is copied from `.kiro/specs/dashboard-simulation/requirements.md`. UI copy is
- * English with Japanese accents; the doll's spoken lines live in the voice catalog, not here.
- * Pure data: no React, no side effects.
+ * The English wording is copied from `.kiro/specs/dashboard-simulation/requirements.md`. UI copy
+ * is English with Japanese accents; `copy.ja.ts` holds the Japanese translation that the header's
+ * language switch selects. The doll's spoken lines live in the voice catalog, not here.
+ *
+ * `COPY` is a live ES module binding to the current language, so components keep importing it and
+ * read the right text on their next render. `setLanguage` is the only writer; the App shell calls
+ * it and then re-renders. Text is always read at render time, never cached at module load.
  */
 import { INDICATOR_TEXT } from "../simulation/indicator";
+import { JA } from "./copy.ja";
 
-export const COPY = {
+export const EN = {
   landing: {
     titleKanji: "座敷童子",
     titleReading: "Zashiki-warashi",
@@ -207,7 +212,7 @@ export const COPY = {
 
   shell: {
     skipToContent: "Skip to content",
-    nav: { landing: "Home", house: "The house", timeline: "Timeline", family: "Family" },
+    nav: { landing: "Home", house: "The house", timeline: "Timeline", family: "Family", help: "Help" },
     mute: "Mute sound",
     unmute: "Sound on",
     soundOn: "Sound: on",
@@ -217,7 +222,94 @@ export const COPY = {
     offlineLive: "Offline: Live cloud needs a connection.",
     offlineFaces: "Offline: face changes need a connection.",
     errorBoundary: "The doll lost her thread. Reload to start again.",
+    languageToggle: "日本語",
+    languageToggleLabel: "Show the page in Japanese",
+  },
+
+  help: {
+    heading: "Help",
+    intro:
+      "A doll that guards the house: she wakes when someone comes near, lights her lantern and turns " +
+      "slowly to see who it is. Everything below works in this browser, without the real doll.",
+    sections: [
+      {
+        title: "Try it in two minutes",
+        items: [
+          "Choose Enter the house, then press one of the four buttons under Call a visitor.",
+          "Each button plays one visit: a family member, a stranger at night, something that moves with no one there, and a lost network.",
+          "Watch the State and Verdict labels change while the doll lights her lantern and turns her head.",
+          "Every spoken line shows Japanese text with an English subtitle. Use Mute sound in the header at any time.",
+        ],
+      },
+      {
+        title: "Sign in (optional)",
+        items: [
+          "Sign in adds the Live cloud switch: the same visits run through the real cloud (face search and speech).",
+          "The demo account is a guest in someone's home. It cannot move the real doll, manage faces or see real snapshots.",
+        ],
+      },
+      {
+        title: "Talk to the doll",
+        items: [
+          "Press Talk and allow the microphone when the browser asks.",
+          "Speak first, in Japanese. The doll waits quietly until you say something, for example 「こんにちは」.",
+          "Your voice goes to Amazon Bedrock in Tokyo and is not stored. Subtitles appear while you talk.",
+          "A conversation ends after a quiet moment or a time limit. There is a small number of conversations per day.",
+        ],
+      },
+      {
+        title: "Timeline and Family",
+        items: [
+          "Timeline lists the visits you simulated, and for signed-in users the visits of the real doll.",
+          "Family lets family members register their own faces with a consent notice, and delete them at any time.",
+        ],
+      },
+      {
+        title: "Privacy",
+        items: [
+          "The header always shows whether the real doll's camera or microphone is in use.",
+          "Snapshots stay in the owner's AWS account and expire within days. Names are never shown to strangers.",
+        ],
+      },
+      {
+        title: "Language",
+        items: ["The 日本語 button in the header switches to Japanese, and English switches back. Every page changes, including this one, and this browser remembers the choice."],
+      },
+    ],
   },
 } as const;
 
-export type Copy = typeof COPY;
+/** The shape both languages share: the English text widened to plain strings. */
+type Widen<T> = T extends string
+  ? string
+  : T extends (...args: infer A) => infer R
+    ? (...args: A) => R
+    : T extends readonly (infer U)[]
+      ? readonly Widen<U>[]
+      : { readonly [K in keyof T]: Widen<T[K]> };
+
+export type Copy = Widen<typeof EN>;
+
+export type Lang = "en" | "ja";
+export const LANGS: readonly Lang[] = ["en", "ja"];
+
+const COPIES: Readonly<Record<Lang, Copy>> = { en: EN, ja: JA };
+
+/** The current language's text. Read it at render time. */
+export let COPY: Copy = EN;
+let current: Lang = "en";
+
+/** Switches every later read of `COPY`. The caller re-renders. */
+export function setLanguage(lang: Lang): void {
+  current = lang;
+  COPY = COPIES[lang];
+}
+
+export function currentLanguage(): Lang {
+  return current;
+}
+
+/** The text of one language, for tests and for code that must not depend on the switch. */
+export function copyFor(lang: Lang): Copy {
+  return COPIES[lang];
+}

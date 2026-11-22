@@ -6,6 +6,9 @@
  * or the Privacy_Indicator (Requirements 8.3, 13.4, 19.5). The House page stays mounted on
  * every route (hidden when not shown) so a running scenario and the simulated Timeline survive
  * navigation.
+ *
+ * Language: the shell owns the choice (stored, else the browser language), calls `setLanguage`
+ * before rendering and re-renders on a switch, so every page reads `COPY` in the new language.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ControlPanel } from "./components/ControlPanel";
@@ -13,7 +16,8 @@ import { DevicePanel } from "./components/DevicePanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PrivacyIndicator } from "./components/PrivacyIndicator";
 import { TalkPanel } from "./components/TalkPanel";
-import { COPY } from "./content/copy";
+import { COPY, setLanguage, type Lang } from "./content/copy";
+import { browserLanguages, detectLanguage, readStoredLanguage, storeLanguage } from "./content/language";
 import { DEVICE_ID, useDeviceStatus } from "./hooks/useDeviceStatus";
 import { createApiClient, type ApiClient, type ApiResult, type VoiceInfo } from "./lib/api";
 import { createAudioPlayer } from "./lib/audio";
@@ -22,17 +26,29 @@ import { hrefFor, navigate, watchRoute, type Route } from "./lib/router";
 import { capabilities, type Role } from "./lib/roles";
 import { loadSettings, type Settings, type SettingsResult } from "./lib/settings";
 import { FamilyPage } from "./pages/Family";
+import { Help } from "./pages/Help";
 import { House } from "./pages/House";
 import { Landing } from "./pages/Landing";
 import { Timeline } from "./pages/Timeline";
 import type { SimEncounter } from "./simulation/types";
 
-const NAV: { route: Route; label: string }[] = [
-  { route: "/", label: COPY.shell.nav.landing },
-  { route: "/house", label: COPY.shell.nav.house },
-  { route: "/timeline", label: COPY.shell.nav.timeline },
-  { route: "/family", label: COPY.shell.nav.family },
-];
+/** Built at render time so the labels follow the language switch. */
+function navItems(): { route: Route; label: string }[] {
+  return [
+    { route: "/", label: COPY.shell.nav.landing },
+    { route: "/house", label: COPY.shell.nav.house },
+    { route: "/timeline", label: COPY.shell.nav.timeline },
+    { route: "/family", label: COPY.shell.nav.family },
+    { route: "/help", label: COPY.shell.nav.help },
+  ];
+}
+
+/** The language to start with. Also applies it, so the first render is already translated. */
+function initialLanguage(): Lang {
+  const lang = detectLanguage(readStoredLanguage(), browserLanguages());
+  setLanguage(lang);
+  return lang;
+}
 
 const API_METHODS = [
   "me",
@@ -87,6 +103,17 @@ function useOnline(): boolean {
 }
 
 export function App() {
+  const [lang, setLang] = useState<Lang>(initialLanguage);
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+  const toggleLanguage = (): void => {
+    const next: Lang = lang === "en" ? "ja" : "en";
+    setLanguage(next); // before the state change, so the re-render reads the new text
+    storeLanguage(next);
+    setLang(next);
+  };
+
   const [settingsResult, setSettingsResult] = useState<SettingsResult | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -226,7 +253,7 @@ export function App() {
           {COPY.roles[role]}
         </span>
         <nav aria-label="Pages" className="app-header__nav">
-          {NAV.map((item) => (
+          {navItems().map((item) => (
             <a
               key={item.route}
               href={hrefFor(item.route)}
@@ -237,6 +264,15 @@ export function App() {
           ))}
         </nav>
         <div className="app-header__tools">
+          <button
+            type="button"
+            className="button"
+            lang={lang === "en" ? "ja" : "en"}
+            aria-label={COPY.shell.languageToggleLabel}
+            onClick={toggleLanguage}
+          >
+            {COPY.shell.languageToggle}
+          </button>
           <button type="button" className="button" aria-pressed={muted} onClick={toggleMute}>
             {muted ? COPY.shell.unmute : COPY.shell.mute}
           </button>
@@ -310,6 +346,7 @@ export function App() {
               <FamilyPage key={sessionKey} api={api} role={role} online={online} />
             </main>
           )}
+          {route === "/help" && <Help />}
         </ErrorBoundary>
       </div>
     </div>

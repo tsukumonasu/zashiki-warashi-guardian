@@ -11,18 +11,22 @@ export interface LandingProps {
   onSignIn: (user: string, password: string) => Promise<{ ok: true } | { ok: false; error: SignInError }>;
 }
 
-const ERROR_TEXT: Record<SignInError, string> = {
-  failed: COPY.signIn.failed,
-  needs_setup: COPY.signIn.needsSetup,
-  offline: COPY.signIn.offline,
-};
+/** Read at call time, so the text follows the language switch. */
+function errorText(error: SignInError): string {
+  const map: Record<SignInError, string> = {
+    failed: COPY.signIn.failed,
+    needs_setup: COPY.signIn.needsSetup,
+    offline: COPY.signIn.offline,
+  };
+  return map[error];
+}
 
 /** First screen: legend, title, "Enter the house" and a separate "Sign in" (Requirement 1). */
 export function Landing({ onEnter, cloudAvailable, signedIn, onSignIn }: LandingProps) {
   const [showForm, setShowForm] = useState(false);
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SignInError | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(event: FormEvent): Promise<void> {
@@ -38,7 +42,7 @@ export function Landing({ onEnter, cloudAvailable, signedIn, onSignIn }: Landing
       setShowForm(false);
       setUser("");
     } else {
-      setError(ERROR_TEXT[result.error]);
+      setError(result.error);
     }
   }
 
@@ -96,7 +100,7 @@ export function Landing({ onEnter, cloudAvailable, signedIn, onSignIn }: Landing
           </label>
           {error !== null && (
             <p className="signin__error" role="alert">
-              {error}
+              {errorText(error)}
             </p>
           )}
           <div className="signin__buttons">

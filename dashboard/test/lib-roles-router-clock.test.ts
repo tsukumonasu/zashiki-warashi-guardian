@@ -54,6 +54,7 @@ describe("router", () => {
     expect(parseHash("#/house")).toBe("/house");
     expect(parseHash("#/timeline")).toBe("/timeline");
     expect(parseHash("#/family")).toBe("/family");
+    expect(parseHash("#/help")).toBe("/help");
     expect(parseHash("#/house/")).toBe("/house");
     expect(parseHash("#/house?x=1")).toBe("/house");
     expect(parseHash("#/nope")).toBe("/");

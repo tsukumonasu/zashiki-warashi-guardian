@@ -19,6 +19,9 @@ Scoped steering adds detail: `hardware.md` (the physical doll), `cloud.md`, `das
 - **Language.** Everything written to the repository — code, identifiers, comments, commit
   messages, specs, docs, UI copy — is in **English**. The doll's spoken lines are Japanese
   with English subtitles. In chat, answer the developer in **Japanese**.
+  Exception, requested by the owner: the dashboard UI also has a Japanese translation
+  (`dashboard/src/content/copy.ja.ts`), chosen with the header's language switch. English
+  (`copy.ts`) stays the source text, and every key exists in both.
 - **Contract first.** Change `docs/schema.md` before changing any message producer or
   consumer, then update all three parts and their tests in the same change.
 - **Pure core.** Decision logic — the device state machine, the cloud verdict logic, the

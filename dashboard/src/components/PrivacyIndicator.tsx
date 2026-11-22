@@ -1,3 +1,4 @@
+import { COPY } from "../content/copy";
 import { indicatorView, type StatusFetch } from "../simulation/indicator";
 
 export interface PrivacyIndicatorProps {
@@ -6,7 +7,8 @@ export interface PrivacyIndicatorProps {
 
 /**
  * Header indicator of the real doll's camera and microphone (Requirements 13.4 to 13.9).
- * Always shows a text label together with a symbol, never colour alone.
+ * Always shows a text label together with a symbol, never colour alone. The pure view decides
+ * what to show; the label comes from `COPY`, so it follows the language switch.
  */
 export function PrivacyIndicator({ statusFetch }: PrivacyIndicatorProps) {
   const view = indicatorView(statusFetch);
@@ -19,7 +21,7 @@ export function PrivacyIndicator({ statusFetch }: PrivacyIndicatorProps) {
             <span aria-hidden="true" className="privacy-symbol">
               {part === "Camera on" ? "◉" : "●"}
             </span>{" "}
-            {part}
+            {part === "Camera on" ? COPY.privacy.cameraOn : COPY.privacy.microphoneOn}
           </span>
         ))}
       </div>
@@ -32,7 +34,7 @@ export function PrivacyIndicator({ statusFetch }: PrivacyIndicatorProps) {
       <span aria-hidden="true" className="privacy-symbol">
         {symbol}
       </span>{" "}
-      {view.text}
+      {COPY.privacy[view.kind]}
     </div>
   );
 }

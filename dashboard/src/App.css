@@ -146,6 +146,15 @@ svg {
   min-width: 0;
 }
 
+/* Help */
+.help {
+  max-width: 44rem;
+  margin: var(--space-4) auto;
+  line-height: 1.7;
+}
+.help__section ul {
+  padding-left: 1.25rem;
+}
 /* Landing */
 .landing {
   max-width: 40rem;
