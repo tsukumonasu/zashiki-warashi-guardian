@@ -13,10 +13,20 @@ export interface UploadTicket {
 
 export type UploadResult = { readonly ok: true } | { readonly ok: false };
 
-/** Builds the multipart body: every pre-signed field, then `file` as the last entry. */
+/**
+ * Builds the multipart body: every pre-signed field, the `Content-Type` of the file, then
+ * `file` as the last entry.
+ *
+ * The cloud's POST policy requires a `Content-Type` form field (`starts-with "image/"`), but a
+ * pre-signed POST only returns the fields that are signed, so the browser must add this one
+ * itself. Without it S3 answers 403 "Policy Condition failed". The value comes from the file the
+ * user chose; a field that the ticket already carries is kept as it is.
+ */
 export function buildUploadForm(fields: Record<string, string>, file: Blob): FormData {
   const form = new FormData();
   for (const [name, value] of Object.entries(fields)) form.append(name, value);
+  const hasContentType = Object.keys(fields).some((name) => name.toLowerCase() === "content-type");
+  if (!hasContentType && file.type !== "") form.append("Content-Type", file.type);
   form.append("file", file);
   return form;
 }
