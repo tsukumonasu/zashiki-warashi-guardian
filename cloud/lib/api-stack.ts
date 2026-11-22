@@ -320,7 +320,13 @@ export class ApiStack extends Stack {
         resources: [props.bucket.arnForObjects("audio/say/*")],
       }),
     );
-    props.table.grantReadWriteData(say);
+    say.addToRolePolicy(
+      new iam.PolicyStatement({
+        // Device status read and the hourly counter only; no delete, no scan, no index.
+        actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+        resources: [props.table.tableArn],
+      }),
+    );
     this.apiSay = say;
 
     // ---- HTTP API: no corsPreflight here (WebStack sets it), JWT authorizer on every route ----
