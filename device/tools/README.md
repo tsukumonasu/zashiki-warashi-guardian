@@ -51,6 +51,17 @@ python3 warashi_check.py demo   # presence → lantern → turn → snapshot →
 - Photos (`check_*.jpg`, `demo_*.jpg`) are saved in the current directory and are
   git-ignored because they may show faces.
 
+## warashi_gaze.py: check calibration through the agent's own servo path
+```
+sudo systemctl stop warashi-agent
+python3 tools/warashi_gaze.py demo    # pan 0 -> +40 -> -40 -> 0, then tilt 0 -> +12 -> -12 -> 0
+python3 tools/warashi_gaze.py move    # type "<pan> <tilt>" in degrees from the calibrated center
+```
+Run it from `~/warashi/device`. Unlike the scripts above, it uses the agent's `ServoAdapter` and
+glide planner, so it **does** apply `config.toml`: center offsets, `pan_invert` / `tilt_invert`,
+the `pan_limit` / `tilt_limit` clamp, at most 2° per 30 ms, and detach after the move. It needs
+`motion_enabled = true`, otherwise the moves are only logged. Center the head by hand first: the
+first step jumps to the first commanded angle. Positive pan is the doll's right, positive tilt is up.
 ## check_cloud.py: cloud link check (no hardware needed)
 
 ```
@@ -72,9 +83,11 @@ It never prints the endpoint, file paths, key material or payloads. Its unit tes
   If they do nothing while the Pi runs, check that the pack has not come loose.
 - **USB ports.** AT-CSP1 in the Pi's `USB` port, power in `PWR`. Swapped, the audio device
   is invisible.
-- **Each servo jumps to 0° when the script creates it.** gpiozero's `AngularServo` defaults
-  to `initial_angle=0.0`, so the first move is not a slow glide, even in `warashi_calib.py`
-  (which detaches immediately afterwards). Center the head by hand before you start.
+- **The first move is a jump, not a glide.** The scripts create servos with
+  `initial_angle=None` (no pulse at creation), but a servo cannot report its position, so the
+  first command moves it to the target at full speed. Center the head by hand before you start;
+  `warashi_calib.py` asks you to confirm this and limits its first move to ±10°. It detaches
+  after every move.
 - **`warashi_test.py servo` tilts to ±30°,** beyond the default tilt limit of ±20° and at the
   hard maximum. Do not run it after assembly unless calibration showed ±30° is safe.
 - On Ctrl+C the scripts stop without sweeping back to center. `demo` mode switches the lantern off.

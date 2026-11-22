@@ -42,10 +42,16 @@ def main():
         max_angle=90,
         min_pulse_width=0.0005,
         max_pulse_width=0.0024,
+        # None = send no pulse until the first command. The default (0) makes the
+        # servo jump to 0 degrees at full speed the moment it is created.
+        initial_angle=None,
     )
-    s.detach()  # Do not move on startup — wait for the first input.
     cur = 0
-    print(f"{axis}: no movement yet.  Enter 0 first to check the doll is facing forward.")
+    print(f"{axis}: no movement yet.")
+    print("The first move jumps to the commanded angle at full speed, because the")
+    print("servo position cannot be read. Turn the head BY HAND to the centre first.")
+    input("Head is at the centre by hand? Press Enter to continue (Ctrl+C to abort) ")
+    first_move = True
     print("WARNING: if this is a 360° continuous-rotation servo it will spin without stopping.")
     print("         This script is for 180° positional servos only.")
     print("Enter an angle (e.g. 10, -10), c = record centre, q = quit")
@@ -65,7 +71,12 @@ def main():
             except ValueError:
                 print("Enter a number, c, or q")
                 continue
+            if first_move and abs(target) > 10:
+                print("First move: enter a value within +-10 degrees (it jumps, it does not glide).")
+                continue
+            first_move = False
             glide(s, cur, target)
+            s.detach()  # Relax after each move: no holding buzz, no vibration on the horn.
             cur = target
             if (
                 input("  Cable OK?  Record this angle as the travel limit? [y/n] ")

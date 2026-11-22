@@ -44,6 +44,7 @@ def make_servo(pin):
         max_angle=90,
         min_pulse_width=0.0005,
         max_pulse_width=0.0024,
+        initial_angle=None,  # no pulse (and no jump to 0 degrees) until the first command
     )
 
 
