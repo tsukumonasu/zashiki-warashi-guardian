@@ -10,10 +10,10 @@ export const JA: Copy = {
   landing: {
     titleKanji: "座敷童子",
     titleReading: "ざしきわらし",
-    titleTranslation: "家を守る子どもの精霊",
+    titleTranslation: "家を守る子どもの妖怪",
     // Exactly two sentences, like the English legend (Requirement 1.1).
     legend:
-      "岩手の古い農家には、座敷童子という子どもの精霊がいて、家を守り福をもたらすと言い伝えられています。" +
+      "岩手の古い農家には、座敷童子という子どもの妖怪がいて、家を守り福をもたらすと言い伝えられています。" +
       "この人形は誰かが近づくと目を覚まし、行灯をともし、ゆっくり振り向いて訪れた人を確かめます。",
     enter: "家に入る",
     signIn: "サインイン",
@@ -29,10 +29,10 @@ export const JA: Copy = {
   },
 
   verdicts: {
-    family: "家族",
-    stranger: "見知らぬ人",
+    family: "家の人",
+    stranger: "しらない人",
     no_face: "顔なし",
-    uncertain: "判定できず",
+    uncertain: "わからない",
     offline: "オフライン",
   },
 
@@ -55,9 +55,24 @@ export const JA: Copy = {
     },
   },
 
+  diary: {
+    comments: {
+      family: ["いえの ひとが かえってきた。おかえりって いえたよ。", "だいすきな ひとたちが もどってきて、ほっとした。"],
+      stranger: ["しらない ひとが いた。こわかった。", "しらない ひとが すぐそばに いた。ずっと みていたよ。"],
+      strangerNotified: [
+        "しらない ひとが いた。こわかったから、みんなに しらせたよ。",
+        "しらない ひとだった。ちゅうい してって つたえたよ。",
+      ],
+      no_face: ["だれか いた きがするけど、かおが みえなかった。", "かげが とおりすぎた。かおは みえなかった。"],
+      uncertain: ["だれだか よく わからなかった。ちょっと ふあん。", "よく みたけど、やっぱり わからなかった。"],
+      offline: ["おそとと つながらなくて、じぶんで きめたよ。", "しずかだった。ひとりで できる ことを したよ。"],
+      unknown: ["うとうと していて、よく おぼえて いない。", "ねむくて ぼんやり していたよ。"],
+    },
+  },
   timeline: {
-    simulatedHeading: "シミュレーションの訪問",
-    realHeading: "実際の訪問",
+    pageTitle: "今日の日記",
+    simulatedHeading: "ためしに みた ゆめ",
+    realHeading: "ほんとうの おきゃくさん",
     familyNotified: "家族に通知",
     familyNotifiedNote: "(シミュレーションです。実際には送信していません)",
     liveCloudLabel: "ライブクラウド",
@@ -120,7 +135,8 @@ export const JA: Copy = {
     delete: "削除",
     oneFace: "写真には顔がちょうど1つ写っている必要があります。",
     storedNote: "顔はあなたの AWS アカウントだけに保存され、いつでも削除できます。",
-    heading: "家族の顔",
+    heading: "家の人間たち",
+    pageTitle: "住人設定",
     noMembers: "まだ顔は登録されていません",
     loadFailed: "顔の一覧を読み込めませんでした",
     noticeOutOfDate: "この同意事項は古くなっています。ページを再読み込みしてください。",
@@ -207,7 +223,7 @@ export const JA: Copy = {
 
   shell: {
     skipToContent: "本文へ移動",
-    nav: { landing: "ホーム", house: "家", timeline: "記録", family: "家族", help: "ヘルプ" },
+    nav: { landing: "ホーム", house: "人形", timeline: "今日の日記", family: "住人設定", help: "ヘルプ" },
     mute: "音を消す",
     unmute: "音を出す",
     soundOn: "音: オン",
@@ -253,10 +269,10 @@ export const JA: Copy = {
         ],
       },
       {
-        title: "記録と家族",
+        title: "今日の日記と住人設定",
         items: [
-          "「記録」には、シミュレーションした訪問と、サインインしている場合は本物の人形の訪問が並びます。",
-          "「家族」では、家族が同意事項を読んだうえで自分の顔を登録でき、いつでも削除できます。",
+          "「今日の日記」には、ためしの訪問と、サインインしている場合は本物の人形の訪問が並びます。",
+          "「住人設定」では、家の人間が同意事項を読んだうえで自分の顔を登録でき、いつでも削除できます。",
         ],
       },
       {

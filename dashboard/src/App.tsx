@@ -36,7 +36,6 @@ import type { SimEncounter } from "./simulation/types";
 /** Built at render time so the labels follow the language switch. */
 function navItems(): { route: Route; label: string }[] {
   return [
-    { route: "/", label: COPY.shell.nav.landing },
     { route: "/house", label: COPY.shell.nav.house },
     { route: "/timeline", label: COPY.shell.nav.timeline },
     { route: "/family", label: COPY.shell.nav.family },

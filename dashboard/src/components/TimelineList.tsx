@@ -1,4 +1,5 @@
 import { COPY } from "../content/copy";
+import { diaryComment } from "../lib/diary";
 import type { Encounter, SimEncounter } from "../simulation/types";
 
 export type TimelineEntry = Encounter | SimEncounter;
@@ -63,6 +64,7 @@ export function TimelineList(props: TimelineListProps) {
                   </span>
                 ) : null}
               </button>
+              <p className="diary-note">{diaryComment(e)}</p>
             </li>
           ))}
         </ul>

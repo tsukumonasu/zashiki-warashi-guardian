@@ -102,6 +102,7 @@ export function FamilyPage({ api, role, upload = uploadToS3, online = true }: Fa
     const why = role === "visitor" ? COPY.locked.visitor : COPY.family.lockedFaces;
     return (
       <section className="family-page" aria-label={COPY.family.heading}>
+        <h1 className="page-title">{COPY.family.pageTitle}</h1>
         <h2>{COPY.family.heading}</h2>
         <Locked label={COPY.family.register} explanation={why} />
         <Locked label={COPY.family.delete} explanation={why} />
@@ -199,6 +200,7 @@ export function FamilyPage({ api, role, upload = uploadToS3, online = true }: Fa
 
   return (
     <section className="family-page" aria-label={COPY.family.heading}>
+      <h1 className="page-title">{COPY.family.pageTitle}</h1>
       <h2>{COPY.family.heading}</h2>
 
       {loadFailed ? (

@@ -114,6 +114,7 @@ export function Timeline({ api, role, illustrationBase, simulated }: TimelinePro
 
   return (
     <main className="timeline-page">
+      <h1 className="page-title">{COPY.timeline.pageTitle}</h1>
       <TimelineList
         heading={COPY.timeline.simulatedHeading}
         items={simulated}

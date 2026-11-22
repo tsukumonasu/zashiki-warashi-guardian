@@ -61,8 +61,24 @@ export const EN = {
     },
   },
 
+  diary: {
+    // The doll's own notes about a visit. Same count per kind in every language.
+    comments: {
+      family: ["Someone from the house came home. I said welcome back.", "The people I love were back. I felt calm."],
+      stranger: ["A stranger was here. I was scared.", "Someone I did not know stood close by. I kept watching."],
+      strangerNotified: [
+        "A stranger was here. I was scared, so I told everyone.",
+        "I did not know that person. I warned the house.",
+      ],
+      no_face: ["I think someone was there, but I could not see a face.", "A shadow passed by. No face at all."],
+      uncertain: ["I could not tell who it was. I felt a little uneasy.", "I looked and looked, and still was not sure."],
+      offline: ["I could not reach outside, so I decided by myself.", "It was quiet out there. I did what I could alone."],
+      unknown: ["I was drowsy and do not remember much.", "I was half asleep. It is all a blur."],
+    },
+  },
   timeline: {
-    simulatedHeading: "Simulated visits",
+    pageTitle: "Today's diary",
+    simulatedHeading: "Practice visits",
     realHeading: "Real visits",
     familyNotified: "Family notified",
     // Visible note so the label never claims a real notification (design D13).
@@ -127,7 +143,8 @@ export const EN = {
     delete: "Delete",
     oneFace: "The photo must show exactly one face.",
     storedNote: "Faces are stored only in your AWS account and can be deleted at any time.",
-    heading: "Family faces",
+    heading: "The people of the house",
+    pageTitle: "Residents",
     noMembers: "No faces registered yet",
     loadFailed: "The list of faces could not be loaded",
     noticeOutOfDate: "This consent notice is out of date. Reload the page.",
@@ -214,7 +231,7 @@ export const EN = {
 
   shell: {
     skipToContent: "Skip to content",
-    nav: { landing: "Home", house: "The house", timeline: "Timeline", family: "Family", help: "Help" },
+    nav: { landing: "Home", house: "Doll", timeline: "Today's diary", family: "Residents", help: "Help" },
     mute: "Mute sound",
     unmute: "Sound on",
     soundOn: "Sound: on",
@@ -260,10 +277,10 @@ export const EN = {
         ],
       },
       {
-        title: "Timeline and Family",
+        title: "Today's diary and Residents",
         items: [
-          "Timeline lists the visits you simulated, and for signed-in users the visits of the real doll.",
-          "Family lets family members register their own faces with a consent notice, and delete them at any time.",
+          "Today's diary lists the visits you simulated, and for signed-in users the visits of the real doll.",
+          "Residents lets family members register their own faces with a consent notice, and delete them at any time.",
         ],
       },
       {
