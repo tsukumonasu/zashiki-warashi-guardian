@@ -113,7 +113,8 @@ export function House({
         {showLiveSwitch && (
           <section className="live-panel" aria-labelledby="live-heading">
             <h2 id="live-heading" className="scenario-panel__heading">
-              {COPY.live.switchLabel}
+              {COPY.live.heading}
+              <InfoTip text={COPY.live.tip} />
             </h2>
             <label className="live-panel__row">
               <input
@@ -125,6 +126,12 @@ export function House({
               />{" "}
               {COPY.live.switchLabel}
             </label>
+            <p className="live-panel__intro">{COPY.live.abilitiesIntro}</p>
+            <ul className="live-panel__abilities">
+              {COPY.live.abilities.map((text) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
             {!online && <p className="live-panel__offline">{COPY.shell.offlineLive}</p>}
             {live.enabled && online && (
               <label className="live-panel__row">

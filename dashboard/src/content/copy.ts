@@ -104,7 +104,7 @@ export const EN = {
     familyNotified: "Family notified",
     // Visible note so the label never claims a real notification (design D13).
     familyNotifiedNote: "(simulated, nothing was sent)",
-    liveCloudLabel: "Live cloud",
+    liveCloudLabel: "Extra features",
     showOlder: "Show older",
     snapshotExpired: "Snapshot expired",
     empty: "No visits yet",
@@ -123,7 +123,15 @@ export const EN = {
   },
 
   live: {
-    switchLabel: "Live cloud",
+    heading: "Extra features",
+    switchLabel: "Use the extra features",
+    abilitiesIntro: "What you can do with them:",
+    abilities: [
+      "Check faces with the real cloud (face search) instead of the bundled samples.",
+      "Have the doll's voice made by real speech synthesis, and ask for a brand-new line.",
+      "It runs the same visits the real doll would get. The real doll does not move.",
+    ],
+    tip: "Signed-in users only. The scenarios above run through the real cloud instead of the samples in your browser. It uses the cloud, so it is limited to a few runs per hour.",
     generateLabel: "Generate a new line",
     networkDown: "No cloud call: the network is down",
     rateLimited: (seconds: number): string => `The cloud needs a rest. Try again in ${seconds} seconds.`,
@@ -254,14 +262,14 @@ export const EN = {
   shell: {
     infoLabel: "What is this?",
     skipToContent: "Skip to content",
-    nav: { landing: "Home", house: "Web simulation", doll: "Real doll", timeline: "Today's diary", family: "Residents", help: "Help" },
+    nav: { landing: "Home", house: "Web simulation", doll: "Remote control", timeline: "Today's diary", family: "Residents", help: "Help" },
     mute: "Mute sound",
     unmute: "Sound on",
     soundOn: "Sound: on",
     soundMuted: "Sound: muted",
     realDollHeading: "The real doll",
     offlineBanner: "Offline: the simulation still works",
-    offlineLive: "Offline: Live cloud needs a connection.",
+    offlineLive: "Offline: the extra features need a connection.",
     offlineFaces: "Offline: face changes need a connection.",
     errorBoundary: "The doll lost her thread. Reload to start again.",
     languageToggle: "日本語",
@@ -286,7 +294,7 @@ export const EN = {
       {
         title: "Sign in (optional)",
         items: [
-          "Sign in adds the Live cloud switch: the same visits run through the real cloud (face search and speech).",
+          "Sign in adds the Extra features switch: the same visits run through the real cloud (face search and speech).",
           "The demo account is a guest in someone's home. It cannot move the real doll, manage faces or see real snapshots.",
         ],
       },

@@ -94,7 +94,7 @@ export const JA: Copy = {
     columns: { time: "時刻", verdict: "判定", diary: "日記", notes: "備考" },
     familyNotified: "家族に通知",
     familyNotifiedNote: "(シミュレーションです。実際には送信していません)",
-    liveCloudLabel: "ライブクラウド",
+    liveCloudLabel: "追加機能",
     showOlder: "古い訪問を表示",
     snapshotExpired: "スナップショットは期限切れです",
     empty: "まだ訪問はありません",
@@ -113,7 +113,15 @@ export const JA: Copy = {
   },
 
   live: {
-    switchLabel: "ライブクラウド",
+    heading: "追加機能",
+    switchLabel: "追加機能を使う",
+    abilitiesIntro: "できること:",
+    abilities: [
+      "顔の判定を、サンプルではなく本物のクラウド(顔の検索)で行います。",
+      "人形の声を、本物の音声合成で作ります。新しいセリフも頼めます。",
+      "本物の人形が受け取るのと同じ訪問を処理します。本物の人形は動きません。",
+    ],
+    tip: "サインインした人だけが使えます。上のシナリオを、ブラウザ内のサンプルではなく本物のクラウドで動かします。クラウドを使うため、1時間あたりの回数に上限があります。",
     generateLabel: "新しいセリフを生成する",
     networkDown: "クラウドを呼んでいません: ネットワークが切れています",
     rateLimited: (seconds: number): string => `クラウドは休憩中です。${seconds} 秒後にもう一度お試しください。`,
@@ -244,14 +252,14 @@ export const JA: Copy = {
   shell: {
     infoLabel: "これは何?",
     skipToContent: "本文へ移動",
-    nav: { landing: "ホーム", house: "WEBシミュレーション", doll: "本物の人形", timeline: "今日の日記", family: "住人設定", help: "ヘルプ" },
+    nav: { landing: "ホーム", house: "WEBシミュレーション", doll: "遠隔操作", timeline: "今日の日記", family: "住人設定", help: "ヘルプ" },
     mute: "音を消す",
     unmute: "音を出す",
     soundOn: "音: オン",
     soundMuted: "音: オフ",
     realDollHeading: "本物の人形",
     offlineBanner: "オフラインです。シミュレーションはそのまま使えます",
-    offlineLive: "オフラインです。ライブクラウドにはネットワーク接続が必要です。",
+    offlineLive: "オフラインです。追加機能にはネットワーク接続が必要です。",
     offlineFaces: "オフラインです。顔の変更にはネットワーク接続が必要です。",
     errorBoundary: "人形が迷子になりました。再読み込みして、はじめからやり直してください。",
     languageToggle: "English",
@@ -276,7 +284,7 @@ export const JA: Copy = {
       {
         title: "サインイン(任意)",
         items: [
-          "サインインすると「ライブクラウド」のスイッチが使えます。同じ訪問を本物のクラウド(顔の検索と音声合成)で実行します。",
+          "サインインすると「追加機能」のスイッチが使えます。同じ訪問を本物のクラウド(顔の検索と音声合成)で実行します。",
           "デモ用アカウントは、誰かの家に招かれたゲストです。本物の人形を動かすこと、顔の管理、実際のスナップショットの閲覧はできません。",
         ],
       },
