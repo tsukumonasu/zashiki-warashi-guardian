@@ -723,6 +723,7 @@ values outside the range are valid, as for other numbers). The cloud tool comman
 | S18 | `GET /me` gains `voice: { "enabled": boolean, "maxSeconds": int, "remainingToday": int }`. | The dashboard can disable the button with a reason. |
 | S19 | New error codes: `session_active` (409, a session already uses this doll or this virtual doll) and `voice_unavailable` (503, kill switch or a failed start). A daily cap gives the existing `429 rate_limited` with `Retry-After` set to the seconds until the next UTC midnight (1 to 86,400). | Distinct codes for distinct causes. |
 | S20 | The error code list test and the route table test include the new entries. | Keeps the drift check. |
+| S21 | "Voice session channels": a second `hello` counts as the first, and the first `in` `audio` frame before any `hello` counts as the `hello` (that frame is dropped). No field changes. Found during the first deployment: the browser's `hello` was published before the session Lambda had subscribed, and the session never opened. | AppSync Events keeps no messages for a subscriber that is not connected yet. |
 
 ### Fixtures
 

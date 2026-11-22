@@ -174,9 +174,18 @@ describe("VoiceStack", () => {
 
   it("scopes voice-session to the one API, the command topics and its table (R4.8)", () => {
     const statements = byFunction["VoiceSession"] ?? [];
-    const appsync = statements.find((s) => actionsOf(s).some((a) => a.startsWith("appsync:")))!;
-    expect(actionsOf(appsync).sort()).toEqual(["appsync:EventConnect", "appsync:EventPublish", "appsync:EventSubscribe"]);
-    expect(flatten(resourcesOf(appsync)[0])).toMatch(/:appsync:.*apis\/<ref>\/\*$/);
+    const appsync = statements.filter((s) => actionsOf(s).some((a) => a.startsWith("appsync:")));
+    expect(appsync.flatMap(actionsOf).sort()).toEqual([
+      "appsync:EventConnect",
+      "appsync:EventPublish",
+      "appsync:EventSubscribe",
+    ]);
+    // EventConnect is authorized on the API ARN itself; `apis/<id>/*` would not match it.
+    const connect = appsync.find((s) => actionsOf(s).includes("appsync:EventConnect"))!;
+    expect(actionsOf(connect)).toEqual(["appsync:EventConnect"]);
+    expect(flatten(resourcesOf(connect)[0])).toMatch(/:appsync:.*apis\/<ref>$/);
+    const data = appsync.find((s) => actionsOf(s).includes("appsync:EventPublish"))!;
+    expect(flatten(resourcesOf(data)[0])).toMatch(/:appsync:.*apis\/<ref>\/channelNamespace\/voice$/);
     const iot = statements.find((s) => actionsOf(s).includes("iot:Publish"))!;
     expect(flatten(resourcesOf(iot)[0])).toMatch(/:iot:.*:topic\/warashi\/\*\/commands$/);
   });

@@ -172,6 +172,27 @@ async function* outputEvents(
   }
 }
 
+/** Waits for the response of the stream call, then yields its output events. */
+async function* responseEvents(
+  response: Promise<{ body?: AsyncIterable<InvokeModelWithBidirectionalStreamOutput> }>,
+  endInput: () => void,
+): AsyncGenerator<SonicEvent> {
+  let body: AsyncIterable<InvokeModelWithBidirectionalStreamOutput> | undefined;
+  try {
+    body = (await response).body;
+  } catch (err) {
+    endInput();
+    yield { kind: "error", code: errorCode(err) };
+    return;
+  }
+  if (body === undefined) {
+    endInput();
+    yield { kind: "error", code: "no_output_stream" };
+    return;
+  }
+  yield* outputEvents(body);
+}
+
 export type SonicBedrock = Pick<BedrockRuntimeClient, "send">;
 
 let defaultClient: BedrockRuntimeClient | undefined;
@@ -193,21 +214,18 @@ export function createSonicClient(options: { client?: SonicBedrock } = {}): Soni
     async open(modelId: string): Promise<SonicStream> {
       const client = options.client ?? getDefaultClient();
       const input = makeInputQueue();
-      const response = await client.send(
-        new InvokeModelWithBidirectionalStreamCommand({ modelId, body: input.iterable }),
-      );
-      if (response.body === undefined) {
-        input.end();
-        throw new Error("Bedrock returned no output stream");
-      }
-      const body = response.body;
+      // Not awaited here: Bedrock answers only after it has read the first input events
+      // (`sessionStart`, ...), and the caller sends them after `open` returns. Awaiting the
+      // response first would wait forever. A failed call surfaces as an error event instead.
+      const response = client.send(new InvokeModelWithBidirectionalStreamCommand({ modelId, body: input.iterable }));
+      response.catch(() => undefined); // handled in `events()`; avoids an unhandled rejection
       let closed = false;
       return {
         async send(eventJson: string): Promise<void> {
           if (closed) throw new Error("Sonic stream is closed");
           input.push(eventJson);
         },
-        events: () => outputEvents(body),
+        events: () => responseEvents(response, () => input.end()),
         async close(): Promise<void> {
           closed = true;
           input.end();

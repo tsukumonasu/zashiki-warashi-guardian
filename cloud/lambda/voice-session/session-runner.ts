@@ -179,6 +179,8 @@ export async function runSession(payload: SessionPayload, deps: SessionDeps): Pr
   let toolContentCounter = 0;
   let outSeq = 0;
   let malformed = 0;
+  /** Counts for the `session_end` log: they show where a silent session stopped. Never content. */
+  const flow = { hello: 0, implicitHello: 0, audioIn: 0, audioToSonic: 0, sonicAudio: 0, userText: 0, assistantText: 0, live: false };
   let streamClosedFed = false;
 
   // Tool bookkeeping: tool use ids the model still waits for, and look results from the client.
@@ -494,12 +496,25 @@ export async function runSession(payload: SessionPayload, deps: SessionDeps): Pr
     const frame: InFrame = decoded.frame;
     switch (frame.t) {
       case "hello":
+        flow.hello += 1;
         await drive({ t: "hello" });
         return;
       case "audio":
         // Hot path: bypasses the reducer. Frames before the stream is ready are dropped.
+        flow.audioIn += 1;
+        if (!state.helloSeen && state.phase === "starting") {
+          // docs/schema.md "Hello" (S21): the client's `hello` was published before this session
+          // subscribed and is lost. Its audio shows that it is connected and subscribed.
+          // The frame still passes the reorder buffer below, so its `seq` leaves no gap; it is
+          // dropped there because the stream is not open yet.
+          flow.implicitHello += 1;
+          await drive({ t: "hello" });
+        }
         for (const chunk of reorder.push(frame.seq, frame.pcm)) {
-          if (streamReady) sendSonic([sonicAudioInput(ids, chunk.pcm)]);
+          if (streamReady) {
+            flow.audioToSonic += 1;
+            sendSonic([sonicAudioInput(ids, chunk.pcm)]);
+          }
         }
         return;
       case "look.result":
@@ -514,6 +529,7 @@ export async function runSession(payload: SessionPayload, deps: SessionDeps): Pr
   async function onSonic(ev: SonicEvent): Promise<void> {
     switch (ev.kind) {
       case "audio":
+        flow.sonicAudio += 1;
         outSeq += 1;
         publish("out", { t: "audio", seq: outSeq, pcm: ev.pcmBase64 });
         await drive({ t: "activity" });
@@ -535,6 +551,8 @@ export async function runSession(payload: SessionPayload, deps: SessionDeps): Pr
         return;
       }
       case "text": {
+        if (ev.role === "USER") flow.userText += 1;
+        else flow.assistantText += 1;
         if (ev.role === "USER") {
           publish("text", { t: "transcript", role: "user", text: ev.text, final: ev.stage !== "SPECULATIVE" });
           await drive({ t: "activity" });
@@ -589,6 +607,7 @@ export async function runSession(payload: SessionPayload, deps: SessionDeps): Pr
         if (state.phase === "starting") {
           await drive({ t: "streamOpened" });
           streamReady = currentPhase() === "live";
+          if (streamReady) flow.live = true;
         }
         return;
       case "openFailed":
@@ -654,6 +673,6 @@ export async function runSession(payload: SessionPayload, deps: SessionDeps): Pr
       logVoice("channel_close_failed", sessionId, { error: errorName(err) });
     }
     const reason: EndReason | null = state.endReason;
-    logVoice("session_end", sessionId, { reason, missedAudioFrames: reorder.missed(), malformed });
+    logVoice("session_end", sessionId, { reason, missedAudioFrames: reorder.missed(), malformed, ...flow });
   }
 }

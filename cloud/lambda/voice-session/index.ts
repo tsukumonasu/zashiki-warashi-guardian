@@ -36,15 +36,21 @@ function requiredEnv(name: string): string {
   return value;
 }
 
-function buildDeps(): SessionDeps {
+const channelOptions = {
+  httpHost: requiredEnv("WARASHI_VOICE_HTTP_HOST"),
+  realtimeHost: requiredEnv("WARASHI_VOICE_REALTIME_HOST"),
+  region: requiredEnv("AWS_REGION"),
+};
+
+/**
+ * Everything except the channel lives for the container. The channel is created per session:
+ * `runSession` closes it at the end, and a closed channel rejects every publish, so a shared one
+ * would break the next session that a warm container runs.
+ */
+function buildDeps(): Omit<SessionDeps, "channel"> {
   return {
     cfg: loadVoiceConfig(process.env),
     sonic: createSonicClient(),
-    channel: createAppSyncChannel({
-      httpHost: requiredEnv("WARASHI_VOICE_HTTP_HOST"),
-      realtimeHost: requiredEnv("WARASHI_VOICE_REALTIME_HOST"),
-      region: requiredEnv("AWS_REGION"),
-    }),
     store: createVoiceStore(),
     bus: createDollBus(),
     now: Date.now,
@@ -79,7 +85,7 @@ export async function handler(event: unknown): Promise<void> {
   }
   logVoice("voice_session_begin", payload.sessionId, { client: payload.client, target: payload.target });
   try {
-    await runSession(payload, deps);
+    await runSession(payload, { ...deps, channel: createAppSyncChannel(channelOptions) });
   } catch (err) {
     // `runSession` cleans up before it rethrows; here only the error name is logged.
     logVoice("voice_session_failed", payload.sessionId, { error: err instanceof Error ? err.name : "unknown" });

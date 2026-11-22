@@ -528,4 +528,37 @@ describe("sonic", () => {
     await stream.close();
     await expect(stream.send("{}")).rejects.toThrow("closed");
   });
+
+  it("returns from open before Bedrock answers, so the first input events can be sent (no deadlock)", async () => {
+    // Like the real service: the response arrives only after the first input event was read.
+    let firstInput: string | null = null;
+    const client = {
+      async send(command: InvokeModelWithBidirectionalStreamCommand) {
+        const body = command.input.body as AsyncIterable<{ chunk?: { bytes?: Uint8Array } }>;
+        for await (const part of body) {
+          firstInput = new TextDecoder().decode(part.chunk?.bytes);
+          break;
+        }
+        async function* out() {
+          yield { chunk: { bytes: new TextEncoder().encode('{"event":{"completionEnd":{}}}') } };
+        }
+        return { body: out() };
+      },
+    };
+    const stream = await createSonicClient({ client: client as never }).open("model-x");
+    await stream.send('{"event":{"sessionStart":{}}}');
+    const seen = [];
+    for await (const ev of stream.events()) seen.push(ev);
+    expect(firstInput).toBe('{"event":{"sessionStart":{}}}');
+    expect(seen).toEqual([{ kind: "completionEnd" }]);
+  });
+
+  it("reports a failed stream call as an error event", async () => {
+    const failure = Object.assign(new Error("denied"), { name: "AccessDeniedException" });
+    const client = { send: () => Promise.reject(failure) };
+    const stream = await createSonicClient({ client: client as never }).open("model-x");
+    const seen = [];
+    for await (const ev of stream.events()) seen.push(ev);
+    expect(seen).toEqual([{ kind: "error", code: "AccessDeniedException" }]);
+  });
 });

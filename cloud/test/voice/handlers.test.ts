@@ -380,6 +380,16 @@ describe("voice-session handler", () => {
     expect(holder.runSession.mock.calls[0]![0]).toEqual(payload());
   });
 
+  it("gives each session of a warm container its own channel", async () => {
+    // `runSession` closes its channel at the end; a shared one would reject every later publish.
+    const handler = await loadSession();
+    await handler(payload());
+    await handler(payload());
+    const [first, second] = holder.runSession.mock.calls.map((c) => (c[1] as { channel: unknown }).channel);
+    expect(first).toBeDefined();
+    expect(second).not.toBe(first);
+  });
+
   it.each([
     ["null", null],
     ["string", "x"],

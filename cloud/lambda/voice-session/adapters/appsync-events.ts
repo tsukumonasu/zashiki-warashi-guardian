@@ -20,6 +20,17 @@ import { SignatureV4 } from "@smithy/signature-v4";
 import type { AwsCredentialIdentity, AwsCredentialIdentityProvider } from "@smithy/types";
 import type { VoiceChannel } from "../../_shared/voice/ports.js";
 
+/**
+ * An error whose `name` tells the log reader which step failed (for example `AppSyncPublish403`).
+ * The session runner logs only `err.name`, so the name carries the reason. It never holds a body,
+ * a token or a frame.
+ */
+export function appSyncError(name: string, message: string): Error {
+  const err = new Error(message);
+  err.name = name;
+  return err;
+}
+
 /** Events per publish request, a service limit. */
 export const MAX_EVENTS_PER_PUBLISH = 5;
 /** At most 10 publish requests per second, so at least 100 ms between two request starts. */
@@ -206,11 +217,11 @@ export function createAppSyncChannel(options: AppSyncOptions): VoiceChannel {
     });
     if (!res.ok) {
       // The body may echo input, so only the status leaves this function.
-      throw new Error(`AppSync publish failed with status ${res.status}`);
+      throw appSyncError(`AppSyncPublish${res.status}`, `AppSync publish failed with status ${res.status}`);
     }
     const parsed = (await res.json().catch(() => null)) as { failed?: unknown[] } | null;
     if (parsed !== null && Array.isArray(parsed.failed) && parsed.failed.length > 0) {
-      throw new Error("AppSync rejected some events");
+      throw appSyncError("AppSyncPublishRejected", "AppSync rejected some events");
     }
   }
 
@@ -226,7 +237,7 @@ export function createAppSyncChannel(options: AppSyncOptions): VoiceChannel {
         const arm = (): void => {
           if (timer !== undefined) clearTimeout(timer);
           timer = setTimeout(() => {
-            queue.fail(new Error("AppSync connection timed out"));
+            queue.fail(appSyncError("AppSyncTimeout", "AppSync connection timed out"));
             ws?.close();
           }, timeoutMs);
         };
@@ -238,7 +249,7 @@ export function createAppSyncChannel(options: AppSyncOptions): VoiceChannel {
           arm();
           socket.addEventListener("open", () => socket.send(JSON.stringify({ type: "connection_init" })));
           socket.addEventListener("error", () => {
-            queue.fail(new Error("AppSync WebSocket error"));
+            queue.fail(appSyncError("AppSyncWebSocketError", "AppSync WebSocket error"));
           });
           socket.addEventListener("close", () => {
             if (timer !== undefined) clearTimeout(timer);
@@ -261,7 +272,7 @@ export function createAppSyncChannel(options: AppSyncOptions): VoiceChannel {
                 void signEventRequest(signOpts, JSON.stringify({ channel })).then(
                   (authorization) =>
                     socket.send(JSON.stringify({ type: "subscribe", id: subId, channel, authorization })),
-                  () => queue.fail(new Error("AppSync signing failed")),
+                  () => queue.fail(appSyncError("AppSyncSigningFailed", "AppSync signing failed")),
                 );
                 break;
               }
@@ -271,7 +282,9 @@ export function createAppSyncChannel(options: AppSyncOptions): VoiceChannel {
               case "connection_error":
               case "subscribe_error":
               case "error":
-                queue.fail(new Error(`AppSync ${String(msg["type"])}`));
+                queue.fail(
+                  appSyncError(`AppSync_${String(msg["type"])}`, `AppSync ${String(msg["type"])}`),
+                );
                 socket.close();
                 break;
               default:
@@ -279,7 +292,7 @@ export function createAppSyncChannel(options: AppSyncOptions): VoiceChannel {
             }
           });
         } catch {
-          queue.fail(new Error("AppSync connect failed"));
+          queue.fail(appSyncError("AppSyncConnectFailed", "AppSync connect failed"));
         }
       })();
       return queue.iterable;

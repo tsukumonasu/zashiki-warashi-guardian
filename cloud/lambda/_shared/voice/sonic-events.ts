@@ -29,6 +29,17 @@ export interface SonicToolSpec {
   };
 }
 
+/**
+ * The tool spec as Sonic reads it: `inputSchema.json` is the JSON schema **as a string**. An object
+ * there makes Bedrock reject the `promptStart` chunk with `ValidationException` ("Unable to parse
+ * input chunk"). Verified against the Nova Sonic tool-use page and a live call (design, "The
+ * model-facing tool specs").
+ */
+export function wireToolSpec(t: SonicToolSpec): { toolSpec: { name: string; description: string; inputSchema: { json: string } } } {
+  const { name, description, inputSchema } = t.toolSpec;
+  return { toolSpec: { name, description, inputSchema: { json: JSON.stringify(inputSchema.json) } } };
+}
+
 /** The settings of `VoiceConfig` that appear in Sonic events. */
 export type SonicVoiceSettings = Pick<VoiceConfig, "voiceModelId" | "voiceId">;
 
@@ -93,7 +104,7 @@ export function sonicStartEvents(p: SonicStart): readonly string[] {
         audioType: "SPEECH",
       },
       toolUseOutputConfiguration: { mediaType: "application/json" },
-      toolConfiguration: { tools: p.tools, toolChoice: { auto: {} } },
+      toolConfiguration: { tools: p.tools.map(wireToolSpec), toolChoice: { auto: {} } },
     }),
     ev("contentStart", {
       promptName: p.promptName,

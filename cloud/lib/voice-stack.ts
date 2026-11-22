@@ -159,7 +159,10 @@ export class VoiceStack extends Stack {
     this.eventApi.addChannelNamespace("VoiceNamespace", { channelNamespaceName: VOICE_NAMESPACE });
     this.httpHost = this.eventApi.httpDns;
     this.realtimeHost = this.eventApi.realtimeDns;
-    const apiResource = `arn:${this.partition}:appsync:${this.region}:${this.account}:apis/${this.eventApi.apiId}/*`;
+    // EventConnect is authorized on the API itself, which `apis/<id>/*` does not match; publish and
+    // subscribe are authorized on the channel namespace (AppSync Events guide, "AWS_IAM authorization").
+    const apiArn = `arn:${this.partition}:appsync:${this.region}:${this.account}:apis/${this.eventApi.apiId}`;
+    const namespaceArn = `${apiArn}/channelNamespace/${VOICE_NAMESPACE}`;
 
     // --- voice-session --------------------------------------------------------------------
     this.voiceSessionFunction = this.makeFunction("VoiceSession", "voice-session", {
@@ -184,8 +187,14 @@ export class VoiceStack extends Stack {
     );
     this.voiceSessionFunction.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ["appsync:EventConnect", "appsync:EventSubscribe", "appsync:EventPublish"],
-        resources: [apiResource],
+        actions: ["appsync:EventConnect"],
+        resources: [apiArn],
+      }),
+    );
+    this.voiceSessionFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["appsync:EventSubscribe", "appsync:EventPublish"],
+        resources: [namespaceArn],
       }),
     );
     this.voiceSessionFunction.addToRolePolicy(

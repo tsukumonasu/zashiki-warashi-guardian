@@ -471,6 +471,44 @@ describe("runSession frames", () => {
   });
 });
 
+describe("runSession hello (docs/schema.md, S21)", () => {
+  it("treats the first audio frame as hello when the hello was lost, then streams later audio", async () => {
+    const { store, channel, bus } = await setup();
+    const sonic = new FakeSonic({ endAfterScript: false });
+    // No hello: it was published before the session subscribed. The client streams audio anyway.
+    channel.injectIn(SESSION_ID, { t: "audio", seq: 0, pcm: "AAA=" });
+    const done = runSession(payload, {
+      cfg: { ...DEFAULT_VOICE_CONFIG, recheckSeconds: 0 },
+      sonic,
+      channel,
+      store,
+      bus,
+      now: () => 1_000_000,
+      newId: () => crypto.randomUUID(),
+      sleep: async () => {},
+      tickMs: 5,
+    });
+    await waitFor(() => sonic.openedModelIds.length === 1, "the Sonic stream to open");
+    await waitFor(
+      () => channel.frames(SESSION_ID, "text").some((f) => f["t"] === "state" && f["state"] === "live"),
+      "the live state",
+    );
+    channel.injectIn(SESSION_ID, { t: "audio", seq: 1, pcm: "AQA=" });
+    const audioSent = () =>
+      sonic.streams[0]!.sent
+        .map((e) => (JSON.parse(e) as { event: { audioInput?: { content: string } } }).event.audioInput?.content)
+        .filter((c): c is string => c !== undefined);
+    await waitFor(() => audioSent().includes("AQA="), "the second audio chunk");
+    channel.injectIn(SESSION_ID, { t: "bye", reason: "user" });
+    await done;
+
+    // The frame that stood in for hello is dropped: the stream was not open when it arrived.
+    expect(audioSent()).not.toContain("AAA=");
+    const ends = channel.frames(SESSION_ID, "text").filter((f) => f["t"] === "end");
+    expect(ends).toEqual([{ t: "end", reason: "user" }]);
+  });
+});
+
 describe("runSession doll notification and cleanup", () => {
   it("client device: conversation.end reaches the doll bus", async () => {
     const s = await startSession({ payload: { client: "device", target: "real", ownerSub: null } });

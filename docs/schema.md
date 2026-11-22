@@ -10,7 +10,7 @@ Single source of truth for everything exchanged between the doll (`/device`), th
 > rules and defined the HTTP API below. The `dashboard-simulation` design
 > (`.kiro/specs/dashboard-simulation/design.md`) added S1 (consent notice text location) and S2
 > (voice-line catalog source). No event or command field changed, so `v` stays 1.
-> The `voice-conversation` design (`.kiro/specs/voice-conversation/design.md`, rows S1 to S20)
+> The `voice-conversation` design (`.kiro/specs/voice-conversation/design.md`, rows S1 to S21)
 > added the conversation events, commands, states, the "Voice session channels" section and the
 > `/conversations` routes; `v` stays 1 because every change adds a type, an optional field or an
 > enumeration value. From now on, change this file first and keep code and tests in all three parts in sync with it.
@@ -363,6 +363,14 @@ after Base64, far below the 240 KB subscription limit. A frame is malformed when
 Base64, decodes to an odd number of bytes, or decodes to more than 12,800 bytes. A decoder never
 throws; it returns the frame or a malformed result. A transcript text, like every other frame
 field, never contains a name. *Reason:* bounds the input and keeps every receiver total.
+
+**Hello.** A client sends `hello` once, right after it subscribed. The session treats a second
+`hello` as the first, and it treats the first `in` `audio` frame that arrives before any `hello`
+as the `hello`; that audio frame itself is dropped, because the model stream is not open yet.
+*Reason (S21):* AppSync Events does not keep messages for a subscriber that is not connected yet,
+so a `hello` published before the session Lambda finished subscribing to `/voice/<sid>/in` is lost.
+Without this rule such a session waits until `noClientSeconds` while the client already streams
+audio. The rule needs no client change and covers the doll and the browser.
 
 ## HTTP API (dashboard ⇄ cloud)
 Defined by the `cloud-judgement` design. Encounter records reuse the envelope and the types

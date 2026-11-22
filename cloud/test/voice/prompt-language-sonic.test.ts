@@ -148,6 +148,11 @@ describe("Sonic event builders", () => {
     expect(ps.promptName).toBe("prompt-0001");
     expect(ps.audioOutputConfiguration).toMatchObject({ mediaType: "audio/lpcm", sampleRateHertz: 24000, channelCount: 1 });
     expect(ps.toolConfiguration.tools).toHaveLength(3);
+    // Sonic rejects an object here ("Unable to parse input chunk"): the schema travels as a string.
+    for (const t of ps.toolConfiguration.tools as unknown as { toolSpec: { inputSchema: { json: unknown } } }[]) {
+      expect(typeof t.toolSpec.inputSchema.json).toBe("string");
+      expect(JSON.parse(t.toolSpec.inputSchema.json as string)).toEqual({ type: "object", properties: {}, required: [] });
+    }
     expect(ev[2].event.contentStart).toMatchObject({ type: "TEXT", role: "SYSTEM", interactive: false });
     expect(ev[3].event.textInput.content).toBe("placeholder system prompt");
   });
