@@ -5,6 +5,14 @@ the cloud side as built by the `cloud-judgement` spec. Everything deploys to `ap
 
 ## Overview
 
+![Architecture overview with AWS icons](architecture.svg)
+
+The diagram above uses the official AWS icons. Its source is
+[`architecture.drawio`](architecture.drawio) (open it with draw.io Desktop or the VS Code extension
+`hediet.vscode-drawio`). After editing, export `architecture.svg` and `architecture.png` again and
+keep the Mermaid diagram below in sync. A Japanese version of this document is
+[`architecture.ja.md`](architecture.ja.md).
+
 ```mermaid
 graph TD
     subgraph Doll["Doll (Pi Zero W)"]
