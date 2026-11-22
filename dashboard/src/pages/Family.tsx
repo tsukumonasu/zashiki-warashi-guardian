@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { COPY } from "../content/copy";
+import { COPY, currentLanguage } from "../content/copy";
+import { noticeFor, noticesFromFiles } from "../content/consent";
 import { Locked } from "../components/Locked";
 import { capabilities, type Role } from "../lib/roles";
 import type { ApiClient, FaceMember } from "../lib/api";
 import { uploadToS3, type UploadResult, type UploadTicket } from "../lib/upload";
 import { canRegister, validateFaceFile } from "../simulation/faces";
 
-/** Consent notice texts bundled per version: `content/consent/<version>.md`. */
-const NOTICES: Record<string, string> = Object.fromEntries(
-  Object.entries(import.meta.glob("../content/consent/*.md", { query: "?raw", import: "default", eager: true })).map(
-    ([path, text]) => [path.replace(/^.*\/([^/]+)\.md$/, "$1"), String(text)],
+/**
+ * Consent notices bundled per version: `content/consent/<version>.md` (English source) and
+ * `<version>.<lang>.md` (translation of the same notice, same version).
+ */
+const NOTICES = noticesFromFiles(
+  Object.fromEntries(
+    Object.entries(import.meta.glob("../content/consent/*.md", { query: "?raw", import: "default", eager: true })).map(
+      ([path, text]) => [path, String(text)],
+    ),
   ),
 );
 
@@ -103,7 +109,8 @@ export function FamilyPage({ api, role, upload = uploadToS3, online = true }: Fa
     );
   }
 
-  const noticeText = noticeVersion === null ? undefined : NOTICES[noticeVersion];
+  // Shown in the current language; the version sent on registration is the same in every language.
+  const noticeText = noticeVersion === null ? undefined : noticeFor(NOTICES, noticeVersion, currentLanguage());
   const noticeMissing = noticeVersion !== null && noticeText === undefined;
   const ready = online && noticeText !== undefined && !busy && file !== null && canRegister(consent, name);
 

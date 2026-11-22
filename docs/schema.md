@@ -429,6 +429,12 @@ Each limit is an integer of at least 1. `voice.remainingToday` is an integer of 
 whenever this version changes. *Reason:* the version a family member accepts must match the text
 they were shown, and a cloud that expects a version the dashboard does not bundle would make every
 face registration fail with `409 consent_required`.
+A translation of a notice lives beside it as `<version>.<lang>.md` (today `ja`). It is the same
+notice in another language, so it carries the same version, and `consent.noticeVersion` is the
+same whichever language the family member read. The English `<version>.md` is the source and must
+exist; a translation without it is ignored, and a missing translation falls back to English.
+*Reason:* the dashboard has a Japanese UI, and a translated notice must never create a version the
+cloud does not know.
 
 `GET /samples` → `{ "samples": [ { "sampleId": string, "label": "family" | "stranger" | "no_face" | "uncertain" } ] }`.
 Labels are the expected outcome shown in the dashboard. They never contain names.
