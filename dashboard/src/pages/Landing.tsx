@@ -1,51 +1,14 @@
-import { useState, type FormEvent } from "react";
 import { COPY } from "../content/copy";
-import type { SignInError } from "../lib/auth";
 
 export interface LandingProps {
   /** Called inside the click handler, so it can unlock audio (Requirement 8.2). */
   onEnter: () => void;
-  /** False when `/config.json` failed: Sign in is hidden (Requirement 1.6). */
+  /** False when `/config.json` failed (Requirement 1.6). */
   cloudAvailable: boolean;
-  signedIn: boolean;
-  onSignIn: (user: string, password: string) => Promise<{ ok: true } | { ok: false; error: SignInError }>;
 }
 
-/** Read at call time, so the text follows the language switch. */
-function errorText(error: SignInError): string {
-  const map: Record<SignInError, string> = {
-    failed: COPY.signIn.failed,
-    needs_setup: COPY.signIn.needsSetup,
-    offline: COPY.signIn.offline,
-  };
-  return map[error];
-}
-
-/** First screen: legend, title, "Enter the house" and a separate "Sign in" (Requirement 1). */
-export function Landing({ onEnter, cloudAvailable, signedIn, onSignIn }: LandingProps) {
-  const [showForm, setShowForm] = useState(false);
-  const [user, setUser] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<SignInError | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function submit(event: FormEvent): Promise<void> {
-    event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    const result = await onSignIn(user, password);
-    setBusy(false);
-    // The password never stays in state after an attempt.
-    setPassword("");
-    if (result.ok) {
-      setShowForm(false);
-      setUser("");
-    } else {
-      setError(result.error);
-    }
-  }
-
+/** First screen: legend, title and "Enter the house". Signing in lives in the header. */
+export function Landing({ onEnter, cloudAvailable }: LandingProps) {
   return (
     <section className="landing">
       <h1 className="landing__title">
@@ -57,69 +20,14 @@ export function Landing({ onEnter, cloudAvailable, signedIn, onSignIn }: Landing
       </h1>
       <p className="landing__legend">{COPY.landing.legend}</p>
       <div className="landing__actions">
-        <button type="button" className="button button--primary" onClick={onEnter}>
+        <button type="button" className="button button--primary button--large" onClick={onEnter}>
           {COPY.landing.enter}
         </button>
-        {cloudAvailable && !signedIn && !showForm && (
-          <button type="button" className="button" onClick={() => setShowForm(true)}>
-            {COPY.landing.signIn}
-          </button>
-        )}
       </div>
       {!cloudAvailable && (
         <p className="landing__note" role="status">
           {COPY.landing.configUnavailable}
         </p>
-      )}
-      {cloudAvailable && !signedIn && showForm && (
-        <form className="signin" onSubmit={(e) => void submit(e)} aria-labelledby="signin-heading">
-          <h2 id="signin-heading">{COPY.signIn.heading}</h2>
-          <label>
-            {COPY.signIn.username}
-            <input
-              type="text"
-              name="username"
-              autoComplete="username"
-              autoCapitalize="none"
-              spellCheck={false}
-              required
-              value={user}
-              onChange={(e) => setUser(e.target.value)}
-            />
-          </label>
-          <label>
-            {COPY.signIn.password}
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
-          {error !== null && (
-            <p className="signin__error" role="alert">
-              {errorText(error)}
-            </p>
-          )}
-          <div className="signin__buttons">
-            <button type="submit" className="button button--primary" disabled={busy}>
-              {busy ? COPY.signIn.working : COPY.signIn.submit}
-            </button>
-            <button
-              type="button"
-              className="button"
-              onClick={() => {
-                setShowForm(false);
-                setError(null);
-                setPassword("");
-              }}
-            >
-              {COPY.signIn.cancel}
-            </button>
-          </div>
-        </form>
       )}
     </section>
   );

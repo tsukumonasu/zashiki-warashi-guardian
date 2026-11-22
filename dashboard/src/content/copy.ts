@@ -208,6 +208,8 @@ export const EN = {
     failed: "Sign-in failed. Check your username and password.",
     needsSetup: "This account needs setup. Ask the owner.",
     offline: "The sign-in service cannot be reached. Check your connection.",
+    checking: "Checking sign-in…",
+    signedInAs: "Signed in as",
   },
 
   shell: {

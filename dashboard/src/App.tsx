@@ -11,6 +11,7 @@
  * before rendering and re-renders on a switch, so every page reads `COPY` in the new language.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AccountMenu } from "./components/AccountMenu";
 import { ControlPanel } from "./components/ControlPanel";
 import { DevicePanel } from "./components/DevicePanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -87,6 +88,14 @@ function withAuthHandling(
   return wrapped as unknown as ApiClient;
 }
 
+/** The tab's own storage, or undefined when the browser blocks it. */
+function browserStorage(): Storage | undefined {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return undefined;
+  }
+}
 function useOnline(): boolean {
   const [online, setOnline] = useState(() => navigator.onLine);
   useEffect(() => {
@@ -153,6 +162,11 @@ export function App() {
             userPoolClientId: settings.userPoolClientId,
             fetch: (...args) => fetch(...args),
             now: () => Date.now(),
+            storage: browserStorage(),
+            setTimer: (fn, ms) => {
+              const id = window.setTimeout(fn, ms);
+              return () => window.clearTimeout(id);
+            },
           }),
     [settings],
   );
@@ -170,10 +184,14 @@ export function App() {
     if (session === null) return;
     return session.subscribe(() => {
       if (session.expiresAt() === null && roleRef.current !== "visitor" && !manualSignOut.current) {
-        setRole("visitor");
-        setVoice(null);
-        setSessionKey((k) => k + 1);
-        setNotice(COPY.roles.signedOutAgain);
+        // The access token ran out. Try the stored refresh token before giving up.
+        void session.restore().then((outcome) => {
+          if (outcome === "restored" || roleRef.current === "visitor") return;
+          setRole("visitor");
+          setVoice(null);
+          setSessionKey((k) => k + 1);
+          setNotice(COPY.roles.signedOutAgain);
+        });
       }
     });
   }, [session]);
@@ -217,7 +235,6 @@ export function App() {
       setNotice(null);
       setRole(me.value.role);
       setVoice(me.value.voice ?? null);
-      navigate("/house");
       return { ok: true };
     },
     [session, api],
@@ -227,8 +244,44 @@ export function App() {
     manualSignOut.current = true;
     discardSession(null);
     manualSignOut.current = false;
-    navigate("/");
   }, [discardSession]);
+
+  // After a reload, sign in again from the refresh token kept in this tab.
+  const [checking, setChecking] = useState(true);
+  useEffect(() => {
+    if (session === null) {
+      setChecking(settingsResult === null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const outcome = await session.restore();
+      if (outcome === "restored") {
+        const me = await api.me();
+        if (!cancelled && me.ok) {
+          setRole(me.value.role);
+          setVoice(me.value.voice ?? null);
+        }
+      }
+      if (!cancelled) setChecking(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // `api` is rebuilt with the session; restoring once per session is intended.
+  }, [session]);
+
+  // A sleeping tab can miss the refresh timer; check again when it becomes visible.
+  useEffect(() => {
+    if (session === null) return;
+    const onVisible = (): void => {
+      if (document.visibilityState !== "visible" || roleRef.current === "visitor") return;
+      const at = session.expiresAt();
+      if (at === null || at - Date.now() < 3 * 60_000) void session.restore();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [session]);
 
   const toggleMute = (): void => {
     player.setMuted(!player.muted);
@@ -249,9 +302,12 @@ export function App() {
         {COPY.shell.skipToContent}
       </a>
       <header className="app-header">
-        <span className="app-header__role" data-role={role}>
-          {COPY.roles[role]}
-        </span>
+        <a className="app-header__brand" href={hrefFor("/")} aria-label={COPY.landing.titleReading}>
+          <span lang="ja" className="app-header__mark" aria-hidden="true">
+            童
+          </span>
+          <span className="app-header__name">{COPY.landing.titleReading}</span>
+        </a>
         <nav aria-label="Pages" className="app-header__nav">
           {navItems().map((item) => (
             <a
@@ -277,11 +333,13 @@ export function App() {
             {muted ? COPY.shell.unmute : COPY.shell.mute}
           </button>
           <PrivacyIndicator statusFetch={deviceStatus.statusFetch} />
-          {role !== "visitor" && (
-            <button type="button" className="button" onClick={signOut}>
-              {COPY.roles.signOut}
-            </button>
-          )}
+          <AccountMenu
+            role={role}
+            cloudAvailable={cloudAvailable}
+            checking={checking}
+            onSignIn={signIn}
+            onSignOut={signOut}
+          />
         </div>
       </header>
 
@@ -304,12 +362,7 @@ export function App() {
       <div id="content" tabIndex={-1} className="app-content">
         <ErrorBoundary>
           {route === "/" && (
-            <Landing
-              onEnter={enterHouse}
-              cloudAvailable={cloudAvailable}
-              signedIn={role !== "visitor"}
-              onSignIn={signIn}
-            />
+            <Landing onEnter={enterHouse} cloudAvailable={cloudAvailable} />
           )}
           <div hidden={route !== "/house"}>
             <House
