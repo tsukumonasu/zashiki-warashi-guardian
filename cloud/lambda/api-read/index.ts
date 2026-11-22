@@ -25,6 +25,9 @@ import {
   type RouteResult,
 } from "../_shared/api-glue.js";
 import { loadConfig } from "../_shared/config.js";
+import { loadVoiceConfig } from "../_shared/voice/config.js";
+import { createHealthStore, createReadCounter } from "../voice-session/adapters/voice-dynamo.js";
+import { meVoice } from "../voice-start/voice-start-core.js";
 import {
   handleDeviceStatus,
   handleGetEncounter,
@@ -44,6 +47,15 @@ const base = {
   consentNoticeVersion: readConsentVersion(process.env),
 };
 
+// The `voice` block of `GET /me` (S18) reads the voice counters and the health flag. It uses the
+// same voice settings as `VoiceStack`, which `ApiStack` passes in through the environment.
+const voiceDeps = {
+  cfg: loadVoiceConfig(process.env),
+  health: createHealthStore(),
+  readCounter: createReadCounter(),
+  now: Date.now,
+};
+
 function readRequest({ request, role }: RouteContext): ReadRequest {
   return { role, query: request.query, pathParameters: request.pathParameters };
 }
@@ -61,7 +73,11 @@ export const handler = createApiHandler({
   allowedOrigin: readWebOrigin(process.env),
   now: Date.now,
   routes: {
-    "GET /me": json(handleMe),
+    "GET /me": async (context: RouteContext): Promise<RouteResult> => {
+      const me = handleMe(readRequest(context), deps(context));
+      const voice = await meVoice({ sub: context.userSub, role: context.role }, voiceDeps);
+      return ok({ ...me, voice });
+    },
     "GET /samples": json(handleSamples),
     "GET /encounters": json(handleListEncounters),
     "GET /encounters/{id}": json(handleGetEncounter),

@@ -71,6 +71,8 @@ export interface MeResponse {
   role: Role;
   consentNoticeVersion: string;
   limits: { simulatePerHour: number; generatePerHour: number };
+  /** Voice availability (S18). Added by the `api-read` handler, which reads the voice counters. */
+  voice?: { enabled: boolean; maxSeconds: number; remainingToday: number };
 }
 
 export interface SamplesResponse {

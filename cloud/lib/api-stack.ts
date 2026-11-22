@@ -30,6 +30,7 @@ import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type * as s3 from "aws-cdk-lib/aws-s3";
 import type { Construct } from "constructs";
+import { envName } from "../lambda/_shared/config.js";
 import { DEMO_COLLECTION_ID, HOUSEHOLD_COLLECTION_ID } from "./data-stack.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -68,6 +69,10 @@ export interface ApiStackProps extends StackProps {
   blockedWords?: string[];
   /** Extra `WARASHI_<SETTING>` tunables, merged into every function environment. */
   tunables?: Record<string, string>;
+  /** Voice kill switch, the same value as `VoiceStack`. `GET /me` reports it to the dashboard. */
+  voiceEnabled?: boolean;
+  /** Voice settings as given in context, the same as `VoiceStack`, so `GET /me` counts the same caps. */
+  voiceTunables?: Record<string, string | number | boolean>;
 }
 
 export class ApiStack extends Stack {
@@ -123,6 +128,11 @@ export class ApiStack extends Stack {
     this.userPoolClientId = this.userPoolClient.userPoolClientId;
 
     // ---- Lambda environment (names fixed by the design; never secrets) ----
+    const voiceEnv: Record<string, string> = {};
+    for (const [setting, value] of Object.entries(props.voiceTunables ?? {})) {
+      voiceEnv[envName(setting)] = String(value);
+    }
+    voiceEnv[envName("voiceEnabled")] = String(props.voiceEnabled ?? false);
     const baseEnv: Record<string, string> = {
       ...props.tunables,
       WARASHI_TABLE_NAME: props.table.tableName,
@@ -164,7 +174,7 @@ export class ApiStack extends Stack {
     // ---- api-read: table read, signer invoke, sample manifest. No snapshots/* ----
     const read = makeFunction("ApiRead", "api-read", {
       timeoutS: DEFAULT_TIMEOUT_S,
-      environment: { ...baseEnv, WARASHI_SIGNER_FUNCTION_NAME: signer.functionName },
+      environment: { ...baseEnv, ...voiceEnv, WARASHI_SIGNER_FUNCTION_NAME: signer.functionName },
       description: "GET /me, /samples, /encounters, /encounters/{id}, /device/status",
     });
     read.addToRolePolicy(
@@ -320,6 +330,12 @@ export class ApiStack extends Stack {
     stage.addPropertyOverride("RouteSettings", {
       "POST /simulate": { ThrottlingRateLimit: SIMULATE_RATE_LIMIT, ThrottlingBurstLimit: SIMULATE_BURST_LIMIT },
     });
+
+    // CloudFormation rejects RouteSettings for a route that does not exist yet, so the stage waits
+    // for every route of this API (found without relying on construct ids).
+    for (const child of this.httpApi.node.findAll()) {
+      if (child instanceof apigwv2.CfnRoute) stage.addDependency(child);
+    }
 
     this.apiUrl = this.httpApi.apiEndpoint;
     this.apiId = this.httpApi.apiId;

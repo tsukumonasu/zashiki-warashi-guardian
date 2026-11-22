@@ -332,7 +332,7 @@ async function settleValue<T>(read: () => Promise<T>, fallback: T): Promise<T> {
 }
 
 /** `503 voice_unavailable` for the kill switch and the health flag; otherwise `null`. */
-async function checkAvailable(deps: StartDeps, nowMs: number): Promise<HttpResult | null> {
+async function checkAvailable(deps: Pick<StartDeps, "cfg" | "health">, nowMs: number): Promise<HttpResult | null> {
   if (!deps.cfg.voiceEnabled) return fail("voice_unavailable", "Voice is unavailable.");
   let state: HealthState | null;
   try {
@@ -401,7 +401,10 @@ export interface MeVoice {
  * and a reviewer while `reviewerVoiceEnabled` is off. `remainingToday` is the smallest room left
  * over the user cap and the global cap. A failing read gives 0, which disables the button safely.
  */
-export async function meVoice(caller: Caller, deps: StartDeps): Promise<MeVoice> {
+export async function meVoice(
+  caller: Caller,
+  deps: Pick<StartDeps, "cfg" | "health" | "readCounter" | "now">,
+): Promise<MeVoice> {
   const { cfg } = deps;
   const nowMs = deps.now();
   const roleAllowed = caller.role !== "reviewer" || cfg.reviewerVoiceEnabled;

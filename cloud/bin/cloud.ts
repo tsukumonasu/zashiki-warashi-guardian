@@ -75,6 +75,8 @@ export function buildApp(app: App = new App()): App {
     iotDataEndpoint: judgement.iotEndpoint,
     householdCollectionId: data.householdCollectionId,
     demoCollectionId: data.demoCollectionId,
+    voiceEnabled: toBoolean(app.node.tryGetContext("voiceEnabled")),
+    voiceTunables: voiceTunableContext(app),
   });
 
   // VoiceStack reads the API and authorizer ids of ApiStack and adds the `/conversations` routes to
