@@ -97,11 +97,14 @@ export class WebStack extends Stack {
           override: true,
         },
         contentSecurityPolicy: {
-          // Snapshots and speech are pre-signed S3 URLs; sign-in calls Cognito directly.
+          // Snapshots and speech are pre-signed S3 URLs; sign-in calls Cognito directly. A face
+          // photo is uploaded from the browser with a pre-signed POST to the data bucket only, so
+          // `connect-src` names that one bucket host. `blob:` lets the page preview the chosen
+          // photo before the upload; the preview never leaves the browser.
           contentSecurityPolicy: [
             "default-src 'self'",
-            `connect-src 'self' ${props.apiUrl} https://cognito-idp.${this.region}.amazonaws.com https://${props.voiceHttpHost} wss://${props.voiceRealtimeHost}`,
-            "img-src 'self' data: https://*.amazonaws.com",
+            `connect-src 'self' ${props.apiUrl} https://cognito-idp.${this.region}.amazonaws.com https://${props.voiceHttpHost} wss://${props.voiceRealtimeHost} https://${props.dataBucketName}.s3.${this.region}.amazonaws.com`,
+            "img-src 'self' data: blob: https://*.amazonaws.com",
             "media-src 'self' https://*.amazonaws.com",
             "style-src 'self' 'unsafe-inline'",
             "frame-ancestors 'none'",
