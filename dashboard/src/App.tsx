@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccountMenu } from "./components/AccountMenu";
 import { ControlPanel } from "./components/ControlPanel";
 import { DevicePanel } from "./components/DevicePanel";
+import { InfoTip } from "./components/InfoTip";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PrivacyIndicator } from "./components/PrivacyIndicator";
 import { TalkPanel } from "./components/TalkPanel";
@@ -372,7 +373,10 @@ export function App() {
               onEncounters={setSimulated}
             />
             <section className="real-doll" aria-labelledby="real-doll-heading">
-              <h2 id="real-doll-heading">{COPY.shell.realDollHeading}</h2>
+              <h2 id="real-doll-heading">
+                {COPY.shell.realDollHeading}
+                <InfoTip text={COPY.tips.realDoll} />
+              </h2>
               <fieldset className="real-doll__group" disabled={!online}>
                 <DevicePanel role={role} response={deviceStatus.response} />
                 <ControlPanel api={api} role={role} deviceId={DEVICE_ID} />

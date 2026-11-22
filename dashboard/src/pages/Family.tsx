@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { COPY, currentLanguage } from "../content/copy";
 import { noticeFor, noticesFromFiles } from "../content/consent";
+import { InfoTip } from "../components/InfoTip";
 import { Locked } from "../components/Locked";
 import { capabilities, type Role } from "../lib/roles";
 import type { ApiClient, FaceMember } from "../lib/api";
@@ -201,27 +202,44 @@ export function FamilyPage({ api, role, upload = uploadToS3, online = true }: Fa
   return (
     <section className="family-page" aria-label={COPY.family.heading}>
       <h1 className="page-title">{COPY.family.pageTitle}</h1>
-      <h2>{COPY.family.heading}</h2>
-
+      <h2>
+        {COPY.family.heading}
+        <InfoTip text={COPY.tips.residents} />
+      </h2>
       {loadFailed ? (
         <p role="alert">{COPY.family.loadFailed}</p>
       ) : members !== null && members.length === 0 ? (
         <p>{COPY.family.noMembers}</p>
       ) : (
-        <ul className="face-list">
-          {(members ?? []).map((m) => (
-            <li key={m.memberId}>
-              <span className="face-name">{m.displayName}</span>{" "}
-              <span className="face-meta">
-                {m.faceCount} {m.faceCount === 1 ? "photo" : "photos"}, added {m.createdAt}
-              </span>{" "}
-              <button type="button" disabled={busy || !online} onClick={() => setDeleting(m)}>
-                {COPY.family.delete}
-                <span className="visually-hidden"> {m.displayName}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th scope="col">{COPY.family.columns.name}</th>
+                <th scope="col">{COPY.family.columns.photos}</th>
+                <th scope="col">{COPY.family.columns.added}</th>
+                <th scope="col">{COPY.family.columns.actions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(members ?? []).map((m) => (
+                <tr key={m.memberId}>
+                  <th scope="row" className="face-name">
+                    {m.displayName}
+                  </th>
+                  <td>{m.faceCount}</td>
+                  <td>{m.createdAt}</td>
+                  <td>
+                    <button type="button" className="button" disabled={busy || !online} onClick={() => setDeleting(m)}>
+                      {COPY.family.delete}
+                      <span className="visually-hidden"> {m.displayName}</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <form onSubmit={(e) => void onSubmit(e)}>

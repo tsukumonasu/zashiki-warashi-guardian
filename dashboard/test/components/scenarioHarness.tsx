@@ -154,9 +154,10 @@ export function renderScenarioHouse(overrides: Partial<HouseProps> = {}): Harnes
   };
 }
 
-/** Text of the entries (list items) of the simulated Timeline list. */
+/** Text of the entries (table rows) of the simulated Timeline list. */
 export function timelineItemTexts(list: HTMLElement): string[] {
   return within(list)
-    .queryAllByRole("listitem")
-    .map((li) => li.textContent ?? "");
+    .queryAllByRole("row")
+    .slice(1) // the header row
+    .map((row) => row.textContent ?? "");
 }

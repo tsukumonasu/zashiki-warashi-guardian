@@ -4,6 +4,7 @@
  * Where a scenario's plan comes from is a prop (`planSource`). The default builds plans from the
  * bundled sample responses, so the page works offline with no backend.
  */
+import { InfoTip } from "../components/InfoTip";
 import { useEffect, useState } from "react";
 import type { ApiClient } from "../lib/api";
 import { systemClock } from "../lib/clock";
@@ -91,7 +92,11 @@ export function House({
 
   return (
     <main className="house">
-      <h1 className="house__title">{COPY.house.heading}</h1>
+      <h1 className="house__title">
+        {COPY.house.heading}
+        <InfoTip text={COPY.tips.simulation} />
+      </h1>
+      <p className="house__intro">{COPY.house.intro}</p>
       <div className="house__layout">
         <div className="house__stage">
           <VirtualDoll view={dollViewFromSim(state)} reducedMotion={reducedMotion} />

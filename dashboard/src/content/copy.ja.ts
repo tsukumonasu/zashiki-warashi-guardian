@@ -15,7 +15,7 @@ export const JA: Copy = {
     legend:
       "岩手の古い農家には、座敷童子という子どもの妖怪がいて、家を守り福をもたらすと言い伝えられています。" +
       "この人形は誰かが近づくと目を覚まし、行灯をともし、ゆっくり振り向いて訪れた人を確かめます。",
-    enter: "家に入る",
+    enter: "WEBシミュレーションを体験する",
     signIn: "サインイン",
     configUnavailable: "現在、クラウドの機能は使えません",
   },
@@ -37,7 +37,9 @@ export const JA: Copy = {
   },
 
   house: {
-    heading: "家",
+    heading: "WEBシミュレーション",
+    intro:
+      "リアルの人形が手元にない方向けの、ブラウザ上のシミュレーション画面です。右のボタンで訪問者を呼ぶと、仮想の人形が本物と同じ流れで反応します。",
     scenariosHeading: "訪問者を呼ぶ",
     stateLabel: "状態",
     verdictLabel: "判定",
@@ -55,6 +57,16 @@ export const JA: Copy = {
     },
   },
 
+  tips: {
+    simulation: "ブラウザ上の仮想の人形です。本物の人形がなくても、訪問者への反応の流れを試せます。実際のカメラやマイクは使いません。",
+    realDoll: "お手元にある本物の人形の状態と操作です。家族としてサインインすると使えます。",
+    diary: "人形が見た訪問を、人形自身のひとことつきで並べた日記です。",
+    simulatedDiary: "WEBシミュレーションで試した訪問の記録です。この画面を閉じると消えます。",
+    realDiary: "本物の人形が出会った訪問の記録です。家族としてサインインすると見られます。",
+    residents: "人形が「家の人」と見分けるために、顔を登録します。登録は本人の同意が必要で、いつでも削除できます。",
+    verdict: "人形の判定です。家の人、しらない人、顔なし、わからない、オフラインのどれかです。",
+    state: "人形がいま何をしているかです。眠る、起きる、探す、見つめる、などがあります。",
+  },
   diary: {
     comments: {
       family: ["いえの ひとが かえってきた。おかえりって いえたよ。", "だいすきな ひとたちが もどってきて、ほっとした。"],
@@ -71,8 +83,9 @@ export const JA: Copy = {
   },
   timeline: {
     pageTitle: "今日の日記",
-    simulatedHeading: "ためしに みた ゆめ",
-    realHeading: "ほんとうの おきゃくさん",
+    simulatedHeading: "WEBシミュレーションの訪問",
+    realHeading: "本物の人形の訪問",
+    columns: { time: "時刻", verdict: "判定", diary: "日記", notes: "備考" },
     familyNotified: "家族に通知",
     familyNotifiedNote: "(シミュレーションです。実際には送信していません)",
     liveCloudLabel: "ライブクラウド",
@@ -137,6 +150,7 @@ export const JA: Copy = {
     storedNote: "顔はあなたの AWS アカウントだけに保存され、いつでも削除できます。",
     heading: "家の人間たち",
     pageTitle: "住人設定",
+    columns: { name: "名前", photos: "写真", added: "登録日", actions: "操作" },
     noMembers: "まだ顔は登録されていません",
     loadFailed: "顔の一覧を読み込めませんでした",
     noticeOutOfDate: "この同意事項は古くなっています。ページを再読み込みしてください。",
@@ -222,8 +236,9 @@ export const JA: Copy = {
   },
 
   shell: {
+    infoLabel: "これは何?",
     skipToContent: "本文へ移動",
-    nav: { landing: "ホーム", house: "人形", timeline: "今日の日記", family: "住人設定", help: "ヘルプ" },
+    nav: { landing: "ホーム", house: "WEBシミュレーション", timeline: "今日の日記", family: "住人設定", help: "ヘルプ" },
     mute: "音を消す",
     unmute: "音を出す",
     soundOn: "音: オン",

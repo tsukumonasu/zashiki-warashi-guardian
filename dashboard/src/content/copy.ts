@@ -21,7 +21,7 @@ export const EN = {
     legend:
       "In old Iwate farmhouses, a child spirit called the zashiki-warashi is said to guard the house and bring it good fortune. " +
       "This doll wakes when someone draws near, lights her lantern, and turns slowly to see who has come.",
-    enter: "Enter the house",
+    enter: "Try the web simulation",
     signIn: "Sign in",
     configUnavailable: "Cloud features are unavailable right now",
   },
@@ -43,7 +43,9 @@ export const EN = {
   },
 
   house: {
-    heading: "The house",
+    heading: "Web simulation",
+    intro:
+      "This screen is for people who do not have the real doll at hand. A virtual doll in your browser reacts the same way the real one does. Press a button on the right to call a visitor.",
     scenariosHeading: "Call a visitor",
     stateLabel: "State",
     verdictLabel: "Verdict",
@@ -61,6 +63,18 @@ export const EN = {
     },
   },
 
+  tips: {
+    simulation:
+      "A virtual doll in your browser. You can try how the doll reacts to visitors without owning the real one. It never uses your real camera or microphone.",
+    realDoll: "The state and controls of the real doll in someone's home. Available when you sign in as family.",
+    diary: "A diary of the visits the doll saw, each with a short note in the doll's own words.",
+    simulatedDiary: "Visits you tried in the web simulation. They disappear when you close this page.",
+    realDiary: "Visits the real doll met. Visible when you sign in as family.",
+    residents:
+      "Register faces so the doll can tell the people of the house apart from strangers. Registration needs the person's consent, and a face can be deleted at any time.",
+    verdict: "What the doll decided: family, stranger, no face, unsure, or offline.",
+    state: "What the doll is doing now: sleeping, waking, looking, gazing and so on.",
+  },
   diary: {
     // The doll's own notes about a visit. Same count per kind in every language.
     comments: {
@@ -78,8 +92,9 @@ export const EN = {
   },
   timeline: {
     pageTitle: "Today's diary",
-    simulatedHeading: "Practice visits",
-    realHeading: "Real visits",
+    simulatedHeading: "WEB simulation visits",
+    realHeading: "Real doll visits",
+    columns: { time: "Time", verdict: "Verdict", diary: "Diary", notes: "Notes" },
     familyNotified: "Family notified",
     // Visible note so the label never claims a real notification (design D13).
     familyNotifiedNote: "(simulated, nothing was sent)",
@@ -145,6 +160,7 @@ export const EN = {
     storedNote: "Faces are stored only in your AWS account and can be deleted at any time.",
     heading: "The people of the house",
     pageTitle: "Residents",
+    columns: { name: "Name", photos: "Photos", added: "Added", actions: "Action" },
     noMembers: "No faces registered yet",
     loadFailed: "The list of faces could not be loaded",
     noticeOutOfDate: "This consent notice is out of date. Reload the page.",
@@ -230,8 +246,9 @@ export const EN = {
   },
 
   shell: {
+    infoLabel: "What is this?",
     skipToContent: "Skip to content",
-    nav: { landing: "Home", house: "Doll", timeline: "Today's diary", family: "Residents", help: "Help" },
+    nav: { landing: "Home", house: "Web simulation", timeline: "Today's diary", family: "Residents", help: "Help" },
     mute: "Mute sound",
     unmute: "Sound on",
     soundOn: "Sound: on",

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { COPY } from "../content/copy";
 import { EncounterDetail } from "../components/EncounterDetail";
 import { TimelineList, type TimelineEntry } from "../components/TimelineList";
+import { InfoTip } from "../components/InfoTip";
 import { Locked } from "../components/Locked";
 import type { ApiClient } from "../lib/api";
 import { capabilities, type Role } from "../lib/roles";
@@ -104,6 +105,7 @@ export function Timeline({ api, role, illustrationBase, simulated }: TimelinePro
         heading={COPY.timeline.realHeading}
         items={real.items}
         emptyText={emptyText}
+        tip={COPY.tips.realDiary}
         openId={open?.kind === "real" ? open.id : null}
         onOpen={(e) => void openReal(e.encounterId)}
         onShowOlder={real.nextCursor !== null ? () => void showOlder() : null}
@@ -114,11 +116,15 @@ export function Timeline({ api, role, illustrationBase, simulated }: TimelinePro
 
   return (
     <main className="timeline-page">
-      <h1 className="page-title">{COPY.timeline.pageTitle}</h1>
+      <h1 className="page-title">
+        {COPY.timeline.pageTitle}
+        <InfoTip text={COPY.tips.diary} />
+      </h1>
       <TimelineList
         heading={COPY.timeline.simulatedHeading}
         items={simulated}
         emptyText={COPY.timeline.empty}
+        tip={COPY.tips.simulatedDiary}
         openId={open?.kind === "sim" ? open.entry.encounterId : null}
         onOpen={onOpenSim}
       />

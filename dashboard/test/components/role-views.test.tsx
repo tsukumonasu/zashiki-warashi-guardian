@@ -47,8 +47,14 @@ function apiFor(e: Encounter): FakeApiClient {
 
 async function openFirstEncounter(): Promise<void> {
   const user = userEvent.setup();
-  const entries = await screen.findAllByRole("button", { expanded: false });
-  const real = entries.find((b) => b.textContent?.includes("Stranger"));
+  // Each table row holds the verdict in one cell and the open button in another.
+  const real = await waitFor(() => {
+    const found = screen
+      .getAllByRole("button", { expanded: false })
+      .find((b) => b.closest("tr")?.textContent?.includes("Stranger"));
+    if (!found) throw new Error("entry not loaded yet");
+    return found;
+  });
   expect(real).toBeDefined();
   await user.click(real!);
   await screen.findByLabelText("Encounter detail");
