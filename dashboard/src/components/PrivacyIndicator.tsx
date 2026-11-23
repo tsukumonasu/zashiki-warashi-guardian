@@ -3,6 +3,8 @@ import { indicatorView, type StatusFetch } from "../simulation/indicator";
 
 export interface PrivacyIndicatorProps {
   statusFetch: StatusFetch;
+  /** True while a photo asked for on this page is still on its way. */
+  cameraRequested?: boolean;
 }
 
 /**
@@ -10,8 +12,8 @@ export interface PrivacyIndicatorProps {
  * Always shows a text label together with a symbol, never colour alone. The pure view decides
  * what to show; the label comes from `COPY`, so it follows the language switch.
  */
-export function PrivacyIndicator({ statusFetch }: PrivacyIndicatorProps) {
-  const view = indicatorView(statusFetch);
+export function PrivacyIndicator({ statusFetch, cameraRequested = false }: PrivacyIndicatorProps) {
+  const view = indicatorView(statusFetch, cameraRequested);
 
   if (view.kind === "active") {
     return (

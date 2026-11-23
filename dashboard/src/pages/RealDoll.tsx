@@ -15,8 +15,12 @@ export interface RealDollPageProps {
   cloudAvailable: boolean;
   voice: VoiceInfo | null;
   deviceResponse: DevicePanelProps["response"];
+  /** True when the latest status poll failed; the panel then keeps its last values. */
+  deviceLoadFailed?: boolean;
   /** Called after a command reached the cloud, so the status is asked for again soon. */
   onCommandSent?: () => void;
+  /** True while a photo is on its way, so the header shows the camera as on. */
+  onPhotoWaiting?: (waiting: boolean) => void;
 }
 
 /**
@@ -30,7 +34,9 @@ export function RealDollPage({
   cloudAvailable,
   voice,
   deviceResponse,
+  deviceLoadFailed = false,
   onCommandSent,
+  onPhotoWaiting,
 }: RealDollPageProps) {
   const caps = capabilities(role);
   return (
@@ -48,7 +54,7 @@ export function RealDollPage({
         <>
           {!caps.controls && <p role="status">{COPY.realDollPage.needFamily}</p>}
           <fieldset className="real-doll__group" disabled={!online}>
-            <DevicePanel role={role} response={deviceResponse} />
+            <DevicePanel role={role} response={deviceResponse} loadFailed={deviceLoadFailed} />
             <ControlPanel
               api={api}
               role={role}
@@ -57,7 +63,7 @@ export function RealDollPage({
               onSent={onCommandSent}
             />
           </fieldset>
-          {caps.controls && <RemoteActions api={api} deviceId={DEVICE_ID} />}
+          {caps.controls && <RemoteActions api={api} deviceId={DEVICE_ID} onWaiting={onPhotoWaiting} onDone={onCommandSent} />}
           {cloudAvailable && (
             <TalkPanel api={api} role={role} deviceId={DEVICE_ID} voice={voice} online={online} targets="real" />
           )}

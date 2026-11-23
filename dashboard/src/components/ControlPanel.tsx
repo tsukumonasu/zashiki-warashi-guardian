@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import catalog from "../simulation/data/voice-catalog.json";
 import { buildCommand, type Control } from "../simulation/controls";
-import { COPY } from "../content/copy";
+import { COPY, currentLanguage } from "../content/copy";
 import { capabilities, type Role } from "../lib/roles";
 import type { ApiClient } from "../lib/api";
 import { Locked } from "./Locked";
@@ -23,10 +23,16 @@ export interface ControlPanelProps {
 type Notice =
   | { kind: "none" }
   | { kind: "sent"; deviceOnline: boolean }
+  | { kind: "accepted" }
   | { kind: "rejected"; code: string }
   | { kind: "failed"; control: Control };
 
 const LINES = [...catalog].sort((a, b) => a.id.localeCompare(b.id));
+
+/** A line as a person reads it: no internal id. English shows the translation, then the Japanese. */
+function lineLabel(line: { ja: string; en: string }): string {
+  return currentLanguage() === "ja" ? line.ja : `${line.en} (${line.ja})`;
+}
 
 /**
  * Manual controls for the real doll (Requirement 14).
@@ -44,7 +50,7 @@ export function ControlPanel({
   refusalPollMs,
   refusalWaitMs,
 }: ControlPanelProps) {
-  const [lineId, setLineId] = useState<string>(LINES[0]?.id ?? "");
+  const [lineId, setLineId] = useState<string>("");
   const [level, setLevel] = useState(0.5);
   const [fadeS, setFadeS] = useState(2);
   const [pending, setPending] = useState(false);
@@ -65,10 +71,10 @@ export function ControlPanel({
     const why = role === "visitor" ? COPY.locked.visitor : COPY.controls.lockedControls;
     return (
       <section className="control-panel" aria-label="Call the doll">
-        <Locked label="Say a line" explanation={why} />
+        <Locked label={COPY.controls.lineSay} explanation={why} />
         <Locked label={COPY.controls.lookLeft} explanation={why} />
         <Locked label={COPY.controls.lookRight} explanation={why} />
-        <Locked label="Set the lantern" explanation={why} />
+        <Locked label={COPY.controls.lanternSet} explanation={why} />
         <Locked label={COPY.controls.remoteStart} explanation={why} />
         <Locked label={COPY.controls.sleep} explanation={why} />
         <Locked label={COPY.controls.wake} explanation={why} />
@@ -96,7 +102,9 @@ export function ControlPanel({
     // The doll answers a refused command with error.reported; show why instead of "sent".
     const wanted = () => alive.current && mine === generation.current;
     const code = await watchRefusal(api, result.value.id, wanted, refusalPollMs, refusalWaitMs);
-    if (code !== null && wanted()) setNotice({ kind: "rejected", code });
+    if (!wanted()) return;
+    // The doll answers only a refusal. No refusal within the wait means she took it.
+    setNotice(code !== null ? { kind: "rejected", code } : { kind: "accepted" });
   }
 
   // The doll rejects gaze and lantern while resting (docs/schema.md, command_rejected_state).
@@ -107,32 +115,33 @@ export function ControlPanel({
     <section className="control-panel" aria-label="Call the doll">
       <div className="control-row">
         <label>
-          Line
+          {COPY.controls.line}
           <select value={lineId} onChange={(e) => setLineId(e.target.value)} disabled={pending}>
+            <option value="">{COPY.controls.linePlaceholder}</option>
             {LINES.map((line) => (
               <option key={line.id} value={line.id}>
-                {`${line.id}: ${line.ja} / ${line.en}`}
+                {lineLabel(line)}
               </option>
             ))}
           </select>
         </label>
-        <button type="button" disabled={pending || lineId === ""} onClick={() => void send({ kind: "speak", lineId })}>
-          Say it
+        <button type="button" className="button" disabled={pending || lineId === ""} onClick={() => void send({ kind: "speak", lineId })}>
+          {COPY.controls.lineSay}
         </button>
       </div>
 
       <div className="control-row">
-        <button type="button" disabled={pending || resting} onClick={() => void send({ kind: "look", side: "left" })}>
+        <button type="button" className="button" disabled={pending || resting} onClick={() => void send({ kind: "look", side: "left" })}>
           {COPY.controls.lookLeft}
         </button>
-        <button type="button" disabled={pending || resting} onClick={() => void send({ kind: "look", side: "right" })}>
+        <button type="button" className="button" disabled={pending || resting} onClick={() => void send({ kind: "look", side: "right" })}>
           {COPY.controls.lookRight}
         </button>
       </div>
 
       <div className="control-row">
         <label>
-          Lantern level
+          {COPY.controls.lanternLevel}
           <input
             type="range"
             min={0}
@@ -143,7 +152,7 @@ export function ControlPanel({
           />
         </label>
         <label>
-          Fade (seconds)
+          {COPY.controls.fadeLabel}
           <input
             type="number"
             min={0}
@@ -153,19 +162,19 @@ export function ControlPanel({
             onChange={(e) => setFadeS(Number(e.target.value))}
           />
         </label>
-        <button type="button" disabled={pending || resting} onClick={() => void send({ kind: "lantern", level, fadeS })}>
-          Set the lantern
+        <button type="button" className="button" disabled={pending || resting} onClick={() => void send({ kind: "lantern", level, fadeS })}>
+          {COPY.controls.lanternSet}
         </button>
       </div>
 
       <div className="control-row">
-        <button type="button" disabled={pending} onClick={() => void send({ kind: "mode", mode: "remote" })}>
+        <button type="button" className="button" disabled={pending} onClick={() => void send({ kind: "mode", mode: "remote" })}>
           {COPY.controls.remoteStart}
         </button>
-        <button type="button" disabled={pending} onClick={() => void send({ kind: "mode", mode: "sleep" })}>
+        <button type="button" className="button" disabled={pending} onClick={() => void send({ kind: "mode", mode: "sleep" })}>
           {COPY.controls.sleep}
         </button>
-        <button type="button" disabled={pending} onClick={() => void send({ kind: "mode", mode: "guard" })}>
+        <button type="button" className="button" disabled={pending} onClick={() => void send({ kind: "mode", mode: "guard" })}>
           {COPY.controls.wake}
         </button>
       </div>
@@ -174,11 +183,12 @@ export function ControlPanel({
       {dollState === "remote" && <p className="control-hint">{COPY.controls.remoteHint}</p>}
       <div role="status" aria-live="polite" className="control-notice">
         {notice.kind === "sent" && (notice.deviceOnline ? COPY.controls.sent : COPY.controls.offline)}
+        {notice.kind === "accepted" && COPY.controls.accepted}
         {notice.kind === "rejected" && refusalMessage(notice.code)}
         {lastFailed !== null && (
           <>
-            <span>The command could not be sent. </span>
-            <button type="button" disabled={pending} onClick={() => void send(lastFailed)}>
+            <span>{COPY.controls.sendFailed}</span>
+            <button type="button" className="button" disabled={pending} onClick={() => void send(lastFailed)}>
               {COPY.controls.tryAgain}
             </button>
           </>

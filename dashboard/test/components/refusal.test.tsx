@@ -29,15 +29,15 @@ describe("ControlPanel refusals", () => {
     expect(api.callsOf("commandResult")[0]?.args).toEqual([CMD]);
   });
 
-  it("keeps 'sent' when no refusal arrives", async () => {
+  it("says the doll accepted the command when no refusal arrives in time", async () => {
     const api = new FakeApiClient()
       .script("command", { ok: true, value: { id: CMD, deviceOnline: true } })
       .script("commandResult", PENDING);
     render(<ControlPanel api={api} role="family" deviceId={DEVICE} refusalPollMs={1} refusalWaitMs={30} />);
     await userEvent.click(screen.getByRole("button", { name: COPY.controls.sleep }));
-    await waitFor(() => expect(api.callsOf("commandResult").length).toBeGreaterThan(1));
-    await new Promise((r) => setTimeout(r, 60));
-    expect(screen.getByRole("status").textContent).toContain(COPY.controls.sent);
+    // While the check runs the notice says the answer is awaited.
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain(COPY.controls.sent));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain(COPY.controls.accepted));
   });
 
   it("does not ask an offline doll", async () => {
@@ -50,7 +50,7 @@ describe("ControlPanel refusals", () => {
 
   it.each(["sleeping", "cooldown"])("disables look and lantern while the doll is %s", (state) => {
     render(<ControlPanel api={new FakeApiClient()} role="family" deviceId={DEVICE} dollState={state} />);
-    for (const name of [COPY.controls.lookLeft, COPY.controls.lookRight, "Set the lantern"]) {
+    for (const name of [COPY.controls.lookLeft, COPY.controls.lookRight, COPY.controls.lanternSet]) {
       expect((screen.getByRole("button", { name }) as HTMLButtonElement).disabled).toBe(true);
     }
     expect((screen.getByRole("button", { name: COPY.controls.sleep }) as HTMLButtonElement).disabled).toBe(false);

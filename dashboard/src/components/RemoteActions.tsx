@@ -14,6 +14,10 @@ export interface RemoteActionsProps {
   /** Refusal check timing for a typed line; tests shorten it. */
   refusalPollMs?: number;
   refusalWaitMs?: number;
+  /** Called with true while a photo is on its way, and false when that wait is over. */
+  onWaiting?: (waiting: boolean) => void;
+  /** Called when a photo request has finished, so the page can ask for the doll's state. */
+  onDone?: () => void;
 }
 
 /** Longest text the cloud accepts (`docs/schema.md`, `POST /say`). */
@@ -64,6 +68,8 @@ export function RemoteActions({
   waitMs = 40_000,
   refusalPollMs,
   refusalWaitMs,
+  onWaiting,
+  onDone,
 }: RemoteActionsProps) {
   const [photo, setPhoto] = useState<PhotoState>({ kind: "idle" });
   const [say, setSay] = useState<SayState>({ kind: "idle" });
@@ -155,6 +161,15 @@ export function RemoteActions({
   }
 
   const photoBusy = photo.kind === "sending" || photo.kind === "waiting";
+  // The header shows the camera as on for as long as this page waits for a photo.
+  useEffect(() => {
+    onWaiting?.(photoBusy);
+    return () => onWaiting?.(false);
+  }, [photoBusy, onWaiting]);
+  useEffect(() => {
+    if (photo.kind !== "idle" && !photoBusy) onDone?.();
+    // Only the end of a request matters, not a new `onDone` identity.
+  }, [photo.kind, photoBusy]);
   return (
     <section className="remote-actions" aria-labelledby="remote-heading">
       <h2 id="remote-heading">{COPY.remote.heading}</h2>

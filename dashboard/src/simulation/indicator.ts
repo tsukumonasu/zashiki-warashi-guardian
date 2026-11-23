@@ -30,7 +30,19 @@ const SIMULATION: IndicatorView = { kind: "simulation", text: INDICATOR_TEXT.sim
 const UNKNOWN: IndicatorView = { kind: "unknown", text: INDICATOR_TEXT.unknown };
 const OFF: IndicatorView = { kind: "off", text: INDICATOR_TEXT.off };
 
-export function indicatorView(f: StatusFetch): IndicatorView {
+/**
+ * `cameraRequested` is true while the page itself has asked the doll for a photo and waits for it.
+ * The doll's own report can lag by seconds, and the camera runs for less time than a poll takes,
+ * so the indicator also shows "Camera on" for that wait: it may over-report, never under-report.
+ */
+export function indicatorView(f: StatusFetch, cameraRequested = false): IndicatorView {
+  const view = reportedView(f);
+  if (!cameraRequested) return view;
+  if (view.kind !== "active") return { kind: "active", parts: [INDICATOR_TEXT.cameraOn] };
+  if (view.parts.includes(INDICATOR_TEXT.cameraOn)) return view;
+  return { kind: "active", parts: [INDICATOR_TEXT.cameraOn, ...view.parts] };
+}
+function reportedView(f: StatusFetch): IndicatorView {
   if (f.kind === "none") return SIMULATION;
   if (f.kind === "failed") return UNKNOWN;
   // Offline takes precedence: the last report may be stale (Requirement 13.8).

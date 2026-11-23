@@ -5,7 +5,7 @@ import type { StatusFetch } from "../simulation/indicator";
 export const DEVICE_ID = "warashi-01";
 export const POLL_INTERVAL_MS = 30_000;
 /** When to ask again after a command, so the page shows the doll's new state soon. */
-export const REFRESH_AFTER_MS: readonly number[] = [1500, 4000];
+export const REFRESH_AFTER_MS: readonly number[] = [1500, 4000, 8000];
 
 export interface UseDeviceStatusOptions {
   api: ApiClient;
@@ -20,8 +20,10 @@ export interface UseDeviceStatusOptions {
 export interface DeviceStatus {
   /** What the Privacy_Indicator needs (Requirements 13.5 to 13.8). */
   statusFetch: StatusFetch;
-  /** The last successful response, or null before one arrived or after a failure. */
+  /** The last successful response, kept after a failed poll; null before the first success. */
   response: DeviceStatusResponse | null;
+  /** True when the latest poll failed, so the page can say the data may be old. */
+  loadFailed: boolean;
   /** Asks again shortly, for example after a command changed the doll's state. */
   refresh: () => void;
 }
@@ -36,7 +38,8 @@ const defaultVisible = (): boolean => document.visibilityState === "visible";
 /**
  * Polls `GET /device/status` for the real doll: once when the view opens, then every 30 s
  * while the page is visible (Requirement 13.1). Does nothing while `enabled` is false.
- * A failed call reports `failed`, so the indicator says "unknown" and never "off".
+ * A failed call reports `failed`, so the indicator says "unknown" and never "off". The last good
+ * response stays in `response`: a failed read is not proof that the doll is out of reach.
  */
 export function useDeviceStatus(options: UseDeviceStatusOptions): DeviceStatus {
   const { api, enabled } = options;
@@ -45,13 +48,14 @@ export function useDeviceStatus(options: UseDeviceStatusOptions): DeviceStatus {
   const [state, setState] = useState<Omit<DeviceStatus, "refresh">>({
     statusFetch: { kind: "none" },
     response: null,
+    loadFailed: false,
   });
   // The poll of the running effect, so refresh() never polls for a disabled or unmounted view.
   const pollRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (!enabled) {
-      setState({ statusFetch: { kind: "none" }, response: null });
+      setState({ statusFetch: { kind: "none" }, response: null, loadFailed: false });
       return;
     }
     let cancelled = false;
@@ -65,9 +69,13 @@ export function useDeviceStatus(options: UseDeviceStatusOptions): DeviceStatus {
         if (cancelled) return;
         if (result.ok) {
           const r = result.value;
-          setState({ statusFetch: { kind: "ok", online: r.online, status: r.status }, response: r });
+          setState({
+            statusFetch: { kind: "ok", online: r.online, status: r.status },
+            response: r,
+            loadFailed: false,
+          });
         } else {
-          setState({ statusFetch: { kind: "failed" }, response: null });
+          setState((previous) => ({ ...previous, statusFetch: { kind: "failed" }, loadFailed: true }));
         }
       });
     };

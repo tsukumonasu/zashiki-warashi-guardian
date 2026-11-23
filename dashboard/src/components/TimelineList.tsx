@@ -1,5 +1,6 @@
 import { COPY } from "../content/copy";
 import { diaryComment } from "../lib/diary";
+import { formatJst } from "../lib/time";
 import { InfoTip } from "./InfoTip";
 import type { Encounter, SimEncounter } from "../simulation/types";
 
@@ -27,10 +28,6 @@ export function verdictLabel(e: TimelineEntry): string {
   return e.reaction?.offline === true ? COPY.verdicts.offline : "—";
 }
 
-function formatTime(ts: string): string {
-  // ISO strings from the cloud and the engine are UTC; show them as is, without Date.
-  return ts.replace("T", " ").replace(/\.\d+Z$/, "Z");
-}
 
 /** One table of encounters under its own heading (Requirement 10.5). Pure presentation. */
 export function TimelineList(props: TimelineListProps) {
@@ -69,7 +66,7 @@ export function TimelineList(props: TimelineListProps) {
                       aria-expanded={openId === e.encounterId}
                       onClick={() => onOpen(e)}
                     >
-                      <time dateTime={e.startedAt}>{formatTime(e.startedAt)}</time>
+                      <time dateTime={e.startedAt}>{formatJst(e.startedAt)}</time>
                     </button>
                   </td>
                   <td>

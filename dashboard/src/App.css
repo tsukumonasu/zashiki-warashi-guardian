@@ -572,3 +572,48 @@ svg {
   border-radius: 0.75rem;
   border: 1px solid var(--color-night-line);
 }
+
+/* Remote control panel of the real doll: same look as the cards of the remote actions */
+.control-panel {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--color-night-line);
+  border-radius: 1rem;
+}
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-3);
+}
+.control-row label {
+  display: grid;
+  gap: var(--space-1);
+}
+.control-panel select,
+.control-panel input[type="number"] {
+  min-height: 2.5rem;
+  padding: var(--space-1) var(--space-3);
+  font: inherit;
+  color: var(--text-on-night);
+  background: rgba(18, 24, 51, 0.8);
+  border: 1px solid var(--color-night-line);
+  border-radius: 0.6rem;
+}
+.control-panel select {
+  max-width: 100%;
+}
+.control-panel input[type="range"] {
+  accent-color: var(--accent);
+}
+.control-hint,
+.control-notice {
+  margin: 0;
+  color: var(--text-dim-on-night);
+}
+.control-notice {
+  min-height: 1.5rem;
+}

@@ -2,8 +2,9 @@ import { COPY } from "../content/copy";
 import type { ApiClient } from "./api";
 
 /** Time between two checks for a refusal, and how long to keep checking (remote-feedback F2). */
-export const REFUSAL_POLL_MS = 1000;
-export const REFUSAL_WAIT_MS = 6000;
+export const REFUSAL_POLL_MS = 1500;
+/** A doll on a weak Wi-Fi link can take several seconds to answer, so wait longer than that. */
+export const REFUSAL_WAIT_MS = 15_000;
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, ms));
 

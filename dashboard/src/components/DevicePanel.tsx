@@ -1,5 +1,6 @@
 import { COPY } from "../content/copy";
 import type { DeviceStatusResponse } from "../lib/api";
+import { formatJst } from "../lib/time";
 import { capabilities, type Role } from "../lib/roles";
 import type { State } from "../simulation/types";
 import { Locked } from "./Locked";
@@ -8,13 +9,14 @@ export interface DevicePanelProps {
   role: Role;
   /** Last successful `GET /device/status` response, or null. */
   response: DeviceStatusResponse | null;
+  /** True when the latest status request failed. `response` then holds an older answer. */
+  loadFailed?: boolean;
 }
 
-/** The last report time in the reader's own time zone, or "never". */
+/** The last report time in Japan time, or "never". */
 function lastSeen(at: string | null): string {
   if (at === null) return COPY.device.neverSeen;
-  const date = new Date(at);
-  return Number.isNaN(date.getTime()) ? at : date.toLocaleString();
+  return formatJst(at);
 }
 
 /** The doll's activity in words; an unknown value (a newer doll) is shown as it came. */
@@ -30,6 +32,12 @@ function direction(deg: number, negative: string, positive: string): string {
   return `${rounded < 0 ? negative : positive} ${Math.abs(rounded)}°`;
 }
 
+function modeLabel(state: string, mode: string): string {
+  const d = COPY.device;
+  if (state === "remote") return d.modeRemote;
+  return mode === "sleep" ? d.modeSleep : d.modeGuard;
+}
+
 function lantern(level: number): string {
   return level <= 0 ? COPY.device.lanternOff : `${Math.round(level * 100)}%`;
 }
@@ -41,7 +49,7 @@ function lantern(level: number): string {
  * Whether the doll is reachable and what she is doing are two separate lines: a connected doll
  * is often asleep, and "awake" next to "sleeping" read as a contradiction.
  */
-export function DevicePanel({ role, response }: DevicePanelProps) {
+export function DevicePanel({ role, response, loadFailed = false }: DevicePanelProps) {
   const d = COPY.device;
   if (!capabilities(role).deviceStatus) {
     return (
@@ -51,9 +59,18 @@ export function DevicePanel({ role, response }: DevicePanelProps) {
     );
   }
 
+  if (response === null && loadFailed) {
+    // Nothing arrived yet. A failed read does not mean the doll was never seen.
+    return (
+      <section className="device-panel" aria-label="The real doll">
+        <p role="status">{d.loadFailedNothing}</p>
+      </section>
+    );
+  }
   if (response === null || !response.online) {
     return (
       <section className="device-panel" aria-label="The real doll">
+        {loadFailed && <p role="status">{d.loadFailed}</p>}
         <p>{d.outOfReach}</p>
         <p>
           {d.lastSeen}: {lastSeen(response?.lastSeenAt ?? null)}
@@ -65,13 +82,14 @@ export function DevicePanel({ role, response }: DevicePanelProps) {
   const s = response.status;
   return (
     <section className="device-panel" aria-label="The real doll">
+      {loadFailed && <p role="status">{d.loadFailed}</p>}
       <p>{d.connected}</p>
       {s !== null && (
         <dl>
           <dt>{d.activity}</dt>
           <dd>{activity(s.state)}</dd>
           <dt>{d.mode}</dt>
-          <dd>{s.mode === "sleep" ? d.modeSleep : d.modeGuard}</dd>
+          <dd>{modeLabel(s.state, s.mode)}</dd>
           <dt>{d.head}</dt>
           <dd>
             {direction(s.panDeg, d.left, d.right)} / {direction(s.tiltDeg, d.down, d.up)}

@@ -306,6 +306,7 @@ export function App() {
   };
 
   const deviceStatus = useDeviceStatus({ api, enabled: capabilities(role).deviceStatus });
+  const [photoWaiting, setPhotoWaiting] = useState(false);
   const settingsKnown = settingsResult !== null;
 
   return (
@@ -344,7 +345,7 @@ export function App() {
           <button type="button" className="button" aria-pressed={muted} onClick={toggleMute}>
             {muted ? COPY.shell.unmute : COPY.shell.mute}
           </button>
-          <PrivacyIndicator statusFetch={deviceStatus.statusFetch} />
+          <PrivacyIndicator statusFetch={deviceStatus.statusFetch} cameraRequested={photoWaiting} />
           <AccountMenu
             role={role}
             cloudAvailable={cloudAvailable}
@@ -396,7 +397,9 @@ export function App() {
               cloudAvailable={cloudAvailable}
               voice={voice}
               deviceResponse={deviceStatus.response}
+              deviceLoadFailed={deviceStatus.loadFailed}
               onCommandSent={deviceStatus.refresh}
+              onPhotoWaiting={setPhotoWaiting}
             />
           )}
           {route === "/timeline" && (

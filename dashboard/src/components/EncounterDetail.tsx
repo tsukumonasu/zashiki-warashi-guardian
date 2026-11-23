@@ -1,5 +1,6 @@
 import { COPY } from "../content/copy";
 import { capabilities, type Role } from "../lib/roles";
+import { formatJst } from "../lib/time";
 import type { Encounter, SchemaMessage, SimEncounter } from "../simulation/types";
 import { verdictLabel } from "./TimelineList";
 
@@ -71,7 +72,7 @@ export function EncounterDetail({ encounter, role, illustrationBase, simulated, 
       <ol aria-label="Events">
         {eventsInTimeOrder(encounter.events).map((m) => (
           <li key={m.id}>
-            <time dateTime={m.ts}>{m.ts}</time> {describeEvent(m)}
+            <time dateTime={m.ts}>{formatJst(m.ts)}</time> {describeEvent(m)}
           </li>
         ))}
       </ol>

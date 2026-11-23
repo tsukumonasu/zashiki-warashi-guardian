@@ -51,7 +51,7 @@ export const EN = {
     verdictLabel: "Verdict",
     noVerdict: "No verdict yet",
     states: {
-      sleeping: "Sleeping",
+      sleeping: "Waiting quietly",
       waking: "Waking",
       seeking: "Looking for someone",
       gazing: "Gazing",
@@ -80,7 +80,7 @@ export const EN = {
     residents:
       "Register faces so the doll can tell the people of the house apart from strangers. Registration needs the person's consent, and a face can be deleted at any time.",
     verdict: "What the doll decided: family, stranger, no face, unsure, or offline.",
-    state: "What the doll is doing now: sleeping, waking, looking, gazing and so on.",
+    state: "What the doll is doing now: waiting, waking, looking, gazing and so on.",
   },
   diary: {
     // The doll's own notes about a visit. Same count per kind in every language.
@@ -101,7 +101,7 @@ export const EN = {
     pageTitle: "Today's diary",
     simulatedHeading: "WEB simulation visits",
     realHeading: "Real doll visits",
-    columns: { time: "Time", verdict: "Verdict", diary: "Diary", notes: "Notes" },
+    columns: { time: "Time (Japan time)", verdict: "Verdict", diary: "Diary", notes: "Notes" },
     familyNotified: "Family notified",
     // Visible note so the label never claims a real notification (design D13).
     familyNotifiedNote: "(simulated, nothing was sent)",
@@ -150,13 +150,16 @@ export const EN = {
     mode: "Mode",
     modeGuard: "Guarding (wakes when someone comes near)",
     modeSleep: "Not guarding (ignores visitors)",
+    modeRemote: "Remote control (ignores visitors)",
+    loadFailed: "The latest status could not be loaded. Showing the last one that arrived.",
+    loadFailedNothing: "The status could not be loaded. Try again in a moment.",
     head: "Head (left/right / up/down)",
     left: "left",
     right: "right",
     up: "up",
     down: "down",
     center: "straight",
-    lantern: "Lantern (brightness)",
+    lantern: "Lantern brightness",
     lanternOff: "off",
     lastSeen: "Last report",
   },
@@ -172,16 +175,24 @@ export const EN = {
   controls: {
     lookLeft: "Look left",
     lookRight: "Look right",
-    sleep: "Put the doll to sleep",
+    line: "Line",
+    linePlaceholder: "Choose a line…",
+    lineSay: "Say this line",
+    lanternLevel: "Lantern brightness",
+    fadeLabel: "Seconds until it reaches that brightness",
+    lanternSet: "Change the lantern brightness",
+    sleep: "Pause guarding",
     wake: "Set back to guard mode",
     remoteStart: "Start remote control",
     restingHint:
-      "The doll is resting, so looking and the lantern are off. Press “Start remote control” to wake her and move her yourself.",
+      "The doll is waiting quietly, so she cannot move her head or change the lantern. Press “Start remote control” to wake her and move her yourself.",
     remoteHint:
       "Under remote control. She goes back to guarding after two minutes without a command, or when you press “Set back to guard mode”.",
-    sent: "Sent to the doll",
+    sent: "Sent to the doll. Waiting for her answer…",
+    accepted: "The doll accepted it.",
     offline: "The doll is offline. The command was not stored and will not play later.",
     tryAgain: "Try again",
+    sendFailed: "The command could not be sent. ",
     lockedControls: "This is someone's home. Only the family can call the doll.",
   },
 
@@ -189,7 +200,7 @@ export const EN = {
     heading: "Remote actions",
     photoHeading: "Take a photo",
     photoTip:
-      "The doll wakes, lights her lantern, takes one picture and goes back to rest. If she is already awake with a visitor, she takes the picture at once. Only the family can see it, and it is deleted after a few days. The camera indicator at the top shows while she is looking.",
+      "The doll wakes, lights her lantern, takes one picture and goes back to waiting. If she is already awake with a visitor, she takes the picture at once. Only the family can see it, and it is deleted after a few days. The camera indicator at the top shows while she is looking.",
     photoNote: "This uses the real camera for a moment.",
     photoButton: "Take a photo",
     photoWaiting: "Waiting for the photo…",
@@ -199,7 +210,7 @@ export const EN = {
     photoFailed: "The request could not be sent. Try again.",
     sayHeading: "Make the doll speak",
     sayTip:
-      "Type a Japanese line and the doll says it aloud, even when she is asleep. The cloud checks the text first: up to 60 characters, no Latin letters, no emoji and no frightening words.",
+      "Type a Japanese line and the doll says it aloud, even when she is waiting quietly. The cloud checks the text first: up to 60 characters, no Latin letters, no emoji and no frightening words.",
     sayLabel: "What should the doll say? (Japanese, up to 60 characters)",
     sayWarning:
       "She speaks out loud to whoever is near her, a guest or a stranger too. Do not type names or private details.",
@@ -214,7 +225,7 @@ export const EN = {
 
   refusal: {
     state:
-      "The doll did not do it: she is resting or busy right now (for example finishing a visit or talking). Try again in a moment.",
+      "The doll did not do it: she is waiting quietly or busy right now (for example finishing a visit or talking). Try again in a moment.",
     speakRejected: "The doll did not say it: that line does not fit what is happening right now.",
     audioBusy: "The doll did not say it: she is still speaking.",
     unknownLine: "The doll did not say it: she does not know that line.",
@@ -322,7 +333,7 @@ export const EN = {
     unmute: "Sound on",
     soundOn: "Sound: on",
     soundMuted: "Sound: muted",
-    realDollHeading: "The real doll",
+    realDollHeading: "Remote control",
     offlineBanner: "Offline: the simulation still works",
     offlineLive: "Offline: the extra features need a connection.",
     offlineFaces: "Offline: face changes need a connection.",
@@ -340,7 +351,7 @@ export const EN = {
       {
         title: "Try it in two minutes",
         items: [
-          "Choose Enter the house, then press one of the four buttons under Call a visitor.",
+          "Press “Try the web simulation”, then press one of the four buttons under “Call a visitor”.",
           "Each button plays one visit: a family member, a stranger at night, something that moves with no one there, and a lost network.",
           "Watch the State and Verdict labels change while the doll lights her lantern and turns her head.",
           "Every spoken line shows Japanese text with an English subtitle. Use Mute sound in the header at any time.",
