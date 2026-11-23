@@ -212,7 +212,7 @@ class ServoAdapter:
             elif isinstance(action, ReleaseServos):
                 with self._lock:
                     self._cancel_locked()
-                    self._detach_locked()
+                    self._release_locked()
             else:
                 _log.warning("servo adapter ignores %s", type(action).__name__)
         except Exception as exc:  # noqa: BLE001 - R20.10: a failure becomes adapter.error
@@ -251,6 +251,12 @@ class ServoAdapter:
             if plan.steps == 0:
                 # An empty plan completes when it starts (R15.4).
                 arrived = ServoArrived(motion_id=plan.motion_id)
+                if self._enabled and not self._attached:
+                    # The servos were released, so the head may have sagged or been moved since
+                    # the last write. The remembered pose says "already there", so a silent
+                    # arrival would leave it where it is. Drive both axes to the goal again,
+                    # so a return to center always returns the head.
+                    self._reseat_locked(plan.goal, now)
                 if self._attached:
                     self._arm_detach_locked(now)
             else:
@@ -319,6 +325,27 @@ class ServoAdapter:
             if self._attached:
                 self._arm_detach_locked(now)
             return ServoArrived(motion_id=plan.motion_id)
+
+    def _reseat_locked(self, goal: tuple[float, float], now: float) -> None:
+        """Write the goal angles on both axes although the plan has no step to take."""
+        self._write_locked(Axis.PAN, goal[0])
+        self._write_locked(Axis.TILT, goal[1])
+        self._last_write_at = now
+
+    def _release_locked(self) -> None:
+        """``ReleaseServos``: detach, but not before the last write had ``servo_settle_ms``.
+        The State_Machine releases the servos at the moment ``servo.arrived`` comes, which is
+        the moment of the last write. A servo needs a little time to reach that angle; cutting
+        the pulse at once leaves the head short of center and the next start from a wrong
+        place. Shutdown does not wait: ``emergency_detach`` still detaches at once (R20.6).
+        """
+        now = self._scheduler.now()
+        if self._attached and self._last_write_at is not None:
+            hold_until = self._last_write_at + self._cfg.servo.servo_settle_ms / 1000
+            if hold_until - now > _TIME_TOL_S:
+                self._arm_detach_locked(self._last_write_at)
+                return
+        self._detach_locked()
 
     def _write_locked(self, axis: Axis, angle: float) -> None:
         """Write one Commanded_Angle as an absolute servo angle (R14.7, R15.3)."""

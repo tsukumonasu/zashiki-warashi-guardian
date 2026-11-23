@@ -175,8 +175,11 @@ def test_an_empty_first_plan_creates_the_devices_and_arrives_at_once(pose_path: 
     rig.adapter.handle(GazeTarget(pan_deg=0.0, tilt_deg=0.0, motion_id="m0"))
     assert len(rig.factory.creations) == 2
     assert rig.posted == [ServoArrived(motion_id="m0")]
-    assert rig.factory.writes == []
-    assert rig.manual.pending() == 0  # nothing attached, so no detach is armed
+    # The head may not be where the pose file says, so the goal is written once, then released.
+    assert rig.write_angles(PAN_PIN) == [0.0]
+    assert rig.write_angles(TILT_PIN) == [0.0]
+    rig.advance_to(SETTLE_S + EPS)
+    assert {d.pin for d in rig.factory.detaches} == {PAN_PIN, TILT_PIN}
 
 
 def test_the_first_pulse_on_each_pin_is_the_first_commanded_angle(pose_path: Path) -> None:
@@ -346,19 +349,105 @@ def test_a_new_plan_before_the_settle_time_postpones_the_detach(pose_path: Path)
     assert rig.posted == [ServoArrived(motion_id="m1"), ServoArrived(motion_id="m2")]
 
 
-def test_release_servos_detaches_at_once_and_cancels_the_plan(pose_path: Path) -> None:
+def test_release_servos_cancels_the_plan_and_detaches_after_the_settle_time(
+    pose_path: Path,
+) -> None:
     rig = make_rig(pose_path)
     rig.adapter.handle(GazeTarget(pan_deg=10.0, tilt_deg=0.0, motion_id="m1"))
-    rig.advance_to(0.07)  # two of five writes done
+    rig.advance_to(0.07)  # two of five writes done, the last at 0.06
     rig.adapter.handle(ReleaseServos())
-
+    assert rig.factory.detaches == []  # the servo gets time to reach the last angle
+    rig.advance_to(0.06 + SETTLE_S - EPS)
+    assert rig.factory.detaches == []
+    rig.advance_to(0.06 + SETTLE_S + EPS)
     assert {d.pin for d in rig.factory.detaches} == {PAN_PIN, TILT_PIN}
-    assert all(d.time - 0.07 <= 0.05 for d in rig.factory.detaches)
+    assert all(d.time == pytest.approx(0.06 + SETTLE_S) for d in rig.factory.detaches)
     rig.advance_to(2.0)
     assert rig.write_angles(PAN_PIN) == [2.0, 4.0]
     assert rig.posted == []  # a cancelled plan never arrives
     assert rig.manual.pending() == 0
     assert read_pose(pose_path) == {"panDeg": 4.0, "tiltDeg": 0.0}
+
+
+# --------------------------------------------------------------------------------------------
+# Returning to center always moves the head (head drift after a release)
+# --------------------------------------------------------------------------------------------
+def test_a_release_right_after_arrival_keeps_the_last_pulse_for_the_settle_time(
+    pose_path: Path,
+) -> None:
+    """The State_Machine releases the moment ``servo.arrived`` comes (end of the cooldown)."""
+    rig = make_rig(pose_path)
+    rig.adapter.handle(GazeTarget(pan_deg=4.0, tilt_deg=0.0, motion_id="m1"))
+    rig.advance_to(0.06 + EPS)
+    assert rig.posted == [ServoArrived(motion_id="m1")]
+    rig.adapter.handle(ReleaseServos())  # as the State_Machine does on the arrival
+    rig.advance_to(0.06 + SETTLE_S / 2)
+    assert rig.factory.detaches == []
+    rig.advance_to(0.06 + SETTLE_S + EPS)
+    assert len(rig.factory.detaches) == 2
+    assert rig.write_angles(PAN_PIN)[-1] == 4.0  # the last pulse stayed on the last angle
+
+
+def test_a_release_after_the_settle_time_detaches_at_once(pose_path: Path) -> None:
+    rig = make_rig(pose_path)
+    rig.adapter.handle(GazeTarget(pan_deg=4.0, tilt_deg=0.0, motion_id="m1"))
+    rig.advance_to(0.06 + SETTLE_S + EPS)  # already auto-detached
+    detached = len(rig.factory.detaches)
+    rig.adapter.handle(ReleaseServos())
+    assert len(rig.factory.detaches) >= detached  # harmless, no new write
+    assert len(rig.write_angles(PAN_PIN)) == 2
+
+
+def test_a_return_to_the_remembered_pose_still_writes_it_after_a_release(pose_path: Path) -> None:
+    """The head may sag while released, so "already there" must not mean "write nothing"."""
+    rig = make_rig(pose_path)
+    rig.adapter.handle(GazeTarget(pan_deg=4.0, tilt_deg=0.0, motion_id="m1"))
+    rig.advance_to(1.0)  # arrived and auto-detached; the remembered pose is (4, 0)
+    assert len(rig.factory.detaches) == 2
+    writes_before = len(rig.write_angles(PAN_PIN))
+    rig.adapter.handle(GazeTarget(pan_deg=4.0, tilt_deg=0.0, motion_id="m2"))
+    assert rig.posted[-1] == ServoArrived(motion_id="m2")
+    assert rig.write_angles(PAN_PIN)[writes_before:] == [4.0]
+    assert rig.write_angles(TILT_PIN)[-1] == 0.0
+    rig.advance_to(2.0)
+    assert len(rig.factory.detaches) == 4  # released again after the settle time
+
+
+def test_a_return_to_the_remembered_pose_writes_nothing_while_the_servos_hold(
+    pose_path: Path,
+) -> None:
+    rig = make_rig(pose_path)
+    rig.adapter.handle(GazeTarget(pan_deg=4.0, tilt_deg=0.0, motion_id="m1"))
+    rig.advance_to(0.1)  # attached, not yet detached
+    writes_before = len(rig.write_angles(PAN_PIN))
+    rig.adapter.handle(GazeTarget(pan_deg=4.0, tilt_deg=0.0, motion_id="m2"))
+    assert len(rig.write_angles(PAN_PIN)) == writes_before
+    assert rig.posted[-1] == ServoArrived(motion_id="m2")
+
+
+def test_the_reseat_uses_the_calibrated_center_and_inversion(pose_path: Path) -> None:
+    rig = make_rig(pose_path, pan_center_offset=5.0, pan_invert=True, tilt_center_offset=40.0)
+    rig.adapter.handle(GazeTarget(pan_deg=0.0, tilt_deg=0.0, motion_id="m0"))
+    assert rig.write_angles(PAN_PIN) == [5.0]
+    assert rig.write_angles(TILT_PIN) == [40.0]
+
+
+def test_motion_disabled_still_writes_nothing_for_an_empty_plan(pose_path: Path) -> None:
+    rig = make_rig(pose_path, enabled=False)
+    rig.adapter.handle(GazeTarget(pan_deg=0.0, tilt_deg=0.0, motion_id="m0"))
+    rig.advance_to(1.0)
+    assert rig.factory.creations == []
+    assert rig.factory.writes == []
+    assert rig.posted == [ServoArrived(motion_id="m0")]
+
+
+def test_emergency_detach_does_not_wait_for_the_settle_time(pose_path: Path) -> None:
+    rig = make_rig(pose_path)
+    rig.adapter.handle(GazeTarget(pan_deg=4.0, tilt_deg=0.0, motion_id="m1"))
+    rig.advance_to(0.07)
+    rig.adapter.emergency_detach()
+    assert len(rig.factory.detaches) == 2
+    assert all(d.time == pytest.approx(0.07) for d in rig.factory.detaches)
 
 
 # --------------------------------------------------------------------------------------------
@@ -384,7 +473,8 @@ def test_pose_file_holds_the_last_commanded_angles_after_detach(pose_path: Path)
     [
         ((10.0, -4.0), (14.0, -4.0), [12.0, 14.0], []),
         ((30.0, -20.0), (26.0, -20.0), [28.0, 26.0], []),  # the limits themselves are valid
-        ((10.0, -4.0), (10.0, -4.0), [], []),  # already there: an empty plan
+        # Already there: an empty plan. The servos are released, so it still drives the goal once.
+        ((10.0, -4.0), (10.0, -4.0), [10.0], [-4.0]),
     ],
 )
 def test_the_first_plan_starts_from_the_saved_pose(

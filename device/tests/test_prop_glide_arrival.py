@@ -156,6 +156,18 @@ def _expected_writes(plan: GlidePlan, upto: float, index: int, cfg: Config) -> l
     ]
 
 
+def _reseat_writes(plan: GlidePlan, t: float, index: int, cfg: Config) -> list[_Write]:
+    """The write of an empty plan that starts while the servos are released.
+    The head may have sagged or been moved since the last write, so the goal is driven once on
+    both axes even though the remembered pose says "already there".
+    """
+    pins = {Axis.PAN: cfg.pins.pan_pin, Axis.TILT: cfg.pins.tilt_pin}
+    return [
+        _Write(t, pins[axis], to_servo_angle(axis, plan.goal[n], cfg.servo), index)
+        for n, axis in enumerate(AXES)
+    ]
+
+
 def _check_adapter(
     cfg: Config,
     data: st.DataObject,
@@ -211,8 +223,8 @@ def _check_adapter(
     # ---- Oracle --------------------------------------------------------------------------
     plan1_done = plan1.end_time <= t1  # every angle scheduled at or before t1 was written
     expected = _expected_writes(plan1, t1, 0, cfg)
-    if second:
-        expected += _expected_writes(final, math.inf, 1, cfg)
+    if plan1.steps == 0:
+        expected += _reseat_writes(plan1, t0, 0, cfg)  # the first plan starts released
     # Indices of the plans that complete; a cut first plan gets no arrival (R14.6).
     completed = ([0] if plan1_done else []) + ([1] if second else [])
 
@@ -227,8 +239,11 @@ def _check_adapter(
         attached_at_t1 = bool(writes1) and not plan1_detached
         if final.steps > 0:
             detach_times.append(final.end_time + settle_s)
-        elif attached_at_t1:
+        else:
+            if not attached_at_t1:
+                expected += _reseat_writes(final, t1, 1, cfg)
             detach_times.append(t1 + settle_s)  # an empty plan arms the detach when it starts
+        expected += _expected_writes(final, math.inf, 1, cfg)
 
     # ---- Writes: every angle at its scheduled time, the last at t0 + duration_s -----------
     actual = factory.writes
