@@ -226,6 +226,19 @@ python3 warashi_check.py         # PIR、サーボ、LED、スピーカー、マ
 これらのツールは `config.toml` と `motion_enabled` を無視します。詳細と注意事項は
 `device/tools/README.md` を参照してください。実行のたびに、頭は手で中心に合わせます。
 
+**PipeWire の音量を上げる(しないと人形の声が小さいままです)。** Raspberry Pi OS は PipeWire を使い、
+起動のたびにスピーカーフォンの音量を 0.40(ALSA の `PCM` で 47%、-23.8dB)に戻します。
+スピーカーフォン本体が最大でも、声は小さいままです。`amixer -c 1 sset PCM 100%` と
+`sudo alsactl store` で ALSA 側を上げても、PipeWire が次の起動で 0.40 に戻すので効きません。
+PipeWire 側で音量を設定します。
+```
+wpctl status                       # "Sinks" の中の "USB Composite Device Analog Stereo" の番号を見る
+wpctl set-volume <番号> 1.0        # 番号は、再起動や USB の差し替えで変わることがある
+wpctl get-volume <番号>            # Volume: 1.00 と出れば OK
+```
+この 1.00 は再起動しても保たれます。最初の再起動のあとに一度確かめ、スピーカーフォンや USB ポートを
+替えたときにもう一度確かめてください。
+
 ### B3. AWS IoT Core に人形を登録（PC で実行）
 
 A4 のスタック出力が必要です。`--out` は git 管理下の外にします。
@@ -343,4 +356,5 @@ sudo systemctl restart warashi-agent
 | `deploy_pi.sh: step 'user query' failed` | SSH ユーザーが root、または SSH の失敗。通常ユーザーを使う。 |
 | 人形が「誰かいるの？」のセリフしか言わない | クラウド接続が切れている。`check_cloud.py` を実行。オフラインでも基本動作は続く設計。 |
 | 起動時に `voice_file_missing` / `voice_line_invalid` が出る、声が出ない | キャッシュ音声が未生成、またはコピーされていない。A9 を実行して B5 をやり直す。Pi 側は `~/warashi/device/warashi_agent/voice/` に WAV があるか確認。 |
+| スピーカーフォン本体が最大なのに人形の声が小さい | PipeWire が起動のたびに音量を 0.40 に戻している。`wpctl set-volume <Sink の番号> 1.0` を実行する(B2)。 |
 | サーボのログは出るが動かない | `motion_enabled` がまだ `false`。 |

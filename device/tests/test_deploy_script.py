@@ -127,11 +127,20 @@ def test_full_run_order_excludes_and_default_pi_dir(sandbox: dict) -> None:
 
     assert calls[1][2:] == ["user@host.example", "id", "-un"]
     assert calls[2][3] == "cd 'warashi/device' && pwd"
-    install = calls[3][3]
+    # The two sudo calls use `ssh -t` so that a sudo password can be typed.
+    assert calls[3][2] == "-t"
+    install = calls[3][4]
     assert "sudo tee /etc/systemd/system/warashi-agent.service" in install
     assert "sudo systemctl daemon-reload" in install
     assert "sudo systemctl enable warashi-agent" in install
-    assert calls[4][2:] == ["user@host.example", "sudo", "systemctl", "restart", "warashi-agent"]
+    assert calls[4][2:] == [
+        "-t",
+        "user@host.example",
+        "sudo",
+        "systemctl",
+        "restart",
+        "warashi-agent",
+    ]
 
 
 @needs_bash
@@ -207,7 +216,7 @@ def test_failing_step_stops_later_steps(
 def test_installed_unit_has_workdir_and_user_filled_in(sandbox: dict, tmp_path: Path) -> None:
     result = _run(sandbox, PI_HOST="h", STUB_USER="warashi", STUB_WORKDIR="/home/warashi/w/device")
     assert result.returncode == 0, result.stderr
-    install = _read_log(sandbox["log"])[3][3]
+    install = _read_log(sandbox["log"])[3][4]
     # Run only the sed part locally, on the template, in place of the remote file.
     sed_part = install.split(" | sudo tee ", 1)[0]
     remote_file = "'warashi/device/systemd/warashi-agent.service'"

@@ -52,8 +52,14 @@ Power: the Pi's 5 V pin feeds only the PIR sensor. The servos and the LED run fr
 
 ## Audio — Audio-Technica AT-CSP1 USB speakerphone (speaker and microphone in one)
 - ALSA device `plughw:CARD=Device,DEV=0`. Select it by card **name**; card numbers change.
-- The mixer is already set and stored on the Pi: `PCM` 100 %, `Mic` 100 % capture,
+- The ALSA mixer is already set and stored on the Pi: `PCM` 100 %, `Mic` 100 % capture,
   `Auto Gain Control` on.
+- **PipeWire sets its own volume on top of ALSA, and that one counts.** At every start it put
+  the speakerphone sink back to 0.40 (ALSA `PCM` 47 %, -23.8 dB), so the doll's voice was quiet
+  even with the unit at maximum. `amixer ... sset PCM 100%` and `alsactl store` do not stick.
+  Fix: `wpctl status`, read the number of the Sink "USB Composite Device Analog Stereo", then
+  `wpctl set-volume <number> 1.0`; it stays 1.00 after a reboot. This is a step of the Pi setup
+  (`docs/deployment.en.md`, B2).
 - Playback: 16-bit PCM WAV through `aplay` (assume no MP3 decoder on the Pi). The speaker
   rolls off near 10 kHz, which is fine for voice.
 - Recording: mono 16 kHz S16_LE through `arecord`. The microphone is quiet: apply software

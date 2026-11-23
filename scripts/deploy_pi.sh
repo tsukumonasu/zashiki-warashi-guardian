@@ -6,8 +6,8 @@
 #
 # Steps: copy, user query, unit installation, restart. A failing step prints its
 # name and stops the script with a non-zero code; no later step runs (R28.6).
-# No host, user or secret is stored here (R28.7). The sudo calls assume the
-# passwordless sudo of the Raspberry Pi OS first user.
+# No host, user or secret is stored here (R28.7). The sudo calls use `ssh -t`, so a Pi whose
+# sudo asks for a password prompts in your terminal (once per call); passwordless sudo works too.
 set -euo pipefail
 
 fail() {
@@ -66,10 +66,10 @@ WORKDIR="$(ssh "$PI_HOST" "cd '$PI_DIR' && pwd")" \
 if ! [[ "$WORKDIR" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
     fail "unit installation" "unexpected working directory from the Pi"
 fi
-ssh "$PI_HOST" "sed -e 's|@WORKDIR@|$WORKDIR|g' -e 's|@USER@|$PI_USER|g' '$PI_DIR/systemd/$UNIT_NAME.service' | sudo tee /etc/systemd/system/$UNIT_NAME.service >/dev/null && sudo systemctl daemon-reload && sudo systemctl enable $UNIT_NAME" \
+ssh -t "$PI_HOST" "sed -e 's|@WORKDIR@|$WORKDIR|g' -e 's|@USER@|$PI_USER|g' '$PI_DIR/systemd/$UNIT_NAME.service' | sudo tee /etc/systemd/system/$UNIT_NAME.service >/dev/null && sudo systemctl daemon-reload && sudo systemctl enable $UNIT_NAME" \
     || fail "unit installation" "could not install or enable the unit"
 
 # Step 6: restart.
-ssh "$PI_HOST" sudo systemctl restart "$UNIT_NAME" || fail "restart" "could not restart $UNIT_NAME"
+ssh -t "$PI_HOST" sudo systemctl restart "$UNIT_NAME" || fail "restart" "could not restart $UNIT_NAME"
 
 echo "deploy_pi: done ($UNIT_NAME restarted)"

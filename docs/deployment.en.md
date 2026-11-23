@@ -230,6 +230,19 @@ python3 warashi_check.py         # PIR, servos, LED, speaker, microphone, camera
 These tools ignore `config.toml` and `motion_enabled`. Details and safety notes:
 `device/tools/README.md`. Center the head by hand before each run.
 
+**Raise the PipeWire volume (the doll's voice is too quiet otherwise).** Raspberry Pi OS runs
+PipeWire, and it resets the speakerphone to a volume of 0.40 (ALSA `PCM` at 47 %, -23.8 dB) every
+time it starts. The speakerphone's own volume can be at maximum and the voice is still quiet.
+Setting ALSA with `amixer -c 1 sset PCM 100%` and `sudo alsactl store` does not last, because
+PipeWire sets 0.40 again at the next start. Set the volume in PipeWire instead:
+```
+wpctl status                       # under "Sinks", find the number of "USB Composite Device Analog Stereo"
+wpctl set-volume <number> 1.0      # the number may change after a reboot or after you move the USB plug
+wpctl get-volume <number>          # should print: Volume: 1.00
+```
+The 1.00 survives a reboot. Check it once after the first reboot, and again if you replace the
+speakerphone or change its USB port.
+
 ### B3. Provision the doll in AWS IoT Core (on your laptop)
 
 Needs the stack outputs from A4. The `--out` folder must be outside any git work tree.
@@ -352,4 +365,5 @@ sweep back to center.
 | `deploy_pi.sh: step 'user query' failed` | SSH user is root, or SSH failed. Use a normal user. |
 | Doll reacts with the "is someone there?" line only | The cloud link is down. Run `check_cloud.py`; the offline loop still works by design. |
 | `voice_file_missing` / `voice_line_invalid` at startup, or no voice | The cached voice lines were not generated or not copied. Run A9, then B5 again. On the Pi, check that `~/warashi/device/warashi_agent/voice/` holds the WAV files. |
+| The doll's voice is very quiet although the speakerphone is at maximum | PipeWire resets the volume to 0.40 at every start. Run `wpctl set-volume <sink number> 1.0` (B2). |
 | Servo logs appear but nothing moves | `motion_enabled` is still `false`. |
