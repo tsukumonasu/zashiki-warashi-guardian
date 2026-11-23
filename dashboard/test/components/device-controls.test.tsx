@@ -34,21 +34,29 @@ function statusResponse(online: boolean, motionEnabled = true): DeviceStatusResp
 }
 
 describe("DevicePanel", () => {
-  it("shows the awake text and values when online", () => {
+  it("shows the connection and the doll's activity as separate lines when online", () => {
     render(<DevicePanel role="family" response={statusResponse(true)} />);
-    expect(screen.getByText(COPY.device.awake)).toBeTruthy();
-    expect(screen.getByText("sleeping")).toBeTruthy();
+    expect(screen.getByText(COPY.device.connected)).toBeTruthy();
+    expect(screen.getByText(COPY.house.states.sleeping)).toBeTruthy();
+    expect(screen.getByText(COPY.device.modeGuard)).toBeTruthy();
+    expect(screen.queryByText("sleeping")).toBeNull();
     expect(screen.queryByText(COPY.device.motionOff)).toBeNull();
   });
 
-  it("shows the asleep-or-out-of-reach text when offline or unknown", () => {
+  it("shows the out-of-reach text when offline or unknown", () => {
     const { rerender } = render(<DevicePanel role="family" response={statusResponse(false)} />);
-    expect(screen.getByText(COPY.device.asleepOrOutOfReach)).toBeTruthy();
-    expect(screen.getByText(`Last seen: ${COPY.device.neverSeen}`)).toBeTruthy();
+    expect(screen.getByText(COPY.device.outOfReach)).toBeTruthy();
+    expect(screen.getByText(`${COPY.device.lastSeen}: ${COPY.device.neverSeen}`)).toBeTruthy();
     rerender(<DevicePanel role="family" response={null} />);
-    expect(screen.getByText(COPY.device.asleepOrOutOfReach)).toBeTruthy();
+    expect(screen.getByText(COPY.device.outOfReach)).toBeTruthy();
   });
 
+  it("describes the head and the lantern in words", () => {
+    render(<DevicePanel role="family" response={statusResponse(true)} />);
+    const d = COPY.device;
+    expect(screen.getByText(`${d.right} 5° / ${d.down} 3°`)).toBeTruthy();
+    expect(screen.getByText("50%")).toBeTruthy();
+  });
   it("shows the motion notice only when motionEnabled is false", () => {
     render(<DevicePanel role="family" response={statusResponse(true, false)} />);
     expect(screen.getByText(COPY.device.motionOff)).toBeTruthy();
@@ -56,7 +64,7 @@ describe("DevicePanel", () => {
 
   it("shows a locked panel to a visitor", () => {
     render(<DevicePanel role="visitor" response={statusResponse(true)} />);
-    expect(screen.queryByText(COPY.device.awake)).toBeNull();
+    expect(screen.queryByText(COPY.device.connected)).toBeNull();
     expect(screen.getAllByText(COPY.locked.visitor).length).toBeGreaterThan(0);
   });
 });

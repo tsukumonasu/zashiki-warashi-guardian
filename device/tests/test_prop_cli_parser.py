@@ -21,7 +21,7 @@ from warashi_agent.cli import (
     VerdictKey,
     parse_line,
 )
-from warashi_agent.model import FaceBox, Mode, Verdict
+from warashi_agent.model import FaceBox, ModeRequest, Verdict
 
 RESULT_TYPES = (
     PirKey,
@@ -113,7 +113,7 @@ def printed_commands(draw: st.DrawFn) -> Printed:
             "lantern", [_num(level), str(fade)], LanternKey(level=level, fade_ms=fade), [0, 1]
         )
     if kind == "mode":
-        mode = draw(st.sampled_from([Mode.SLEEP, Mode.GUARD]))
+        mode = draw(st.sampled_from(list(ModeRequest)))
         return Printed("mode", [mode.value], ModeKey(mode=mode), [])
     if kind == "conn":
         online = draw(st.booleans())

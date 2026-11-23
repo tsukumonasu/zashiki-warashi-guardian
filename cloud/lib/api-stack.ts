@@ -176,7 +176,8 @@ export class ApiStack extends Stack {
     const read = makeFunction("ApiRead", "api-read", {
       timeoutS: DEFAULT_TIMEOUT_S,
       environment: { ...baseEnv, ...voiceEnv, WARASHI_SIGNER_FUNCTION_NAME: signer.functionName },
-      description: "GET /me, /samples, /encounters, /encounters/{id}, /device/status, /photos/{requestId}",
+      description:
+        "GET /me, /samples, /encounters, /encounters/{id}, /device/status, /photos/{requestId}, /commands/{id}",
     });
     read.addToRolePolicy(
       new iam.PolicyStatement({
@@ -349,6 +350,7 @@ export class ApiStack extends Stack {
       { id: "Commands", path: "/commands", methods: [apigwv2.HttpMethod.POST], fn: commands },
       { id: "PhotosRequest", path: "/photos", methods: [apigwv2.HttpMethod.POST], fn: commands },
       { id: "PhotosRead", path: "/photos/{requestId}", methods: [apigwv2.HttpMethod.GET], fn: read },
+      { id: "CommandResult", path: "/commands/{id}", methods: [apigwv2.HttpMethod.GET], fn: read },
       { id: "Say", path: "/say", methods: [apigwv2.HttpMethod.POST], fn: say },
       { id: "FacesList", path: "/faces", methods: [apigwv2.HttpMethod.GET], fn: admin },
       { id: "FacesCreate", path: "/faces", methods: [apigwv2.HttpMethod.POST], fn: admin },

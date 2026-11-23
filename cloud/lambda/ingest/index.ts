@@ -6,6 +6,7 @@
  * retry can deliver the message again.
  */
 
+import { createCommandResultStore } from "../_shared/adapters/command-results.js";
 import { createRepository, createStateStore } from "../_shared/adapters/dynamo.js";
 import type { SampleSource } from "../_shared/adapters/s3.js";
 import { handleIngest } from "./ingest-core.js";
@@ -24,6 +25,7 @@ const noSamples: SampleSource = {
 const deps = {
   repo: createRepository({ samples: noSamples }),
   state: createStateStore(),
+  results: createCommandResultStore(),
   nowMs: () => Date.now(),
 };
 

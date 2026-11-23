@@ -31,7 +31,7 @@ from hypothesis import strategies as st
 
 from warashi_agent.inbound import Deduplicator, route_inbound
 from warashi_agent.messages import Envelope, ModeSetData, encode
-from warashi_agent.model import Mode, ModeSet
+from warashi_agent.model import ModeRequest, ModeSet
 
 DEVICE_ID = "warashi-01"
 MAX_SEQUENCE = 400
@@ -90,7 +90,7 @@ def mode_set_command(message_id: str) -> bytes:
         ts=TS,
         device_id=DEVICE_ID,
         encounter_id=None,
-        data=ModeSetData(mode=Mode.GUARD),
+        data=ModeSetData(mode=ModeRequest.GUARD),
     )
     return encode(env)
 
@@ -123,7 +123,7 @@ def test_deduplicator_drops_exactly_repeats_within_window(case: tuple[int, list[
         else:
             assert isinstance(result, ModeSet)
             assert result.ref_id == message_id
-            assert result.mode is Mode.GUARD
+            assert result.mode is ModeRequest.GUARD
         routed = routed_next
 
         if not expected_drop:

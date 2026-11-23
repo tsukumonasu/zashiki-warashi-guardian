@@ -12,7 +12,7 @@ export type Control =
   | { readonly kind: "speak"; readonly lineId: string }
   | { readonly kind: "look"; readonly side: "left" | "right" }
   | { readonly kind: "lantern"; readonly level: number; readonly fadeS: number }
-  | { readonly kind: "mode"; readonly mode: "guard" | "sleep" };
+  | { readonly kind: "mode"; readonly mode: "guard" | "sleep" | "remote" };
 
 /** The `command` field of the `POST /commands` body. */
 export type OutgoingCommand =
@@ -27,7 +27,7 @@ export type OutgoingCommand =
     }
   | {
       readonly type: "mode.set";
-      readonly data: { readonly mode: "guard" | "sleep" };
+      readonly data: { readonly mode: "guard" | "sleep" | "remote" };
     };
 
 /** NaN and ±Infinity become 0 (Requirement 14.3). */

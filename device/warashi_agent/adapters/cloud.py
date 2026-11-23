@@ -431,6 +431,10 @@ class MqttCloudLink:
                 self._connected = False
                 if self._stopped or not was_connected:
                     return
+                # paho 2 passes (flags, reason_code, properties), paho 1 only (rc). The reason
+                # tells a duplicate client id or a keepalive timeout from a Wi-Fi drop.
+                reason = args[1] if len(args) >= 2 else (args[0] if args else None)
+                self._log.warning("MQTT link lost (reason %s)", reason)
                 post = self._post
                 if post is not None:
                     post(CloudDisconnected())

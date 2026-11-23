@@ -36,7 +36,7 @@ from warashi_agent.messages import (
     SpeakData,
     encode,
 )
-from warashi_agent.model import FaceBox, Mode, Verdict
+from warashi_agent.model import FaceBox, ModeRequest, Verdict
 
 NO_SNAPSHOT_TEXT = "no snapshot is pending"
 
@@ -100,9 +100,9 @@ class LanternKey:
 
 @dataclass(frozen=True, kw_only=True)
 class ModeKey:
-    """``mode sleep`` or ``mode guard``."""
+    """``mode sleep``, ``mode guard`` or ``mode remote``."""
 
-    mode: Mode
+    mode: ModeRequest
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -205,9 +205,9 @@ def _parse_command(words: list[str]) -> ParseResult:
             return ParseError(reason="expected lantern <level> <fadeMs>")
         return LanternKey(level=_number(args[0]), fade_ms=_integer(args[1]))
     if name == "mode":
-        if len(args) != 1 or args[0] not in (Mode.SLEEP.value, Mode.GUARD.value):
-            return ParseError(reason="expected mode sleep | mode guard")
-        return ModeKey(mode=Mode(args[0]))
+        if len(args) != 1 or args[0] not in {m.value for m in ModeRequest}:
+            return ParseError(reason="expected mode sleep | mode guard | mode remote")
+        return ModeKey(mode=ModeRequest(args[0]))
     return ParseError(reason=f"unknown command: {name[:40]}")
 
 

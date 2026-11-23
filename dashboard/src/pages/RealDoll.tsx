@@ -15,13 +15,23 @@ export interface RealDollPageProps {
   cloudAvailable: boolean;
   voice: VoiceInfo | null;
   deviceResponse: DevicePanelProps["response"];
+  /** Called after a command reached the cloud, so the status is asked for again soon. */
+  onCommandSent?: () => void;
 }
 
 /**
  * Control room of the real doll (the Raspberry Pi in the house), separate from the web
  * simulation. A guest sees one sign-in note instead of a row of locked buttons.
  */
-export function RealDollPage({ api, role, online, cloudAvailable, voice, deviceResponse }: RealDollPageProps) {
+export function RealDollPage({
+  api,
+  role,
+  online,
+  cloudAvailable,
+  voice,
+  deviceResponse,
+  onCommandSent,
+}: RealDollPageProps) {
   const caps = capabilities(role);
   return (
     <main className="page real-doll" aria-labelledby="real-doll-heading">
@@ -39,7 +49,13 @@ export function RealDollPage({ api, role, online, cloudAvailable, voice, deviceR
           {!caps.controls && <p role="status">{COPY.realDollPage.needFamily}</p>}
           <fieldset className="real-doll__group" disabled={!online}>
             <DevicePanel role={role} response={deviceResponse} />
-            <ControlPanel api={api} role={role} deviceId={DEVICE_ID} />
+            <ControlPanel
+              api={api}
+              role={role}
+              deviceId={DEVICE_ID}
+              dollState={deviceResponse?.status?.state ?? null}
+              onSent={onCommandSent}
+            />
           </fieldset>
           {caps.controls && <RemoteActions api={api} deviceId={DEVICE_ID} />}
           {cloudAvailable && (

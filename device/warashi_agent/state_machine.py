@@ -84,6 +84,7 @@ from warashi_agent.model import (
     Lantern,
     LanternFade,
     Mode,
+    ModeRequest,
     ModeSet,
     PirFalling,
     PirRising,
@@ -168,9 +169,26 @@ class ReactionLine:
 
 @dataclass(frozen=True, kw_only=True)
 class Sleeping:
-    """Waiting for presence. No deadline (R10.1)."""
+    """Waiting for presence. No deadline (R10.1).
+
+    ``quiet_until`` is set when an Encounter ends: PIR edges before it are ignored, so a person
+    who stays in front of the doll is not greeted again every few seconds (``pir_quiet_s``).
+    """
 
     state: ClassVar[State] = State.SLEEPING
+    quiet_until: float = 0.0
+
+
+@dataclass(frozen=True, kw_only=True)
+class Remote:
+    """Remote control from the dashboard (remote-mode M1 to M3).
+
+    Always has a deadline, so the doll can never stay awake for ever: every accepted command
+    moves it to ``now + remote_idle_s``, and the first Tick after it enters ``cooldown``.
+    """
+
+    state: ClassVar[State] = State.REMOTE
+    idle_until: float
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -293,6 +311,7 @@ Phase = (
     | Uncertain
     | Cooldown
     | Conversing
+    | Remote
 )
 
 
@@ -346,6 +365,22 @@ class PendingAudio:
 
 
 @dataclass(frozen=True, kw_only=True)
+class PendingPhoto:
+    """A remote photo asked for during an Encounter (remote-feedback F1).
+
+    It lives beside the phase, not inside it: the picture is taken at the current head angles
+    while the visit goes on, and it is published whatever State the doll is in when the camera
+    answers. At most one is outstanding, so the slow camera and uplink stay bounded.
+    """
+
+    request_id: str
+    snapshot_id: str
+    pan_deg: float  # head angles when the photo was asked for
+    tilt_deg: float
+    deadline: float  # now + verdict_timeout_s; a lost result must not block later photos
+
+
+@dataclass(frozen=True, kw_only=True)
 class CameraWatch:
     """The snapshot that keeps ``cameraActive`` true (R23.2)."""
 
@@ -376,6 +411,7 @@ class MachineState:
     # Bookkeeping for the audio_busy rule and status reports.
     audio: tuple[PendingAudio, ...] = ()  # unfinished PlayLine / PlayAudioUrl
     camera: CameraWatch | None = None  # cameraActive is camera is not None (R23.2)
+    photo: PendingPhoto | None = None  # a remote photo taken during an Encounter (F1)
     first_tick_seen: bool = False  # R23.1
     last_status_at: float | None = None  # now of the last PublishStatus
 
@@ -605,7 +641,11 @@ def step(ms: MachineState, event: Event, now: float) -> tuple[MachineState, tupl
     if not isinstance(event, Event):
         raise TypeError(f"step() got an undefined event type: {type(event).__name__}")
     ctx = StepContext(ms, event, now)
-    handler = STATE_HANDLERS.get((ms.state, type(event))) or GLOBAL_HANDLERS.get(type(event))
+    handler = (
+        photo_result_handler(ms, event)
+        or STATE_HANDLERS.get((ms.state, type(event)))
+        or GLOBAL_HANDLERS.get(type(event))
+    )
     nxt = handler(ctx) if handler is not None else ms
     return finalize(ctx, ms, ctx.commit(nxt))
 
@@ -639,9 +679,13 @@ def finalize(
         and ctx.now >= prev.last_status_at + nxt.config.timing.status_interval_s
     )
     camera_changed = (camera is None) is not (prev.camera is None)
-    report = state_changed or camera_changed or first_tick or interval_due
+    # A reconnect follows a broker last will, so the dashboard needs a fresh report (M5).
+    reconnected = isinstance(ctx.event, CloudConnected)
+    report = state_changed or camera_changed or first_tick or interval_due or reconnected
 
     updates: dict[str, object] = {}
+    if is_tick and nxt.photo is not None and ctx.now >= nxt.photo.deadline:
+        updates["photo"] = None  # the camera never answered; allow the next photo (F1)
     if camera != nxt.camera:
         updates["camera"] = camera
     if audio != nxt.audio:
@@ -678,8 +722,11 @@ def next_camera_watch(ctx: StepContext, prev: MachineState) -> CameraWatch | Non
     if camera is not None:
         result_handled = (
             isinstance(event, SnapshotReady | SnapshotFailed)
-            and prev.state in (State.SEEKING, State.CONVERSING)
             and event.snapshot_id == camera.snapshot_id
+            and (
+                prev.state in (State.SEEKING, State.CONVERSING)
+                or (prev.photo is not None and prev.photo.snapshot_id == event.snapshot_id)
+            )
         )
         deadline_passed = isinstance(event, Tick) and ctx.now >= camera.deadline
         if result_handled or deadline_passed:
@@ -766,7 +813,8 @@ def on_pir_rising_sleeping(ctx: StepContext) -> MachineState:
     """
     ms = _with_pir_level(ctx.ms, True)
     warm = ctx.now - ms.start_time >= ms.config.timing.pir_warmup_s
-    if ms.mode is not Mode.GUARD or not warm:
+    quiet = ctx.now < _as(ms.phase, Sleeping).quiet_until
+    if ms.mode is not Mode.GUARD or not warm or quiet:
         return ms
     return enter_waking(ctx, ms)
 
@@ -1544,14 +1592,17 @@ def enter_sleeping(
     It deliberately ignores ``ms.pir_high``. The HC-SR501 output stays high for seconds and
     retriggers, so a visitor still standing in front of the doll when cooldown ends would
     otherwise be greeted again at once. Only a fresh ``pir.rising`` in a later call starts
-    the next Encounter (R11.4).
+    the next Encounter (R11.4). That edge must also come after ``pir_quiet_s``: the sensor
+    retriggers every few seconds while someone stays near, and without a quiet time the doll
+    would never rest, keep its lantern lit and refuse remote commands.
     """
     ctx.change_state(State.SLEEPING, reason)
     ctx.publish(EncounterEnded(reason=end_reason))
     if not ctx.servos_released or ctx.lantern_level != 0.0:
         ctx.release_servos()
         ctx.fade_lantern(0.0, 0)
-    return dataclasses.replace(ms, phase=Sleeping(), encounter=None)
+    quiet_until = ctx.now + ms.config.timing.pir_quiet_s
+    return dataclasses.replace(ms, phase=Sleeping(quiet_until=quiet_until), encounter=None)
 
 
 # --------------------------------------------------------------------------------------------
@@ -1611,7 +1662,8 @@ def reject(ctx: StepContext, code: ErrorCode) -> MachineState:
     doll, touching a deadline or ending the Encounter, so a rejection can never hang it.
     """
     command = ctx.event
-    if not isinstance(command, Speak | Gaze | Lantern | ConversationStart | SnapshotRequest):
+    rejectable = Speak | Gaze | Lantern | ConversationStart | SnapshotRequest | ModeSet
+    if not isinstance(command, rejectable):
         raise TypeError(f"expected a rejectable command, got {type(command).__name__}")
     ctx.report_error(code, REJECTION_MESSAGES[code], command.ref_id)
     return ctx.ms
@@ -1762,7 +1814,13 @@ def on_mode_set(ctx: StepContext) -> MachineState:
     only a later ``pir.rising`` does (R12.9). The argument state is returned itself when
     nothing changes (R1.9).
     """
-    ms, mode = ctx.ms, _as(ctx.event, ModeSet).mode
+    ms, requested = ctx.ms, _as(ctx.event, ModeSet).mode
+    if requested is ModeRequest.REMOTE:
+        return start_remote(ctx)
+    mode = Mode(requested.value)
+    if isinstance(ms.phase, Remote):
+        # guard or sleep ends remote control: back to center, detach, lantern out (M3).
+        return enter_cooldown(ctx, dataclasses.replace(ms, mode=mode), Reason.MANUAL, manual=True)
     if ms.mode is mode:
         return ms
     ms = dataclasses.replace(ms, mode=mode)
@@ -1779,6 +1837,76 @@ def on_mode_set(ctx: StepContext) -> MachineState:
     if ending and ms.state not in (State.SLEEPING, State.COOLDOWN):
         return enter_cooldown(ctx, ms, Reason.MANUAL, manual=True)
     return ms
+
+
+# --------------------------------------------------------------------------------------------
+# Flow: remote control (remote-mode M1 to M3)
+# --------------------------------------------------------------------------------------------
+
+
+def start_remote(ctx: StepContext) -> MachineState:
+    """``mode.set remote``: enter ``remote``, or restart its idle time when already there (M1).
+
+    From ``sleeping`` this is a manual Encounter, started like a visit: lantern first, then a
+    slow glide to center, because this is the first motion after rest (hardware.md). From a
+    visit or ``cooldown`` the Encounter goes on; its pending reaction is dropped with the old
+    phase, and a remote-photo Encounter stops waiting for its picture. ``conversing`` owns the
+    microphone and the speaker, so it refuses.
+    """
+    ms = ctx.ms
+    idle_until = ctx.now + ms.config.timing.remote_idle_s
+    if isinstance(ms.phase, Remote):
+        return dataclasses.replace(ms, phase=Remote(idle_until=idle_until))
+    if isinstance(ms.phase, Conversing):
+        return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+    lantern = ms.config.lantern
+    if isinstance(ms.phase, Sleeping):
+        encounter = ctx.begin_encounter()
+        ctx.change_state(State.REMOTE, Reason.MANUAL)
+        ctx.publish(PresenceDetected(source="manual"))
+        ctx.fade_lantern(lantern.lantern_wake_level, lantern.lantern_fade_in_ms)
+        ctx.gaze_to(0.0, 0.0)
+    else:
+        encounter = dataclasses.replace(_as(ms.encounter, Encounter), photo_request_id=None)
+        ctx.change_state(State.REMOTE, Reason.MANUAL)
+        if ctx.lantern_level == 0.0:
+            # A cooldown may already have faded the lantern; the camera needs light.
+            ctx.fade_lantern(lantern.lantern_wake_level, lantern.lantern_fade_in_ms)
+    return dataclasses.replace(ms, phase=Remote(idle_until=idle_until), encounter=encounter)
+
+
+def on_tick_remote(ctx: StepContext) -> MachineState:
+    """End remote control after ``remote_idle_s`` without an accepted command (M3)."""
+    ms = ctx.ms
+    if ctx.now >= _as(ms.phase, Remote).idle_until:
+        return enter_cooldown(ctx, ms, Reason.TIMEOUT)
+    return ms
+
+
+def _pir_ignored_in_remote(ctx: StepContext) -> MachineState:
+    """``pir.rising`` in ``remote``: record the level only; the family is in control (M2)."""
+    return _with_pir_level(ctx.ms, True)
+
+
+def remote_command(handler: Handler) -> Handler:
+    """Run a command handler in ``remote`` and restart the idle time if it accepted (M2).
+
+    A refused command publishes ``error.reported`` and does not count as activity, so a script
+    of bad commands cannot keep the doll awake.
+    """
+
+    def run(ctx: StepContext) -> MachineState:
+        nxt = handler(ctx)
+        refused = any(
+            isinstance(action, PublishEvent) and isinstance(action.data, ErrorReported)
+            for action in ctx.actions
+        )
+        if refused or not isinstance(nxt.phase, Remote):
+            return nxt
+        idle_until = ctx.now + nxt.config.timing.remote_idle_s
+        return dataclasses.replace(nxt, phase=Remote(idle_until=idle_until))
+
+    return run
 
 
 # --------------------------------------------------------------------------------------------
@@ -2061,8 +2189,87 @@ def on_snapshot_request_sleeping(ctx: StepContext) -> MachineState:
 
 
 def on_snapshot_request_other(ctx: StepContext) -> MachineState:
-    """``snapshot.request`` outside ``conversing``: rejected (R11.16)."""
+    """``snapshot.request`` in ``cooldown``: rejected (R11.16, F1).
+
+    The lantern fades out and the head returns to center there, so a picture would be dark,
+    and the visit is about to end.
+    """
     return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+
+
+PHOTO_STATES: tuple[State, ...] = (
+    State.WAKING,
+    State.SEEKING,
+    State.GAZING,
+    State.GREETING,
+    State.WARNING,
+    State.UNCERTAIN,
+)
+"""States in which a remote photo is taken during the visit (F1); the lantern is lit in all."""
+
+
+def on_snapshot_request_awake(ctx: StepContext) -> MachineState:
+    """A ``photo`` during an Encounter: one picture at the current head angles (F1).
+
+    The visit goes on untouched: no State change, no deadline, no head or lantern move. The
+    camera adapter runs one capture at a time, so the photo simply queues behind a snapshot of
+    the scan. A ``look``, a second photo, or a photo during a remote-photo Encounter (which
+    takes its own picture) is rejected.
+    """
+    ms, cmd = ctx.ms, _as(ctx.event, SnapshotRequest)
+    if cmd.purpose != "photo" or ms.photo is not None or _is_photo(ms):
+        return reject(ctx, ErrorCode.COMMAND_REJECTED_STATE)
+    snapshot_id = ctx.new_id("snap")
+    ctx.emit(TakeSnapshot(snapshot_id=snapshot_id))
+    pan, tilt = ctx.gaze
+    photo = PendingPhoto(
+        request_id=cmd.request_id,
+        snapshot_id=snapshot_id,
+        pan_deg=pan,
+        tilt_deg=tilt,
+        deadline=ctx.now + ms.config.timing.verdict_timeout_s,
+    )
+    return dataclasses.replace(ms, photo=photo)
+
+
+def photo_result_handler(ms: MachineState, event: Event) -> Handler | None:
+    """The handler for the camera result of the outstanding photo, whatever the State (F1).
+
+    Looked up before the State handlers, so a seeking or conversing handler never mistakes the
+    photo for its own snapshot, and a photo that finishes after the visit ended still reaches
+    the family.
+    """
+    photo = ms.photo
+    if photo is None or not isinstance(event, SnapshotReady | SnapshotFailed):
+        return None
+    if event.snapshot_id != photo.snapshot_id:
+        return None
+    return on_photo_ready if isinstance(event, SnapshotReady) else on_photo_failed
+
+
+def on_photo_ready(ctx: StepContext) -> MachineState:
+    """Publish the photo with its ``requestId`` and ``purpose: "photo"`` (F1, R1)."""
+    ms, event = ctx.ms, _as(ctx.event, SnapshotReady)
+    photo = _as(ms.photo, PendingPhoto)
+    ctx.publish(
+        SnapshotCaptured(
+            snapshot_id=photo.snapshot_id,
+            width=event.width,
+            height=event.height,
+            pan_deg=photo.pan_deg,
+            tilt_deg=photo.tilt_deg,
+            jpeg_base64=base64.b64encode(event.jpeg).decode("ascii"),
+            request_id=photo.request_id,
+            purpose="photo",
+        )
+    )
+    return dataclasses.replace(ms, photo=None)
+
+
+def on_photo_failed(ctx: StepContext) -> MachineState:
+    """Report the failed photo and allow the next one; the visit goes on (F1, R3.9)."""
+    ms = on_snapshot_failed(ctx)
+    return dataclasses.replace(ms, photo=None)
 
 
 def on_snapshot_ready_conversing(ctx: StepContext) -> MachineState:
@@ -2165,6 +2372,14 @@ STATE_HANDLERS: Mapping[tuple[State, type], Handler] = MappingProxyType(
         (State.SLEEPING, ConversationStart): on_conversation_start_sleeping,
         # Remote photo (remote-actions R2).
         (State.SLEEPING, SnapshotRequest): on_snapshot_request_sleeping,
+        **{(state, SnapshotRequest): on_snapshot_request_awake for state in PHOTO_STATES},
+        # Remote control (remote-mode M1 to M3).
+        (State.REMOTE, Tick): on_tick_remote,
+        (State.REMOTE, PirRising): _pir_ignored_in_remote,
+        (State.REMOTE, Gaze): remote_command(on_gaze),
+        (State.REMOTE, Lantern): remote_command(on_lantern),
+        (State.REMOTE, Speak): remote_command(on_speak),
+        (State.REMOTE, SnapshotRequest): remote_command(on_snapshot_request_awake),
         (State.GREETING, ConversationStart): on_conversation_start_greeting,
         (State.CONVERSING, ConversationStart): on_conversation_start_conversing,
         (State.CONVERSING, ConversationEnd): on_conversation_end_conversing,

@@ -29,6 +29,7 @@ from warashi_agent.model import (
     Lantern,
     LanternFade,
     Mode,
+    ModeRequest,
     ModeSet,
     PirFalling,
     PirRising,
@@ -63,10 +64,13 @@ SCHEMA_ENUMS: list[tuple[type[StrEnum], set[str]]] = [
             "uncertain",
             "conversing",
             "cooldown",
+            "remote",
         },
     ),
-    # status.report.mode and mode.set.mode
+    # status.report.mode
     (Mode, {"guard", "sleep"}),
+    # mode.set.mode (remote-mode M1)
+    (ModeRequest, {"guard", "sleep", "remote"}),
     # reaction.performed.kind
     (Category, {"family", "stranger", "uncertain"}),
     # judgement.result.verdict
@@ -150,7 +154,7 @@ EVENTS = [
     Speak(ref_id="r", line_id="uncertain", audio_url=None),
     Gaze(ref_id="r", pan_deg=1.0, tilt_deg=2.0),
     Lantern(ref_id="r", level=0.5, fade_ms=100),
-    ModeSet(ref_id="r", mode=Mode.SLEEP),
+    ModeSet(ref_id="r", mode=ModeRequest.SLEEP),
 ]
 
 ACTIONS = [

@@ -30,7 +30,16 @@ from datetime import UTC, datetime
 from enum import Enum, StrEnum
 from typing import Any, ClassVar, Literal
 
-from warashi_agent.model import Category, EndReason, FaceBox, Mode, Reason, State, Verdict
+from warashi_agent.model import (
+    Category,
+    EndReason,
+    FaceBox,
+    Mode,
+    ModeRequest,
+    Reason,
+    State,
+    Verdict,
+)
 
 CONTRACT_VERSION = 1
 """``v`` stays 1: no version of the contract has been deployed yet (R24.3)."""
@@ -241,10 +250,10 @@ class LanternData:
 
 @dataclass(frozen=True, kw_only=True)
 class ModeSetData:
-    """Set the Mode."""
+    """Set the Mode, or start remote control (remote-mode M1)."""
 
     TYPE: ClassVar[str] = "mode.set"
-    mode: Mode
+    mode: ModeRequest
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -602,7 +611,7 @@ _TYPE_SPECS: tuple[TypeSpec, ...] = (
         type=ModeSetData.TYPE,
         direction="command",
         payload=ModeSetData,
-        fields=(_enum("mode", "mode", Mode),),
+        fields=(_enum("mode", "mode", ModeRequest),),
     ),
     TypeSpec(
         type=ConversationStart.TYPE,

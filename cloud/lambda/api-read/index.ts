@@ -1,6 +1,6 @@
 /**
  * `api-read` Lambda entry point: `GET /me`, `/samples`, `/encounters`, `/encounters/{id}`,
- * `/device/status`. Thin glue only; every decision is in `api-read-core.ts`.
+ * `/device/status`, `/photos/{requestId}`, `/commands/{id}`. Thin glue only; every decision is in `api-read-core.ts`.
  *
  * Environment variables (set by the CDK stack, never secrets):
  *   WARASHI_TABLE_NAME, WARASHI_BUCKET_NAME, WARASHI_SIGNER_FUNCTION_NAME  (read by the adapters)
@@ -24,11 +24,13 @@ import {
   type RouteContext,
   type RouteResult,
 } from "../_shared/api-glue.js";
+import { createCommandResultReader } from "../_shared/adapters/command-results.js";
 import { createPhotoReader } from "../_shared/adapters/photos.js";
 import { loadConfig } from "../_shared/config.js";
 import { loadVoiceConfig } from "../_shared/voice/config.js";
 import { createHealthStore, createReadCounter } from "../voice-session/adapters/voice-dynamo.js";
 import { meVoice } from "../voice-start/voice-start-core.js";
+import { handleGetCommandResult } from "./commands-core.js";
 import { handleGetPhoto } from "./photos-core.js";
 import {
   handleDeviceStatus,
@@ -59,6 +61,7 @@ const voiceDeps = {
 };
 
 const photos = createPhotoReader();
+const results = createCommandResultReader();
 function readRequest({ request, role }: RouteContext): ReadRequest {
   return { role, query: request.query, pathParameters: request.pathParameters };
 }
@@ -90,6 +93,13 @@ export const handler = createApiHandler({
         await handleGetPhoto(
           { role: context.role, pathParameters: context.request.pathParameters },
           { photos, signer: base.signer, nowMs: context.nowMs },
+        ),
+      ),
+    "GET /commands/{id}": async (context: RouteContext): Promise<RouteResult> =>
+      ok(
+        await handleGetCommandResult(
+          { role: context.role, pathParameters: context.request.pathParameters },
+          { results, nowMs: context.nowMs },
         ),
       ),
   },

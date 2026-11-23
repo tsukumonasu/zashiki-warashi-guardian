@@ -83,13 +83,15 @@ class _Pose:
 @st.composite
 def _poses(draw: st.DrawFn, cfg: Config) -> _Pose:
     """An absent, valid or garbage pose file (R15.8)."""
-    pan_limit, tilt_limit = cfg.servo.pan_limit, cfg.servo.tilt_limit
+    pan_limit = cfg.servo.pan_limit
+    # The adapter accepts a saved tilt only within the separate up and down limits.
+    tilt_down, tilt_up = cfg.servo.tilt_down, cfg.servo.tilt_up
     kind = draw(st.sampled_from(["absent", "valid", "not_utf8", "out_of_range", "not_object"]))
     if kind == "absent":
         return _Pose(None, (0.0, 0.0), kind)
     if kind == "valid":
         pan = draw(st.floats(min_value=-pan_limit, max_value=pan_limit, **_FINITE))
-        tilt = draw(st.floats(min_value=-tilt_limit, max_value=tilt_limit, **_FINITE))
+        tilt = draw(st.floats(min_value=-tilt_down, max_value=tilt_up, **_FINITE))
         text = json.dumps({"panDeg": pan, "tiltDeg": tilt})
         return _Pose(text.encode("utf-8"), (pan, tilt), kind)
     if kind == "not_utf8":

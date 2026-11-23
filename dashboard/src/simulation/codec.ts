@@ -51,7 +51,10 @@ const B: Kind = { t: "bool" };
 const E = (values: readonly string[]): Kind => ({ t: "enum", values });
 
 const FACE_FIELDS = ["left", "top", "width", "height"] as const;
+/** `status.report.mode`. */
 const MODES = ["guard", "sleep"] as const;
+/** `mode.set.mode`: `remote` starts remote control on the real doll (remote-mode M1). */
+const MODE_SET_MODES = ["guard", "sleep", "remote"] as const;
 
 /** One entry per message type: the `data` fields in schema order. */
 const DATA_FIELDS: Record<SchemaMessage["type"], readonly Field[]> = {
@@ -103,7 +106,7 @@ const DATA_FIELDS: Record<SchemaMessage["type"], readonly Field[]> = {
     ["level", N],
     ["fadeMs", I],
   ],
-  "mode.set": [["mode", E(MODES)]],
+  "mode.set": [["mode", E(MODE_SET_MODES)]],
   "conversation.requested": [["reason", E(["family_verdict"])]],
   "conversation.ended": [
     ["sessionId", S],

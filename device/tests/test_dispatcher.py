@@ -537,7 +537,11 @@ def test_encounter_start_envelopes_carry_the_encounter_id_and_status_carries_nul
 def test_publishes_in_both_connectivity_states(connectivity: tuple[Event, ...]) -> None:
     rig = Rig()
     rig.feed(*connectivity)
-    assert rig.cloud.envelopes == []  # connectivity changes emit no Action (R9.7)
+    # A connect sends one status.report, so the dashboard drops the broker's last will (M5);
+    # a disconnect emits nothing (R9.7).
+    connects = sum(isinstance(e, CloudConnected) for e in connectivity)
+    assert [e.type for e in rig.cloud.envelopes] == [StatusReport.TYPE] * connects
+    rig.cloud.envelopes.clear()
 
     encounter_id = start_encounter(rig)
 

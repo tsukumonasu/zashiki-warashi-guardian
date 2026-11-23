@@ -34,6 +34,8 @@ export interface PhotoDeps {
 }
 
 export interface PhotoResponse {
+  /** The `snapshot.request` envelope id, for `GET /commands/{id}` (remote-feedback F3). */
+  id: string;
   requestId: string;
   deviceOnline: boolean;
 }
@@ -69,10 +71,11 @@ export async function handlePostPhoto(request: PhotoRequest, deps: PhotoDeps): P
     throw new ApiError("rate_limited", "Too many photos. Try again later.", guard.retryAfterS);
   }
   const requestId = deps.newId();
+  const id = deps.newId();
   const envelope = makeCommand(
     "snapshot.request",
     { requestId, purpose: "photo" },
-    { id: deps.newId(), now: new Date(deps.nowMs), deviceId, encounterId: null },
+    { id, now: new Date(deps.nowMs), deviceId, encounterId: null },
   );
   const deviceOnline = await readOnline(deviceId, deps);
   try {
@@ -80,5 +83,5 @@ export async function handlePostPhoto(request: PhotoRequest, deps: PhotoDeps): P
   } catch {
     throw new ApiError("internal", "Could not send the request.");
   }
-  return { requestId, deviceOnline };
+  return { id, requestId, deviceOnline };
 }

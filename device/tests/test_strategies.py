@@ -68,8 +68,12 @@ def r25_violations(cfg: Config) -> list[str]:
         "stranger_confidence_min": 0 < cfg.judgement.stranger_confidence_min <= 1,
         "tick_interval_ms": 10 <= t.tick_interval_ms <= 1000,
         "pir_warmup_s": 0 <= t.pir_warmup_s <= 120,
+        "pir_quiet_s": 0 <= t.pir_quiet_s <= 600,
+        "remote_idle_s": 10 <= t.remote_idle_s <= 600,
         "timeouts > 0": all(
-            getattr(t, f.name) > 0 for f in dataclasses.fields(t) if f.name != "pir_warmup_s"
+            getattr(t, f.name) > 0
+            for f in dataclasses.fields(t)
+            if f.name not in ("pir_warmup_s", "pir_quiet_s")
         ),
         "waking >= fade in": t.waking_timeout_s >= ln.lantern_fade_in_ms / 1000,
         "waking >= sweep": t.waking_timeout_s >= sweep_s,
@@ -94,7 +98,7 @@ def test_valid_configs_pass_every_r25_rule_and_the_test_budget(cfg: Config) -> N
     assert r25_violations(cfg) == []
     t = cfg.timing
     assert t.tick_interval_ms >= 50
-    uncapped = {"tick_interval_ms", "pir_warmup_s", "status_interval_s"}
+    uncapped = {"tick_interval_ms", "pir_warmup_s", "status_interval_s", "remote_idle_s"}
     capped = [f.name for f in dataclasses.fields(t) if f.name not in uncapped]
     # 1e-9 tolerance: valid_configs() draws cooldown_s from just above glide_timeout_s +
     # lantern_fade_out_ms / 1000, which is the float just above 30 when those are 20 and 10000.

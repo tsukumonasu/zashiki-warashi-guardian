@@ -165,6 +165,9 @@ def _drawn_configs(draw: st.DrawFn, motion_enabled: bool | None) -> Config:
     timing = TimingConfig(
         tick_interval_ms=tick_interval_ms,
         pir_warmup_s=draw(_closed_floats(0.0, 120.0)),
+        pir_quiet_s=draw(_closed_floats(0.0, TIMEOUT_MAX_S)),
+        # The default (120 s) or a short value that keeps the tests fast.
+        remote_idle_s=draw(st.one_of(st.just(120.0), _closed_floats(10.0, TIMEOUT_MAX_S))),
         waking_timeout_s=waking_timeout_s,
         verdict_timeout_s=verdict_timeout_s,
         glide_timeout_s=glide_timeout_s,

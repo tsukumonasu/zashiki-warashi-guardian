@@ -1,4 +1,4 @@
-"""Unit tests for the remote photo and the remote ``speak`` (remote-actions R2 and R3).
+"""Unit tests for the remote photo and the remote ``speak`` (remote-actions R2, R3; F1).
 
 A remote photo is a short manual Encounter: ``sleeping`` -> ``waking`` -> ``seeking`` ->
 ``cooldown`` -> ``sleeping``. It publishes ``presence.detected`` with ``source: "manual"``, one
@@ -29,6 +29,7 @@ from warashi_agent.model import (
     GazeTarget,
     LanternFade,
     Mode,
+    PirRising,
     PlayAudioUrl,
     PublishEvent,
     PublishStatus,
@@ -237,7 +238,7 @@ def test_a_look_in_sleeping_is_still_rejected() -> None:
     assert _rejection_codes(actions) == [ErrorCode.COMMAND_REJECTED_STATE]
 
 
-def test_a_photo_outside_sleeping_is_rejected() -> None:
+def test_a_second_photo_during_a_photo_encounter_is_rejected() -> None:
     busy, _ = start_photo()
     nxt, actions = step(busy, photo_request(uid="u9"), NOW + 1)
     assert nxt is busy
@@ -250,6 +251,129 @@ def test_a_photo_in_conversing_is_rejected() -> None:
         encounter=Encounter(encounter_id="e1"),
     )
     nxt, actions = step(ms, photo_request(), NOW)
+    assert nxt is ms
+    assert _rejection_codes(actions) == [ErrorCode.COMMAND_REJECTED_STATE]
+
+
+# ============================================================================================
+# A photo during a visit (remote-feedback F1)
+# ============================================================================================
+
+
+JPEG = b"\xff\xd8\xff" + b"0" * 20
+
+
+def pir_seeking() -> tuple[MachineState, TakeSnapshot]:
+    """A PIR visit in ``seeking`` that waits for its first scan snapshot."""
+    ms, _ = step(machine(), PirRising(uid="pir-1"), NOW)
+    waking = ms.phase
+    assert isinstance(waking, Waking)
+    arrive_at = NOW + CONFIG.lantern.lantern_fade_in_ms / 1000 + 0.1
+    ms, actions = step(ms, ServoArrived(motion_id=waking.motion_id, uid="u2"), arrive_at)
+    (take,) = of_type(actions, TakeSnapshot)
+    assert isinstance(ms.phase, Seeking)
+    return ms, take
+
+
+def photo_in_visit() -> tuple[MachineState, TakeSnapshot, tuple[Action, ...]]:
+    ms, _ = pir_seeking()
+    nxt, actions = step(ms, photo_request(uid="u5"), NOW + 3)
+    (take,) = of_type(actions, TakeSnapshot)
+    return nxt, take, actions
+
+
+def test_a_photo_during_a_visit_takes_one_picture_and_changes_nothing_else() -> None:
+    ms, _ = pir_seeking()
+    nxt, take, actions = photo_in_visit()
+    assert state_changes(actions) == []
+    assert _rejection_codes(actions) == []
+    assert of_type(actions, GazeTarget) == [] and of_type(actions, LanternFade) == []
+    assert nxt.phase == ms.phase
+    assert nxt.encounter == ms.encounter
+    assert nxt.photo is not None
+    assert nxt.photo.request_id == REQUEST_ID
+    assert nxt.photo.snapshot_id == take.snapshot_id
+    assert nxt.camera is not None
+
+
+def test_the_photo_is_published_with_its_request_id_and_the_visit_goes_on() -> None:
+    ms, take, _ = photo_in_visit()
+    ready = SnapshotReady(snapshot_id=take.snapshot_id, jpeg=JPEG, width=640, height=480, uid="u6")
+    nxt, actions = step(ms, ready, NOW + 4)
+    (captured,) = of_type(published(actions), SnapshotCaptured)
+    assert (captured.request_id, captured.purpose) == (REQUEST_ID, "photo")
+    assert captured.snapshot_id == take.snapshot_id
+    assert state_changes(actions) == []
+    assert nxt.phase == ms.phase
+    assert nxt.encounter == ms.encounter
+    assert nxt.photo is None
+    # The scan snapshot is still awaited, as before the photo.
+    assert ms.encounter is not None and nxt.encounter is not None
+    assert nxt.encounter.attempt == ms.encounter.attempt
+
+
+def test_the_scan_snapshot_is_still_judged_after_a_photo() -> None:
+    ms, scan = pir_seeking()
+    ms, _ = step(ms, photo_request(uid="u5"), NOW + 3)
+    ready = SnapshotReady(snapshot_id=scan.snapshot_id, jpeg=JPEG, width=640, height=480, uid="u6")
+    nxt, actions = step(ms, ready, NOW + 4)
+    (captured,) = of_type(published(actions), SnapshotCaptured)
+    assert captured.snapshot_id == scan.snapshot_id
+    assert captured.purpose is None and captured.request_id is None
+    assert nxt.photo == ms.photo
+
+
+def test_a_photo_that_finishes_after_the_visit_ended_is_still_published() -> None:
+    ms, take, _ = photo_in_visit()
+    ms = dataclasses.replace(ms, phase=machine().phase, encounter=None)
+    ready = SnapshotReady(snapshot_id=take.snapshot_id, jpeg=JPEG, width=640, height=480, uid="u6")
+    nxt, actions = step(ms, ready, NOW + 4)
+    (captured,) = of_type(published(actions), SnapshotCaptured)
+    assert captured.request_id == REQUEST_ID
+    assert nxt.photo is None
+    assert nxt.camera is None
+
+
+def test_a_second_photo_while_one_is_outstanding_is_rejected() -> None:
+    ms, _, _ = photo_in_visit()
+    nxt, actions = step(ms, photo_request(uid="u7"), NOW + 3.5)
+    assert nxt is ms
+    assert _rejection_codes(actions) == [ErrorCode.COMMAND_REJECTED_STATE]
+    assert of_type(actions, TakeSnapshot) == []
+
+
+def test_a_failed_photo_is_reported_and_allows_the_next_one() -> None:
+    ms, take, _ = photo_in_visit()
+    failed = SnapshotFailed(snapshot_id=take.snapshot_id, code="camera_failed", uid="u6")
+    nxt, actions = step(ms, failed, NOW + 4)
+    assert _rejection_codes(actions) == [ErrorCode.CAMERA_FAILED]
+    assert state_changes(actions) == []
+    assert nxt.phase == ms.phase
+    assert nxt.photo is None
+
+
+def test_a_lost_photo_result_expires_at_its_deadline() -> None:
+    ms, _, _ = photo_in_visit()
+    assert ms.photo is not None
+    before, _ = step(ms, Tick(uid="u6"), ms.photo.deadline - 0.01)
+    assert before.photo == ms.photo
+    after, _ = step(before, Tick(uid="u7"), ms.photo.deadline)
+    assert after.photo is None
+
+
+def test_a_photo_in_cooldown_is_rejected() -> None:
+    ms = machine(
+        phase=Cooldown(motion_id="m", glide_deadline=NOW + 3, until=NOW + 20, manual=False),
+        encounter=Encounter(encounter_id="e1"),
+    )
+    nxt, actions = step(ms, photo_request(), NOW)
+    assert nxt is ms
+    assert _rejection_codes(actions) == [ErrorCode.COMMAND_REJECTED_STATE]
+
+
+def test_a_look_during_a_visit_is_rejected() -> None:
+    ms, _ = pir_seeking()
+    nxt, actions = step(ms, photo_request(purpose="look"), NOW + 3)
     assert nxt is ms
     assert _rejection_codes(actions) == [ErrorCode.COMMAND_REJECTED_STATE]
 

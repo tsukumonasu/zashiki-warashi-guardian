@@ -124,6 +124,11 @@ class TimingConfig:
 
     tick_interval_ms: float = 100.0
     pir_warmup_s: float = 60.0
+    # PIR edges are ignored this long after an Encounter ends: the HC-SR501 retriggers every few
+    # seconds while someone stays near, which would otherwise start visit after visit.
+    pir_quiet_s: float = 30.0
+    # Remote control ends after this long without an accepted command (remote-mode M3).
+    remote_idle_s: float = 120.0
     waking_timeout_s: float = 3.0
     verdict_timeout_s: float = 8.0
     glide_timeout_s: float = 3.0
@@ -497,6 +502,8 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         "number, 10 <= value <= 1000",
     ),
     _spec("timing", "pir_warmup_s", "float", _in_range(0, 120), "number, 0 <= value <= 120"),
+    _spec("timing", "pir_quiet_s", "float", _in_range(0, 600), "number, 0 <= value <= 600"),
+    _spec("timing", "remote_idle_s", "float", _in_range(10, 600), "number, 10 <= value <= 600"),
     _spec("timing", "waking_timeout_s", "float", _positive, _POS_TEXT),
     _spec("timing", "verdict_timeout_s", "float", _positive, _POS_TEXT),
     _spec("timing", "glide_timeout_s", "float", _positive, _POS_TEXT),

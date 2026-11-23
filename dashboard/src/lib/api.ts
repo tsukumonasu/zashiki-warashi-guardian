@@ -109,9 +109,14 @@ export interface CommandResponse {
 }
 /** `POST /photos` (remote-actions R4). */
 export interface PhotoRequestResponse {
+  /** The command id for `GET /commands/{id}` (remote-feedback F3). An older cloud omits it. */
+  id?: string;
   requestId: string;
   deviceOnline: boolean;
 }
+/** `GET /commands/{id}` (remote-feedback F2): did the doll refuse this command. */
+export type CommandResult = { status: "pending" } | { status: "rejected"; code: string };
+
 /** `GET /photos/{requestId}` (remote-actions R5). */
 export type PhotoStatus = { status: "pending" } | { status: "ready"; url: string; expiresAt: string };
 export interface FaceMember {
@@ -184,6 +189,8 @@ export interface ApiClient {
   /** Asks the doll for one photo. The picture is fetched later with `photo`. */
   photoRequest(deviceId: string): Promise<ApiResult<PhotoRequestResponse>>;
   photo(requestId: string): Promise<ApiResult<PhotoStatus>>;
+  /** Whether the doll refused the command with this id (`pending` until a refusal arrives). */
+  commandResult(id: string): Promise<ApiResult<CommandResult>>;
   /** Makes the doll say typed Japanese text (`POST /say`). */
   say(deviceId: string, text: string): Promise<ApiResult<CommandResponse>>;
   faces(): Promise<ApiResult<{ members: FaceMember[] }>>;
@@ -278,7 +285,9 @@ const isCommandResponse: Guard<CommandResponse> = (v): v is CommandResponse =>
   isObj(v) && isStr(v.id) && isBool(v.deviceOnline);
 
 const isPhotoRequest: Guard<PhotoRequestResponse> = (v): v is PhotoRequestResponse =>
-  isObj(v) && isStr(v.requestId) && isBool(v.deviceOnline);
+  isObj(v) && isStr(v.requestId) && isBool(v.deviceOnline) && (v.id === undefined || isStr(v.id));
+const isCommandResult: Guard<CommandResult> = (v): v is CommandResult =>
+  isObj(v) && (v.status === "pending" || (v.status === "rejected" && isStr(v.code)));
 
 const isPhotoStatus: Guard<PhotoStatus> = (v): v is PhotoStatus =>
   isObj(v) &&
@@ -408,6 +417,7 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
     command: (deviceId, command) => call("POST", "/commands", isCommandResponse, { deviceId, command }),
     photoRequest: (deviceId) => call("POST", "/photos", isPhotoRequest, { deviceId }),
     photo: (requestId) => call("GET", `/photos/${enc(requestId)}`, isPhotoStatus),
+    commandResult: (id) => call("GET", `/commands/${enc(id)}`, isCommandResult),
     say: (deviceId, text) => call("POST", "/say", isCommandResponse, { deviceId, text }),
     faces: () => call("GET", "/faces", isFaces),
     faceUpload: () => call("POST", "/faces/upload", isUploadTicket, {}),

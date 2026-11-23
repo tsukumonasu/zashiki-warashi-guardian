@@ -50,6 +50,8 @@ stranger_confidence_min = 0.80    # lowest accepted stranger confidence: 0 < val
 [timing]
 tick_interval_ms = 100            # clock event period, milliseconds: 10-1000
 pir_warmup_s = 60                 # PIR is ignored this long after start, seconds: 0-120
+pir_quiet_s = 30                  # PIR is ignored this long after a visit ends, seconds: 0-600
+remote_idle_s = 120               # remote control ends after this long without a command: 10-600
 waking_timeout_s = 3              # seconds
 verdict_timeout_s = 8             # seconds to wait for a verdict
 glide_timeout_s = 3               # seconds to wait for a head movement

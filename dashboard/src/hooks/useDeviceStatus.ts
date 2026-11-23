@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApiClient, DeviceStatusResponse } from "../lib/api";
 import type { StatusFetch } from "../simulation/indicator";
 
 export const DEVICE_ID = "warashi-01";
 export const POLL_INTERVAL_MS = 30_000;
+/** When to ask again after a command, so the page shows the doll's new state soon. */
+export const REFRESH_AFTER_MS: readonly number[] = [1500, 4000];
 
 export interface UseDeviceStatusOptions {
   api: ApiClient;
@@ -20,6 +22,8 @@ export interface DeviceStatus {
   statusFetch: StatusFetch;
   /** The last successful response, or null before one arrived or after a failure. */
   response: DeviceStatusResponse | null;
+  /** Asks again shortly, for example after a command changed the doll's state. */
+  refresh: () => void;
 }
 
 const defaultRepeating = (fn: () => void, ms: number): (() => void) => {
@@ -38,7 +42,12 @@ export function useDeviceStatus(options: UseDeviceStatusOptions): DeviceStatus {
   const { api, enabled } = options;
   const setRepeating = options.setRepeating ?? defaultRepeating;
   const isVisible = options.isVisible ?? defaultVisible;
-  const [state, setState] = useState<DeviceStatus>({ statusFetch: { kind: "none" }, response: null });
+  const [state, setState] = useState<Omit<DeviceStatus, "refresh">>({
+    statusFetch: { kind: "none" },
+    response: null,
+  });
+  // The poll of the running effect, so refresh() never polls for a disabled or unmounted view.
+  const pollRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (!enabled) {
@@ -63,6 +72,7 @@ export function useDeviceStatus(options: UseDeviceStatusOptions): DeviceStatus {
       });
     };
 
+    pollRef.current = poll;
     poll();
     const stop = setRepeating(() => {
       if (isVisible()) poll();
@@ -70,9 +80,14 @@ export function useDeviceStatus(options: UseDeviceStatusOptions): DeviceStatus {
 
     return () => {
       cancelled = true;
+      pollRef.current = () => {};
       stop();
     };
   }, [api, enabled, setRepeating, isVisible]);
 
-  return state;
+  const refresh = useCallback(() => {
+    for (const ms of REFRESH_AFTER_MS) window.setTimeout(() => pollRef.current(), ms);
+  }, []);
+
+  return { ...state, refresh };
 }

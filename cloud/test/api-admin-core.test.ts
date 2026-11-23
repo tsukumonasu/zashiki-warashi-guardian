@@ -100,6 +100,11 @@ describe("POST /commands", () => {
     ]);
   });
 
+  it("publishes mode.set remote (remote-mode M1)", async () => {
+    const { bus, send } = commandSetup();
+    await send(cmd("mode.set", { mode: "remote" }));
+    expect(bus.published[0]!.envelope.data).toEqual({ mode: "remote" });
+  });
   it("publishes a cached speak line and mode.set", async () => {
     const { bus, send } = commandSetup();
     await send(cmd("speak", { lineId: "family_hello" }));

@@ -106,6 +106,7 @@ const EYE: Readonly<Record<DeviceState, EyeState>> = {
   uncertain: "open",
   conversing: "open",
   cooldown: "half",
+  remote: "open", // never entered by the virtual doll (remote-mode M4)
 };
 
 /** Fixed `error.reported` texts: no line text, no URL, no private data. */
@@ -855,6 +856,11 @@ function onCommand(ctx: Ctx, message: SchemaMessage): void {
       return;
     case "mode.set": {
       const mode = message.data.mode;
+      if (mode === "remote") {
+        // The virtual doll does not model remote control (remote-mode M4).
+        reportError(ctx, "command_rejected_state", message.id);
+        return;
+      }
       if (ctx.s.mode === mode) return;
       ctx.s = { ...ctx.s, mode };
       const kind = ctx.s.phase.kind;

@@ -331,8 +331,9 @@ def check_status(
         at = obs.last_status + cfg.timing.status_interval_s
         due = rec.now >= at
         ambiguous = abs(rec.now - at) <= TOL
-    required = state_changed or camera_changed or first_tick or due
-    if not (ambiguous and not (state_changed or camera_changed or first_tick)):
+    reconnected = isinstance(rec.event, CloudConnected)  # remote-mode M5
+    required = state_changed or camera_changed or first_tick or due or reconnected
+    if not (ambiguous and not (state_changed or camera_changed or first_tick or reconnected)):
         assert bool(statuses) is required, (
             f"PublishStatus {'missing' if required else 'unexpected'} at {rec.now}"
             f" on {type(rec.event).__name__} (state_changed={state_changed},"
@@ -384,7 +385,10 @@ def check_no_side_effects(rec: Record) -> None:
         isinstance(ev, CloudDisconnected) and before.state is not S.SEEKING
     ):
         _unchanged(rec, "cloud event")
-        assert rec.actions == (), f"cloud event emitted {rec.actions!r} (R9.7)"
+        # A reconnect sends exactly one status.report (remote-mode M5); a disconnect nothing.
+        allowed = (PublishStatus,) if isinstance(ev, CloudConnected) else ()
+        kinds = tuple(type(a) for a in rec.actions)
+        assert kinds in ((), allowed), f"cloud event emitted {rec.actions!r} (R9.7, M5)"
     elif isinstance(ev, PirFalling) or (
         isinstance(ev, PirRising) and before.state is not S.SLEEPING
     ):

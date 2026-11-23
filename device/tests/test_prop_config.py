@@ -103,6 +103,8 @@ GLOSSARY: dict[str, Rule] = {
     "judgement.stranger_confidence_min": _pos(0.80, 1),
     "timing.tick_interval_ms": Rule("number", 100, 10, 1000),
     "timing.pir_warmup_s": Rule("number", 60, 0, 120),
+    "timing.pir_quiet_s": Rule("number", 30, 0, 600),
+    "timing.remote_idle_s": Rule("number", 120, 10, 600),
     "timing.waking_timeout_s": _pos(3),
     "timing.verdict_timeout_s": _pos(8),
     "timing.glide_timeout_s": _pos(3),

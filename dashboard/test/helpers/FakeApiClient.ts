@@ -49,6 +49,7 @@ export class FakeApiClient implements ApiClient {
   command: ApiClient["command"] = (deviceId, command) => this.run("command", [deviceId, command]);
   photoRequest: ApiClient["photoRequest"] = (deviceId) => this.run("photoRequest", [deviceId]);
   photo: ApiClient["photo"] = (requestId) => this.run("photo", [requestId]);
+  commandResult: ApiClient["commandResult"] = (id) => this.run("commandResult", [id]);
   say: ApiClient["say"] = (deviceId, text) => this.run("say", [deviceId, text]);
   faces: ApiClient["faces"] = () => this.run("faces", []);
   faceUpload: ApiClient["faceUpload"] = () => this.run("faceUpload", []);

@@ -192,6 +192,12 @@ describe("conversation in the simulation reducer", () => {
     expect(err?.type === "error.reported" && err.data.code).toBe("command_rejected_state");
   });
 
+  it("refuses mode.set remote, which only the real doll models (remote-mode M4)", () => {
+    const rig = new Rig();
+    rig.feed(cmd("mode.set", { mode: "remote" }));
+    const err = rig.messages[rig.messages.length - 1];
+    expect(err?.type === "error.reported" && err.data.code).toBe("command_rejected_state");
+  });
   it("mode.set sleep ends a conversation as manual", () => {
     const rig = new Rig();
     rig.feed(start("manual"));

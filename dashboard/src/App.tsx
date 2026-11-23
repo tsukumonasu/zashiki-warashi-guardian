@@ -60,6 +60,7 @@ const API_METHODS = [
   "command",
   "photoRequest",
   "photo",
+  "commandResult",
   "say",
   "faces",
   "faceUpload",
@@ -67,7 +68,16 @@ const API_METHODS = [
   "faceDelete",
   "startConversation",
   "endConversation",
-] as const;
+] as const satisfies readonly (keyof ApiClient)[];
+
+/**
+ * Compile-time check that `API_METHODS` names every ApiClient method. A method missing here is
+ * undefined on the wrapped client, so a call to it throws in the browser and silently stops the
+ * flow that made it (this happened once with `commandResult`).
+ */
+type UnwrappedMethod = Exclude<keyof ApiClient, (typeof API_METHODS)[number]>;
+const EVERY_METHOD_WRAPPED: [UnwrappedMethod] extends [never] ? true : UnwrappedMethod = true;
+void EVERY_METHOD_WRAPPED;
 
 /** Wraps every API method so a 401 or 403 reaches the shell (Requirements 11.5, 11.6). */
 function withAuthHandling(
@@ -386,6 +396,7 @@ export function App() {
               cloudAvailable={cloudAvailable}
               voice={voice}
               deviceResponse={deviceStatus.response}
+              onCommandSent={deviceStatus.refresh}
             />
           )}
           {route === "/timeline" && (

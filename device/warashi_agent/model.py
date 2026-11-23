@@ -43,6 +43,8 @@ class State(StrEnum):
     # The P1 voice conversation (voice-conversation R11); entered only when
     # ``conversation_enabled`` is true.
     CONVERSING = "conversing"
+    # Remote control from the dashboard (remote-mode M1); entered only by ``mode.set remote``.
+    REMOTE = "remote"
 
 
 class Mode(StrEnum):
@@ -50,6 +52,18 @@ class Mode(StrEnum):
 
     GUARD = "guard"
     SLEEP = "sleep"
+
+
+class ModeRequest(StrEnum):
+    """The value of a ``mode.set`` command (remote-mode M1).
+
+    ``remote`` starts remote control and is not a Mode: ``status.report.mode`` stays ``guard``
+    or ``sleep``, so the doll always knows what to return to.
+    """
+
+    GUARD = "guard"
+    SLEEP = "sleep"
+    REMOTE = "remote"
 
 
 class Category(StrEnum):
@@ -283,10 +297,10 @@ class Lantern(EventBase):
 
 @dataclass(frozen=True, kw_only=True)
 class ModeSet(EventBase):
-    """Set the Mode (R12.7 to R12.9)."""
+    """Set the Mode (R12.7 to R12.9), or start remote control (remote-mode M1)."""
 
     ref_id: str
-    mode: Mode
+    mode: ModeRequest
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -320,7 +334,7 @@ class SnapshotRequest(EventBase):
     """Take a snapshot (S6, remote-actions R2).
 
     ``purpose`` ``"look"`` is for a voice session and valid in ``conversing`` only; ``"photo"``
-    wakes a sleeping doll for one picture.
+    wakes a sleeping doll for one picture, or takes one picture during a visit (F1).
     """
 
     ref_id: str

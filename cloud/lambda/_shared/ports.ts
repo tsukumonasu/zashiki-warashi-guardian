@@ -60,6 +60,26 @@ export interface PhotoStore {
 export interface PhotoReader {
   getPhoto(requestId: string): Promise<PhotoRecord | null>;
 }
+/**
+ * The doll's refusal of one command (`CMD#<id>`, remote-feedback F2). The doll sends nothing for an
+ * accepted command, so only refusals are recorded.
+ */
+export interface CommandRejection {
+  /** The `id` of the refused command envelope (the `refId` of `error.reported`). */
+  id: string;
+  deviceId: string;
+  code: string;
+  /** DynamoDB TTL, epoch seconds. */
+  ttl: number;
+}
+/** Where ingest records a refusal. Writing the same id twice is harmless. */
+export interface CommandResultStore {
+  putRejection(rejection: CommandRejection): Promise<void>;
+}
+/** Where `GET /commands/{id}` finds it. Resolves `null` for an unknown id. */
+export interface CommandResultReader {
+  getRejection(id: string): Promise<CommandRejection | null>;
+}
 export interface DeviceBus {
   /** Publish with QoS 1 to `warashi/<deviceId>/commands`. */
   publish(deviceId: string, envelope: Envelope): Promise<void>;

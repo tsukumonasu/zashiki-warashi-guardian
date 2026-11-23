@@ -54,6 +54,7 @@ export const JA: Copy = {
       uncertain: "迷っている",
       conversing: "話している",
       cooldown: "落ち着いている",
+      remote: "遠隔操作中",
     },
   },
 
@@ -131,10 +132,23 @@ export const JA: Copy = {
   },
 
   device: {
-    awake: "起きている",
-    asleepOrOutOfReach: "人形は眠っているか、つながっていません",
+    connected: "人形とつながっています",
+    outOfReach: "人形とつながっていません(最近の報告がありません)",
     neverSeen: "未接続",
     motionOff: "人形の動きは無効になっています",
+    activity: "いまの様子",
+    mode: "モード",
+    modeGuard: "見張り中(人が来ると起きます)",
+    modeSleep: "見張りを休んでいる(人が来ても起きません)",
+    head: "首の向き(左右 / 上下)",
+    left: "左",
+    right: "右",
+    up: "上",
+    down: "下",
+    center: "正面",
+    lantern: "ランタン(明るさ)",
+    lanternOff: "消えている",
+    lastSeen: "最後の報告",
   },
 
   privacy: {
@@ -149,7 +163,12 @@ export const JA: Copy = {
     lookLeft: "左を見る",
     lookRight: "右を見る",
     sleep: "人形を眠らせる",
-    wake: "見張りを起こす",
+    wake: "見張りモードに戻す",
+    remoteStart: "遠隔操作を始める",
+    restingHint:
+      "人形は休んでいるので、左右を見ることとランタンは使えません。「遠隔操作を始める」を押すと、起きて操作できるようになります。",
+    remoteHint:
+      "遠隔操作中です。2分間操作がないか、「見張りモードに戻す」を押すと、首を中央に戻して見張りに戻ります。",
     sent: "人形に送りました",
     offline: "人形はオフラインです。コマンドは保存されず、あとで実行されることもありません。",
     tryAgain: "もう一度試す",
@@ -160,7 +179,7 @@ export const JA: Copy = {
     heading: "遠隔アクション",
     photoHeading: "写真を撮る",
     photoTip:
-      "人形が起きてランタンを灯し、1枚だけ撮影して、また休みます。見られるのは家族だけで、数日で削除されます。撮影中は、画面上部のカメラ表示で分かります。",
+      "人形が起きてランタンを灯し、1枚だけ撮影して、また休みます。誰かが来ていて起きているときは、その場で撮ります。見られるのは家族だけで、数日で削除されます。撮影中は、画面上部のカメラ表示で分かります。",
     photoNote: "実機のカメラを一瞬だけ使います。",
     photoButton: "写真を撮る",
     photoWaiting: "写真を待っています…",
@@ -181,6 +200,15 @@ export const JA: Copy = {
     sayFailed: "送れませんでした。もう一度お試しください。",
     offline: "人形がオフラインです。依頼は保存されず、あとで再生されることもありません。",
     limited: (seconds: number): string => `回数が多すぎます。${seconds} 秒後にもう一度お試しください。`,
+  },
+
+  refusal: {
+    state:
+      "人形は実行しませんでした。今は休んでいるか、手が離せません(訪問の終わりや会話の最中など)。少し待ってからもう一度お試しください。",
+    speakRejected: "人形は言いませんでした。今の場面に合わない台詞です。",
+    audioBusy: "人形は言いませんでした。まだ話している途中です。",
+    unknownLine: "人形は言いませんでした。その台詞を知りません。",
+    other: (code: string): string => `人形は実行しませんでした(${code})。`,
   },
 
   family: {

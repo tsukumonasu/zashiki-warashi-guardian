@@ -11,6 +11,7 @@ export const STATES = [
   "uncertain",
   "conversing",
   "cooldown",
+  "remote",
 ] as const;
 export type State = (typeof STATES)[number];
 
@@ -154,7 +155,8 @@ export type Speak = Msg<
 >;
 export type Gaze = Msg<"gaze", { panDeg: number; tiltDeg: number }>;
 export type Lantern = Msg<"lantern", { level: number; fadeMs: number }>;
-export type ModeSet = Msg<"mode.set", { mode: Mode }>;
+/** `remote` starts remote control on the real doll; the virtual doll refuses it (remote-mode M4). */
+export type ModeSet = Msg<"mode.set", { mode: Mode | "remote" }>;
 
 export type ConversationStart = Msg<
   "conversation.start",

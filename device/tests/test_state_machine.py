@@ -864,6 +864,8 @@ def test_connectivity_change_in_waking_is_recorded_and_nothing_else_changes(
     ms, _ = woken(connected=connected)
     nxt, actions = step(ms, event, FADE_DONE - 0.5)
     assert without_status(actions) == ()
+    # A reconnect also sends a status.report (remote-mode M5), which moves last_status_at.
+    nxt = dataclasses.replace(nxt, last_status_at=ms.last_status_at)
     assert nxt == dataclasses.replace(ms, cloud_connected=not connected)
 
 
@@ -871,6 +873,7 @@ def test_cloud_connected_in_seeking_is_recorded_and_nothing_else_changes() -> No
     ms = seeking_with(CURRENT, cloud_connected=False)
     nxt, actions = step(ms, CloudConnected(uid=UID_B), NOW + 1)
     assert without_status(actions) == ()
+    nxt = dataclasses.replace(nxt, last_status_at=ms.last_status_at)
     assert nxt == dataclasses.replace(ms, cloud_connected=True)
 
 
@@ -2058,7 +2061,7 @@ def test_the_first_tick_at_or_after_until_enters_sleeping_and_ends_the_encounter
 
     # Already released and dark, so no backstop Actions (R8.4).
     assert without_status(actions) == ended(end_reason)
-    assert nxt.phase == state_machine.Sleeping()
+    assert nxt.phase == state_machine.Sleeping(quiet_until=at + CONFIG.timing.pir_quiet_s)
     assert nxt.encounter is None
     assert (nxt.servos_released, nxt.lantern_level) == (True, 0.0)
 
@@ -2619,20 +2622,37 @@ def test_a_pir_still_high_when_cooldown_ends_starts_nothing(high_since: str) -> 
     for k, at in enumerate([COOL_UNTIL + 0.1, COOL_UNTIL + 5, COOL_UNTIL + 60]):
         nxt, actions = step(nxt, Tick(uid=edge_uid(10 + k)), at)
         assert without_status(actions) == ()
-        assert (nxt.phase, nxt.encounter) == (state_machine.Sleeping(), None)
+        assert nxt.state is State.SLEEPING
+        assert nxt.encounter is None
 
 
-def test_a_fresh_pir_rising_in_a_later_call_starts_the_next_encounter() -> None:
+def test_a_fresh_pir_rising_after_the_quiet_time_starts_the_next_encounter() -> None:
     sleeping, _ = step(cooling(released=True), Tick(uid=UID_A), COOL_UNTIL)
     assert sleeping.state is State.SLEEPING
 
-    # A later step() call is enough, even with the same now and the level still recorded high.
+    # A later step() call is enough, even with the level still recorded high.
     sleeping = dataclasses.replace(sleeping, pir_high=True)
-    nxt, actions = step(sleeping, edge(True, 1), COOL_UNTIL)
+    nxt, actions = step(sleeping, edge(True, 1), COOL_UNTIL + CONFIG.timing.pir_quiet_s)
 
     assert nxt.state is State.WAKING
     assert nxt.encounter == Encounter(encounter_id=edge_uid(1))
     assert [event.encounter_id for event in presences(actions)] == [edge_uid(1)]
+
+
+@pytest.mark.parametrize("after", [0.0, 5.0, CONFIG.timing.pir_quiet_s - 0.01])
+def test_a_pir_rising_within_the_quiet_time_starts_nothing(after: float) -> None:
+    """The HC-SR501 retriggers every few seconds; a visit must not follow a visit at once."""
+    sleeping, _ = step(cooling(released=True), Tick(uid=UID_A), COOL_UNTIL)
+    nxt, actions = step(sleeping, edge(True, 1), COOL_UNTIL + after)
+    assert nxt.state is State.SLEEPING
+    assert nxt.encounter is None
+    assert nxt.pir_high is True
+    assert without_status(actions) == ()
+
+
+def test_a_restart_has_no_quiet_time() -> None:
+    """Only the end of an Encounter starts the quiet time; the warm-up covers a restart."""
+    assert state_machine.Sleeping().quiet_until == 0.0
 
 
 # ============================================================================================
@@ -3307,9 +3327,8 @@ def test_the_first_tick_reports_once_and_a_quiet_tick_after_it_returns_the_same_
 
 def test_an_event_other_than_a_tick_is_not_the_first_tick() -> None:
     ms = base_state()
-    nxt, actions = step(ms, CloudConnected(uid=UID_A), START + 0.1)
+    nxt, actions = step(ms, PirFalling(uid=UID_A), START + 0.1)
     assert actions == ()
-    assert nxt == dataclasses.replace(ms, cloud_connected=True)
     assert nxt.first_tick_seen is False
 
 
@@ -3340,9 +3359,18 @@ def test_a_report_on_a_state_change_restarts_the_interval_but_is_not_the_first_t
 
 def test_only_a_tick_reports_on_the_interval() -> None:
     ms = reported_recently(base_state())
-    nxt, actions = step(ms, CloudConnected(uid=UID_A), NOW + 2 * INTERVAL_S)
+    nxt, actions = step(ms, PirFalling(uid=UID_A), NOW + 2 * INTERVAL_S)
     assert actions == ()
     assert nxt.last_status_at == NOW
+
+
+def test_a_reconnect_reports_at_once() -> None:
+    """The broker published the last will; a fresh report clears "offline" (M5)."""
+    ms = reported_recently(base_state())
+    nxt, actions = step(ms, CloudConnected(uid=UID_A), NOW + 1)
+    assert actions == (PublishStatus(data=report(nxt, NOW + 1)),)
+    assert nxt.last_status_at == NOW + 1
+    assert nxt.cloud_connected is True
 
 
 # --- State changes (R1.8, R23.1) -------------------------------------------------------------

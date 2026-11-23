@@ -60,7 +60,7 @@ export type CommandData = {
   };
   gaze: { panDeg: number; tiltDeg: number };
   lantern: { level: number; fadeMs: number };
-  "mode.set": { mode: "guard" | "sleep" };
+  "mode.set": { mode: "guard" | "sleep" | "remote" };
   "conversation.start": {
     sessionId: string;
     token: string;
@@ -127,8 +127,12 @@ const STATES = [
   "uncertain",
   "conversing",
   "cooldown",
+  "remote",
 ] as const;
+/** `status.report.mode`. */
 const MODES = ["guard", "sleep"] as const;
+/** `mode.set.mode`: `remote` starts remote control and is not a Mode (remote-mode M1). */
+const MODE_SET_MODES = ["guard", "sleep", "remote"] as const;
 const REASONS = [
   "presence",
   "arrived",
@@ -274,7 +278,7 @@ const REGISTRY: Readonly<Record<string, TypeSpec>> = Object.freeze({
   },
   gaze: { fields: [num("panDeg"), num("tiltDeg")] },
   lantern: { fields: [num("level"), int("fadeMs")] },
-  "mode.set": { fields: [enumOf("mode", MODES)] },
+  "mode.set": { fields: [enumOf("mode", MODE_SET_MODES)] },
   "conversation.start": {
     fields: [
       id64("sessionId"),

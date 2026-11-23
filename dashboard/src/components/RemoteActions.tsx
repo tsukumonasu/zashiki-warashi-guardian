@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { COPY } from "../content/copy";
 import type { ApiClient, ApiError } from "../lib/api";
+import { refusalMessage, watchRefusal } from "../lib/refusal";
 import { InfoTip } from "./InfoTip";
 
 export interface RemoteActionsProps {
@@ -10,6 +11,9 @@ export interface RemoteActionsProps {
   pollMs?: number;
   /** How long to wait for the picture before giving up. Tests shorten it. */
   waitMs?: number;
+  /** Refusal check timing for a typed line; tests shorten it. */
+  refusalPollMs?: number;
+  refusalWaitMs?: number;
 }
 
 /** Longest text the cloud accepts (`docs/schema.md`, `POST /say`). */
@@ -22,12 +26,14 @@ type PhotoState =
   | { kind: "ready"; url: string }
   | { kind: "timeout" }
   | { kind: "offline" }
+  | { kind: "rejected"; code: string }
   | { kind: "failed"; error: ApiError };
 
 type SayState =
   | { kind: "idle" }
   | { kind: "sending" }
   | { kind: "sent"; deviceOnline: boolean }
+  | { kind: "rejected"; code: string }
   | { kind: "failed"; error: ApiError };
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -51,7 +57,14 @@ function sayMessage(error: ApiError): string {
  * automatically. A typed line goes through `POST /say`; the cloud checks it before the doll
  * speaks. Neither request is stored for later: an offline doll never replays them.
  */
-export function RemoteActions({ api, deviceId, pollMs = 2000, waitMs = 40_000 }: RemoteActionsProps) {
+export function RemoteActions({
+  api,
+  deviceId,
+  pollMs = 2000,
+  waitMs = 40_000,
+  refusalPollMs,
+  refusalWaitMs,
+}: RemoteActionsProps) {
   const [photo, setPhoto] = useState<PhotoState>({ kind: "idle" });
   const [say, setSay] = useState<SayState>({ kind: "idle" });
   const [text, setText] = useState("");
@@ -60,6 +73,7 @@ export function RemoteActions({ api, deviceId, pollMs = 2000, waitMs = 40_000 }:
   const generation = useRef(0);
   const busyPhoto = useRef(false);
   const busySay = useRef(false);
+  const sayGeneration = useRef(0);
 
   useEffect(() => {
     alive.current = true;
@@ -101,6 +115,17 @@ export function RemoteActions({ api, deviceId, pollMs = 2000, waitMs = 40_000 }:
         setPhoto({ kind: "ready", url: status.value.url });
         return;
       }
+      // A refused request never brings a picture, so stop waiting and say why (F2, F3).
+      const commandId = asked.value.id;
+      if (commandId !== undefined) {
+        const verdict = await api.commandResult(commandId);
+        if (!alive.current || mine !== generation.current) break;
+        if (verdict.ok && verdict.value.status === "rejected") {
+          busyPhoto.current = false;
+          setPhoto({ kind: "rejected", code: verdict.value.code });
+          return;
+        }
+      }
     }
     busyPhoto.current = false;
     if (alive.current && mine === generation.current) setPhoto({ kind: "timeout" });
@@ -111,16 +136,22 @@ export function RemoteActions({ api, deviceId, pollMs = 2000, waitMs = 40_000 }:
     const line = text.trim();
     if (line === "" || busySay.current) return;
     busySay.current = true;
+    const mine = ++sayGeneration.current;
     setSay({ kind: "sending" });
     const result = await api.say(deviceId, line);
     busySay.current = false;
     if (!alive.current) return;
-    if (result.ok) {
-      setSay({ kind: "sent", deviceOnline: result.value.deviceOnline });
-      setText("");
-    } else {
+    if (!result.ok) {
       setSay({ kind: "failed", error: result.error });
+      return;
     }
+    setSay({ kind: "sent", deviceOnline: result.value.deviceOnline });
+    setText("");
+    if (!result.value.deviceOnline) return;
+    // The doll answers a refused line with error.reported; show why instead of "sent" (F2).
+    const wanted = () => alive.current && mine === sayGeneration.current;
+    const code = await watchRefusal(api, result.value.id, wanted, refusalPollMs, refusalWaitMs);
+    if (code !== null && wanted()) setSay({ kind: "rejected", code });
   }
 
   const photoBusy = photo.kind === "sending" || photo.kind === "waiting";
@@ -141,6 +172,7 @@ export function RemoteActions({ api, deviceId, pollMs = 2000, waitMs = 40_000 }:
           {photo.kind === "timeout" && COPY.remote.photoTimeout}
           {photo.kind === "offline" && COPY.remote.offline}
           {photo.kind === "failed" && photoMessage(photo.error)}
+          {photo.kind === "rejected" && refusalMessage(photo.code)}
           {photo.kind === "ready" && COPY.remote.photoReady}
         </div>
         {photo.kind === "ready" && (
@@ -176,6 +208,7 @@ export function RemoteActions({ api, deviceId, pollMs = 2000, waitMs = 40_000 }:
         <div role="status" aria-live="polite" className="remote-card__status">
           {say.kind === "sent" && (say.deviceOnline ? COPY.remote.saySent : COPY.remote.offline)}
           {say.kind === "failed" && sayMessage(say.error)}
+          {say.kind === "rejected" && refusalMessage(say.code)}
         </div>
       </form>
     </section>

@@ -85,6 +85,7 @@ describe("ApiStack", () => {
         "POST /commands",
         "POST /photos",
         "GET /photos/{requestId}",
+        "GET /commands/{id}",
         "POST /say",
         "GET /faces",
         "POST /faces",

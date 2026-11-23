@@ -60,6 +60,7 @@ export const EN = {
       uncertain: "Unsure",
       conversing: "Talking",
       cooldown: "Settling down",
+      remote: "Under remote control",
     },
   },
 
@@ -141,10 +142,23 @@ export const EN = {
   },
 
   device: {
-    awake: "Awake",
-    asleepOrOutOfReach: "The doll is asleep or out of reach",
+    connected: "Connected to the doll",
+    outOfReach: "The doll is out of reach (no recent report)",
     neverSeen: "never seen",
     motionOff: "Motion is switched off on the doll",
+    activity: "What she is doing",
+    mode: "Mode",
+    modeGuard: "Guarding (wakes when someone comes near)",
+    modeSleep: "Not guarding (ignores visitors)",
+    head: "Head (left/right / up/down)",
+    left: "left",
+    right: "right",
+    up: "up",
+    down: "down",
+    center: "straight",
+    lantern: "Lantern (brightness)",
+    lanternOff: "off",
+    lastSeen: "Last report",
   },
 
   privacy: {
@@ -159,7 +173,12 @@ export const EN = {
     lookLeft: "Look left",
     lookRight: "Look right",
     sleep: "Put the doll to sleep",
-    wake: "Wake the guard",
+    wake: "Set back to guard mode",
+    remoteStart: "Start remote control",
+    restingHint:
+      "The doll is resting, so looking and the lantern are off. Press “Start remote control” to wake her and move her yourself.",
+    remoteHint:
+      "Under remote control. She goes back to guarding after two minutes without a command, or when you press “Set back to guard mode”.",
     sent: "Sent to the doll",
     offline: "The doll is offline. The command was not stored and will not play later.",
     tryAgain: "Try again",
@@ -170,7 +189,7 @@ export const EN = {
     heading: "Remote actions",
     photoHeading: "Take a photo",
     photoTip:
-      "The doll wakes, lights her lantern, takes one picture and goes back to rest. Only the family can see it, and it is deleted after a few days. The camera indicator at the top shows while she is looking.",
+      "The doll wakes, lights her lantern, takes one picture and goes back to rest. If she is already awake with a visitor, she takes the picture at once. Only the family can see it, and it is deleted after a few days. The camera indicator at the top shows while she is looking.",
     photoNote: "This uses the real camera for a moment.",
     photoButton: "Take a photo",
     photoWaiting: "Waiting for the photo…",
@@ -191,6 +210,15 @@ export const EN = {
     sayFailed: "The message could not be sent. Try again.",
     offline: "The doll is offline. The request was not stored and will not play later.",
     limited: (seconds: number): string => `Too many requests. Try again in ${seconds} seconds.`,
+  },
+
+  refusal: {
+    state:
+      "The doll did not do it: she is resting or busy right now (for example finishing a visit or talking). Try again in a moment.",
+    speakRejected: "The doll did not say it: that line does not fit what is happening right now.",
+    audioBusy: "The doll did not say it: she is still speaking.",
+    unknownLine: "The doll did not say it: she does not know that line.",
+    other: (code: string): string => `The doll did not do it (${code}).`,
   },
 
   family: {

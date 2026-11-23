@@ -9,14 +9,22 @@
  *   1. sender identity check (R3.1 to R3.3), before anything else;
  *   2. decode against the contract (unknown types and bad messages store nothing, R10.6);
  *   3. claim `MSG#<id>` (R4.3 to R4.5);
- *   4. store: status handling (R12) or the encounter log (R10).
+ *   4. store: status handling (R12) or the encounter log (R10). An `error.reported` with a
+ *      `refId` is also recorded as `CMD#<refId>`, with or without an encounter, so the dashboard
+ *      can tell that the doll refused that command (remote-feedback F2).
  *
  * A failed claim or write throws, so the message can be redelivered (R4.5, R10.10).
  */
 
 import { decodeEnvelope } from "../_shared/messages.js";
 import type { Envelope } from "../_shared/messages.js";
-import type { EncounterMeta, Repository, StateStore, StatusReportData } from "../_shared/ports.js";
+import type {
+  CommandResultStore,
+  EncounterMeta,
+  Repository,
+  StateStore,
+  StatusReportData,
+} from "../_shared/ports.js";
 import { log } from "../_shared/safelog.js";
 import type { EncounterReaction } from "../_shared/types.js";
 
@@ -24,10 +32,14 @@ import type { EncounterReaction } from "../_shared/types.js";
 export const MESSAGE_CLAIM_TTL_S = 86_400;
 /** Retention of encounter items (R11.4). */
 export const ENCOUNTER_TTL_DAYS = 30;
+/** Retention of `CMD#<id>` refusals: the dashboard asks only seconds after sending (F2). */
+export const COMMAND_RESULT_TTL_S = 86_400;
 
 export type IngestDeps = {
   repo: Repository;
   state: StateStore;
+  /** Optional: without it, refusals are not recorded (F2). */
+  results?: CommandResultStore;
   /** Arrival time in epoch milliseconds. */
   nowMs: () => number;
 };
@@ -163,6 +175,21 @@ async function storeEncounterEvent(
   return { outcome: "event_stored" };
 }
 
+/** Record `CMD#<refId>` for an `error.reported` that names the command it refused (F2). */
+async function recordRejection(envelope: Envelope, deps: IngestDeps): Promise<void> {
+  if (envelope.type !== "error.reported" || deps.results === undefined) return;
+  const data = envelope.data as Record<string, unknown>;
+  const refId = data["refId"];
+  const code = data["code"];
+  if (typeof refId !== "string" || typeof code !== "string") return;
+  await deps.results.putRejection({
+    id: refId,
+    deviceId: envelope.deviceId,
+    code,
+    ttl: Math.floor(deps.nowMs() / 1000) + COMMAND_RESULT_TTL_S,
+  });
+}
+
 async function storeStatus(envelope: Envelope, deps: IngestDeps): Promise<IngestResult> {
   // R12.1, R12.2: only the arrival time orders status. The message `ts` is never used.
   const receivedAtMs = deps.nowMs();
@@ -233,6 +260,7 @@ export async function handleIngest(event: unknown, deps: IngestDeps): Promise<In
 
   try {
     if (isStatus) return await storeStatus(envelope, deps);
+    await recordRejection(envelope, deps);
 
     // R10.5: no encounter, nothing stored. Only the type is logged.
     if (envelope.encounterId === null) {

@@ -114,7 +114,9 @@ function parseCommand(
       };
     case "mode.set": {
       const mode = data["mode"];
-      if (mode !== "guard" && mode !== "sleep") throw bad("mode must be guard or sleep.");
+      if (mode !== "guard" && mode !== "sleep" && mode !== "remote") {
+        throw bad("mode must be guard, sleep or remote.");
+      }
       return { type: "mode.set", data: { mode } };
     }
   }

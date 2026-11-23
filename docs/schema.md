@@ -14,7 +14,12 @@ Single source of truth for everything exchanged between the doll (`/device`), th
 > added the conversation events, commands, states, the "Voice session channels" section and the
 > `/conversations` routes; `v` stays 1 because every change adds a type, an optional field or an
 > enumeration value. The `remote-actions` change (remote photo and typed speech from the dashboard) added optional
-fields, one `state.changed` reason and three HTTP routes; `v` stays 1. From now on, change this
+fields, one `state.changed` reason and three HTTP routes; `v` stays 1. The `remote-feedback` change
+(rows F1 to F3) lets a remote photo be taken during a visit and lets the dashboard see whether the
+doll refused a command; it adds one optional response field and one HTTP route, so `v` stays 1.
+The `remote-mode` change (rows M1 to M5) adds the State `remote`, the `mode.set` value `remote`
+and a `status.report` after every reconnect; `v` stays 1.
+From now on, change this
 file first and keep code and tests in all three parts in sync with it.
 
 ## Transport
@@ -138,7 +143,7 @@ Cloud receiver rules (added by `cloud-judgement`):
 | `timeout` | A state, snapshot or audio deadline passed without the awaited feedback. |
 | `offline` | The cloud was disconnected, so the doll reacted without a verdict. |
 | `audio_done` | The reaction line finished or failed. |
-| `manual` | A `mode.set` with `mode: "sleep"` ended the encounter early. |
+| `manual` | A `mode.set` with `mode: "sleep"` ended the encounter early, or a `mode.set` started or ended remote control (M2). |
 | `cooldown_done` | The cooldown time elapsed. |
 | `error` | A snapshot failed, no voice line of the needed category was available, or the device restarted after an internal error. |
 | `conversation` | The doll entered `conversing` (S7). |
@@ -164,6 +169,9 @@ The device sets `reason` by the **first row whose transition and cause both matc
 | `conversing` → `cooldown` | `conversing` deadline | `timeout` |
 | `sleeping` → `conversing` | `conversation.start` with `source: "manual"` | `conversation` |
 | `sleeping` → `waking` | `snapshot.request` with `purpose: "photo"` | `manual` |
+| any state other than `conversing` and `remote` → `remote` | `mode.set` with `mode: "remote"` | `manual` |
+| `remote` → `cooldown` | `mode.set` with `mode: "guard"` or `mode: "sleep"` | `manual` |
+| `remote` → `cooldown` | no accepted command for `remote_idle_s` | `timeout` |
 | `waking` → `cooldown` | cloud disconnected when leaving `waking` for a photo | `offline` |
 | `seeking` → `cooldown` | the photo snapshot was published | `photo_done` |
 | `seeking` → `cooldown` | `snapshot.failed` for the photo | `error` |
@@ -205,7 +213,7 @@ The device publishes `error.reported` only with these codes.
 | `wrong_device` | device, inbound check | `deviceId` differs from the device's own id | message `id` |
 | `speak_rejected` | device, state machine | `audioUrl` while the accepted verdict is not `family`, or a `lineId` whose category is not permitted for the current situation | command `id` |
 | `audio_busy` | device, state machine | `speak` while earlier audio is unfinished | command `id` |
-| `command_rejected_state` | device, state machine | `gaze` or `lantern` in `sleeping` or `cooldown`; `speak` during the silent stare before the stranger line; `snapshot.request` with `purpose: "photo"` outside `sleeping` | command `id` |
+| `command_rejected_state` | device, state machine | `gaze` or `lantern` in `sleeping` or `cooldown`; `speak` during the silent stare before the stranger line; `snapshot.request` with `purpose: "photo"` in `cooldown` or `conversing`, or while another photo is outstanding | command `id` |
 | `unknown_line` | device, state machine | `speak.lineId` is not a cached voice line | command `id` |
 | `voice_line_missing` | device, state machine | no cached voice line of the reaction's category | `null` |
 | `voice_line_invalid` | device, startup | a voice line was rejected, or the voice manifest is missing or invalid | `null` |
@@ -232,10 +240,10 @@ outstanding, and a `conversation.start` the doll cannot accept (S11).
 | `speak` | `{ "lineId": string \| null, "audioUrl": string \| null, "ja": string, "en": string, "remote": boolean }` | Say a line: exactly one of `lineId` (cached on the device) or `audioUrl` (short-lived HTTPS URL to a WAV file) is set. `remote` is optional (default `false`); see "`speak.remote`" below. |
 | `gaze` | `{ "panDeg": number, "tiltDeg": number }` | Look in a direction. The device clamps to its calibrated limits and moves slowly. |
 | `lantern` | `{ "level": number, "fadeMs": int }` | Lantern brightness 0..1 with a fade time. |
-| `mode.set` | `{ "mode": "guard" \| "sleep" }` | `sleep` ignores presence until set back to `guard`. |
+| `mode.set` | `{ "mode": "guard" \| "sleep" \| "remote" }` | `sleep` ignores presence until set back to `guard`. `remote` starts remote control (M1); `guard` or `sleep` ends it. |
 | `conversation.start` | `{ "sessionId": string, "token": string, "maxSeconds": int, "silenceSeconds": int, "source": "family_verdict" \| "manual" }` | Start the doll's audio client for a voice session. `token` is a secret: the device never logs it and never publishes it. |
 | `conversation.end` | `{ "sessionId": string, "reason": ConversationEndReason }` | The cloud ends a session. Safe to receive twice and for an unknown session. |
-| `snapshot.request` | `{ "requestId": string, "purpose": "look" \| "photo" }` | Take a snapshot. `purpose` is optional (default `"look"`). A `look` is valid in `conversing` only (voice session). A `photo` is valid in `sleeping` only: the doll wakes, takes one picture and goes back to rest (R2). Elsewhere the device answers `command_rejected_state`. The doll answers with a `snapshot.captured` that carries the same `requestId` (and `purpose: "photo"` for a photo). |
+| `snapshot.request` | `{ "requestId": string, "purpose": "look" \| "photo" }` | Take a snapshot. `purpose` is optional (default `"look"`). A `look` is valid in `conversing` only (voice session). A `photo` in `sleeping` wakes the doll, takes one picture and goes back to rest (R2). A `photo` in `waking`, `seeking`, `gazing`, `greeting`, `warning` or `uncertain` takes one picture at the current head angles and changes no state, deadline or reaction (F1). A `photo` in `cooldown` or `conversing`, or while another photo is outstanding, is answered with `command_rejected_state`, and so is a `look` outside `conversing`. The doll answers with a `snapshot.captured` that carries the same `requestId` (and `purpose: "photo"` for a photo). |
 
 Changes from `voice-conversation` (S4 to S6):
 
@@ -271,10 +279,28 @@ Notes on the command fields:
 - **Matching verdicts.** The device matches `judgement.result` by `snapshotId` only, never by
   `encounterId` (see "Commands without an encounter" above).
 
+Remote control (`remote-mode`, M1 to M4):
+
+- **M1 `mode.set` `remote`.** Accepted in every State except `conversing` (there it is
+  `command_rejected_state`) and changes no Mode: `status.report.mode` stays `guard` or `sleep`.
+  From `sleeping` it starts an encounter with `presence.detected` `source: "manual"`, lights the
+  lantern and glides the head to center. From a visit or `cooldown` the current encounter goes
+  on in `remote`, and its reaction, if not yet performed, is dropped. *Reason:* the family wants
+  to move the head and the lantern while nobody is there, without a visit ending under them.
+- **M2 In `remote`.** PIR edges are ignored. `gaze`, `lantern`, `speak` (the usual line rules) and
+  `snapshot.request` with `purpose: "photo"` (one picture in place, as in F1) are accepted. Every
+  accepted command restarts the idle time.
+- **M3 End.** `mode.set` `guard` or `sleep` (which also sets that Mode), or `remote_idle_s` (device
+  config, default 120 s) without an accepted command, enters `cooldown`: the head returns to
+  center, the servos detach and the lantern fades out, as at the end of every visit. A
+  `mode.set` ending gives `encounter.ended.reason` `manual`; the idle end gives `cooldown`.
+- **M4 Dashboard.** The real-doll page starts and ends remote control. The virtual doll does not
+  model it and answers `mode.set` `remote` with `command_rejected_state`.
+
 ## Status (device → cloud)
 | `type` | `data` | When |
 |---|---|---|
-| `status.report` | `{ "state": State, "mode": "guard" \| "sleep", "panDeg": number, "tiltDeg": number, "lantern": number, "cameraActive": boolean, "micActive": boolean, "motionEnabled": boolean, "uptimeSec": int, "agentVersion": string }` | On each state change, on each change of `cameraActive`, on the first tick after start, and every `status_interval_s` (default 60 s). |
+| `status.report` | `{ "state": State, "mode": "guard" \| "sleep", "panDeg": number, "tiltDeg": number, "lantern": number, "cameraActive": boolean, "micActive": boolean, "motionEnabled": boolean, "uptimeSec": int, "agentVersion": string }` | On each state change, on each change of `cameraActive`, on the first tick after start, on each `cloud.connected` (M5), and every `status_interval_s` (default 60 s). |
 | `status.offline` | `{}` | Published by the broker as the last will when the device disconnects. |
 
 Notes on the status fields:
@@ -291,6 +317,9 @@ Notes on the status fields:
   never its `ts`. AWS does not guarantee the order of will messages across reconnects; a later
   `status.report` therefore overrides an earlier offline mark. *Reason:* avoids a false "offline"
   after a quick reconnect.
+- **M5 Reconnect.** The device sends a `status.report` on each `cloud.connected`. *Reason:* the
+  broker publishes the last will on every unexpected disconnect, and without a fresh report the
+  dashboard showed the doll offline for up to `status_interval_s` after a reconnect of two seconds.
 - **Session.** The device connects with a clean MQTT session and subscribes again on every
   connect. Commands sent while it is offline are lost, never replayed. *Reason:* a replayed
   `speak` or `gaze` would act on a visit that has ended.
@@ -316,7 +345,7 @@ published on MQTT, never appear in envelopes, and are not part of the contract t
 | `ConversationFinished` | The conversation adapter ended, exactly once per session; carries the session id and a reason that is a `ConversationEndReason` or `adapter_failed`. |
 
 ## Shared definitions
-- **State**: `sleeping` · `waking` · `seeking` · `gazing` · `greeting` · `warning` ·
+- **State**: `sleeping` · `waking` · `seeking` · `gazing` · `greeting` · `warning` · `remote` (M1) ·
   `uncertain` · `conversing` (P1) · `cooldown`.
 - **Reason**: the `state.changed` reason values listed in "`state.changed` reasons".
 - **ErrorCode**: the codes listed in "`error.reported` codes".
@@ -439,6 +468,7 @@ above so the timeline and the simulation share one model.
 | `DELETE /faces/{memberId}` | yes | no | |
 | `POST /photos` | yes | no | family only; asks the doll for one photo |
 | `GET /photos/{requestId}` | yes | no | family only |
+| `GET /commands/{id}` | yes | no | family only; did the doll refuse this command |
 | `POST /say` | yes | no | family only; rate limited |
 | `POST /conversations` | yes | only when `reviewerVoiceEnabled` | reviewer: browser client and virtual target only; otherwise `403 forbidden` |
 | `GET /conversations/{sessionId}` | owner | owner | a non-owner gets `404 not_found` |
@@ -504,7 +534,8 @@ never stored or replayed. A failed publish gives `500 internal` without a retry.
 dashboard cannot make the doll move beyond what the hardware rules allow, and a late command
 never acts on a visit that has ended.
 
-`POST /photos` body `{ "deviceId": string }` → `202 { "requestId": uuid, "deviceOnline": boolean }` (R4).
+`POST /photos` body `{ "deviceId": string }` → `202 { "id": uuid, "requestId": uuid, "deviceOnline": boolean }` (R4).
+`id` is the `id` of the published `snapshot.request` envelope, for `GET /commands/{id}` (F3).
 The cloud publishes `snapshot.request` with `purpose: "photo"` and the new `requestId` to
 `warashi/<deviceId>/commands` and stores nothing yet. An offline doll still gets one publish
 and `deviceOnline: false`. `deviceId` follows the rule of `POST /commands`. Over the hourly limit it
@@ -516,6 +547,15 @@ gives `429 rate_limited`. `reviewer` gets `403 forbidden`.
 `requestId` was stored. An id that was never asked for, or whose picture has expired, stays
 `pending` (the dashboard stops asking after a timeout). The picture expires with the other
 snapshots (a few days). `reviewer` gets `403 forbidden`; the response never carries a name.
+
+`GET /commands/{id}` → `{ "status": "pending" }` or `{ "status": "rejected", "code": ErrorCode }` (F2).
+`id` is the `id` returned by `POST /commands`, `POST /photos` or `POST /say`, and matches
+`[A-Za-z0-9-]{1,64}`. The cloud records every `error.reported` whose `refId` is a string, with or
+without an encounter, for one day. `rejected` means the doll answered that command with this
+`code`. The doll sends nothing for an accepted command, so `pending` means "no refusal has arrived
+yet": the dashboard asks for a few seconds after sending and treats a lasting `pending` as accepted.
+An unknown id is `pending`. `reviewer` gets `403 forbidden`. *Reason (F2):* a refused command used
+to look as if it had been sent and done.
 
 `POST /say` body `{ "deviceId": string, "text": string }` → `202 { "id": uuid, "deviceOnline": boolean }` (R6).
 `text` is 1 to 60 characters (code points) and at most three sentences, with no Latin letter, no

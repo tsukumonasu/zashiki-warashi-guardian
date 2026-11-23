@@ -69,6 +69,8 @@ GLOSSARY_DEFAULTS: dict[str, object] = {
     "timing": {
         "tick_interval_ms": 100,
         "pir_warmup_s": 60,
+        "pir_quiet_s": 30,
+        "remote_idle_s": 120,
         "waking_timeout_s": 3,
         "verdict_timeout_s": 8,
         "glide_timeout_s": 3,
