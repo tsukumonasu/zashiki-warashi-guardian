@@ -72,7 +72,9 @@ def main():
                 print("Enter a number, c, or q")
                 continue
             if first_move and abs(target) > 10:
-                print("First move: enter a value within +-10 degrees (it jumps, it does not glide).")
+                print(
+                    "First move: enter a value within +-10 degrees (it jumps, it does not glide)."
+                )
                 continue
             first_move = False
             glide(s, cur, target)

@@ -494,7 +494,8 @@ class ServoAdapter:
             return None
         s = self._cfg.servo
         angles = []
-        for key, limit in (("panDeg", s.pan_limit), ("tiltDeg", s.tilt_limit)):
+        bounds = (("panDeg", -s.pan_limit, s.pan_limit), ("tiltDeg", -s.tilt_down, s.tilt_up))
+        for key, low, high in bounds:
             value = data.get(key)
             if isinstance(value, bool) or not isinstance(value, int | float):
                 return None
@@ -502,7 +503,7 @@ class ServoAdapter:
                 number = float(value)
             except OverflowError:
                 return None
-            if not math.isfinite(number) or abs(number) > limit:
+            if not math.isfinite(number) or not low <= number <= high:
                 return None
             angles.append(number)
         return (angles[0], angles[1])

@@ -241,7 +241,7 @@ class _Run:
             raise _SkipError(f"motion_enabled is false; {MOTION_HINT}")
         servo = self._config.servo
         pan = min(SERVO_TEST_DEG, servo.pan_limit)
-        tilt = min(SERVO_TEST_DEG, servo.tilt_limit)
+        tilt = min(SERVO_TEST_DEG, servo.tilt_up)
         for pan_deg, tilt_deg in ((pan, 0.0), (0.0, 0.0), (0.0, tilt), (0.0, 0.0)):
             self._glide(pan_deg, tilt_deg)
         self._adapters.servo.handle(ReleaseServos())

@@ -63,6 +63,10 @@ class ServoConfig:
     tilt_center_offset: float = 0.0
     pan_limit: float = 30.0
     tilt_limit: float = 20.0
+    # Optional per-direction tilt travel, each at most ``tilt_limit``. ``None`` means
+    # ``tilt_limit``. The neck often allows less in one direction than in the other.
+    tilt_up_limit: float | None = None
+    tilt_down_limit: float | None = None
     pan_invert: bool = False
     tilt_invert: bool = False
     glide_step_deg: float = 2.0
@@ -70,6 +74,16 @@ class ServoConfig:
     servo_settle_ms: float = 300.0
     nod_deg: float = 8.0
     pose_file: str = "last_pose.json"
+
+    @property
+    def tilt_up(self) -> float:
+        """Largest positive (upward) tilt from the calibrated center."""
+        return self.tilt_limit if self.tilt_up_limit is None else self.tilt_up_limit
+
+    @property
+    def tilt_down(self) -> float:
+        """Largest downward tilt from the calibrated center, as a positive number."""
+        return self.tilt_limit if self.tilt_down_limit is None else self.tilt_down_limit
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -397,6 +411,21 @@ KEY_SPECS: tuple[KeySpec, ...] = (
     _spec(
         "servo", "tilt_limit", "float", _in_range(0, 30, lo_open=True), "number, 0 < value <= 30"
     ),
+    # Each at most tilt_limit: a cross-key rule (_CROSS_RULES).
+    _spec(
+        "servo",
+        "tilt_up_limit",
+        "float",
+        lambda v: v is None or 0 < v <= 30,
+        "number, 0 < value <= tilt_limit (omit to use tilt_limit)",
+    ),
+    _spec(
+        "servo",
+        "tilt_down_limit",
+        "float",
+        lambda v: v is None or 0 < v <= 30,
+        "number, 0 < value <= tilt_limit (omit to use tilt_limit)",
+    ),
     _spec("servo", "pan_invert", "bool", _always, "boolean"),
     _spec("servo", "tilt_invert", "bool", _always, "boolean"),
     _spec(
@@ -638,6 +667,23 @@ _CROSS_RULES: tuple[_CrossRule, ...] = (
         keys=("servo.tilt_center_offset", "servo.tilt_limit"),
         holds=lambda v: abs(v["servo.tilt_center_offset"]) + v["servo.tilt_limit"] <= 90,
         allowed="abs(tilt_center_offset) + tilt_limit <= 90",
+        stage="range",
+    ),
+    _CrossRule(
+        keys=("servo.tilt_up_limit", "servo.tilt_limit"),
+        holds=lambda v: (
+            v["servo.tilt_up_limit"] is None or v["servo.tilt_up_limit"] <= v["servo.tilt_limit"]
+        ),
+        allowed="0 < tilt_up_limit <= tilt_limit",
+        stage="range",
+    ),
+    _CrossRule(
+        keys=("servo.tilt_down_limit", "servo.tilt_limit"),
+        holds=lambda v: (
+            v["servo.tilt_down_limit"] is None
+            or v["servo.tilt_down_limit"] <= v["servo.tilt_limit"]
+        ),
+        allowed="0 < tilt_down_limit <= tilt_limit",
         stage="range",
     ),
     _CrossRule(

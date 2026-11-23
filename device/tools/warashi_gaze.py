@@ -18,6 +18,7 @@ It needs ``motion_enabled = true`` in the config, otherwise the moves are only l
 head to the center by hand first: a servo cannot report where it is, so the first step jumps
 to the first commanded angle. On exit or Ctrl+C the servos are detached with no sweep back.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -115,7 +116,8 @@ def main() -> int:
         return 1
     if not config.motion.motion_enabled:
         print("motion_enabled is false in the config: moves are only logged, nothing moves.")
-    print(f"limits: pan +-{config.servo.pan_limit} deg, tilt +-{config.servo.tilt_limit} deg")
+    s = config.servo
+    print(f"limits: pan +-{s.pan_limit} deg, tilt up {s.tilt_up} deg, down {s.tilt_down} deg")
     print("Stop the warashi-agent service first. Turn the head to the center BY HAND:")
     print("the first step jumps to the first commanded angle.")
     input("Head at the center, battery on, hands clear? Press Enter (Ctrl+C aborts) ")

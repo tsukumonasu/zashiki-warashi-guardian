@@ -69,12 +69,19 @@ AXES = (Axis.PAN, Axis.TILT)
 
 
 def _limits(cfg: Config) -> tuple[float, float]:
+    """The widest travel per axis (used for drawing wild targets)."""
     return cfg.servo.pan_limit, cfg.servo.tilt_limit
 
 
-def _clamp_ref(value: float, limit: float) -> float:
-    """Reference Clamp to [-limit, limit], written independently of glide.clamp."""
-    return -limit if value < -limit else limit if value > limit else value
+def _ranges(cfg: Config) -> dict[Axis, tuple[float, float]]:
+    """The Calibrated_Range per axis: tilt may allow less upward than downward travel."""
+    s = cfg.servo
+    return {Axis.PAN: (-s.pan_limit, s.pan_limit), Axis.TILT: (-s.tilt_down, s.tilt_up)}
+
+
+def _clamp_between(value: float, low: float, high: float) -> float:
+    """Reference Clamp to [low, high], written independently of glide.clamp."""
+    return low if value < low else high if value > high else value
 
 
 # --------------------------------------------------------------------------------------------
@@ -110,10 +117,11 @@ def _gaps(cfg: Config) -> st.SearchStrategy[float]:
 def _timeline_scenarios(draw: st.DrawFn, cfg: Config):
     """Start angles in range, a start time, and timed GazeTarget / ReleaseServos items."""
     pan_limit, tilt_limit = _limits(cfg)
+    tilt_low, tilt_high = _ranges(cfg)[Axis.TILT]
     finite = {"allow_nan": False, "allow_infinity": False}
     start = (
         draw(st.floats(min_value=-pan_limit, max_value=pan_limit, **finite)),
-        draw(st.floats(min_value=-tilt_limit, max_value=tilt_limit, **finite)),
+        draw(st.floats(min_value=tilt_low, max_value=tilt_high, **finite)),
     )
     t = draw(st.floats(min_value=0.0, max_value=1e4, **finite))
     gaze = st.tuples(_axis_targets(pan_limit), _axis_targets(tilt_limit))
@@ -175,8 +183,7 @@ def _last_write_at_or_before(
 
 def _check_glide_timeline(cfg: Config, data: st.DataObject) -> None:
     start, items = data.draw(_timeline_scenarios(cfg), label="start, items")
-    pan_limit, tilt_limit = _limits(cfg)
-    limits = {Axis.PAN: pan_limit, Axis.TILT: tilt_limit}
+    ranges = _ranges(cfg)
     interval_s = cfg.servo.glide_interval_ms / 1000
 
     # Clause 7: a non-finite target gives no plan, and the timeline only advances its clock.
@@ -192,7 +199,10 @@ def _check_glide_timeline(cfg: Config, data: st.DataObject) -> None:
         if isinstance(item, ReleaseServos):
             assert tl.plan is None
             continue
-        target = (_clamp_ref(item.pan_deg, pan_limit), _clamp_ref(item.tilt_deg, tilt_limit))
+        target = (
+            _clamp_between(item.pan_deg, *ranges[Axis.PAN]),
+            _clamp_between(item.tilt_deg, *ranges[Axis.TILT]),
+        )
         cut_at = next((u for u, later in items[i + 1 :] if _cuts_plan(later)), math.inf)
         plan = tl.plan if tl.plan is not None and tl.plan.motion_id == item.motion_id else None
         if plan is None:
@@ -257,7 +267,8 @@ def _check_glide_timeline(cfg: Config, data: st.DataObject) -> None:
         invert = cfg.servo.pan_invert if axis is Axis.PAN else cfg.servo.tilt_invert
         offset = cfg.servo.pan_center_offset if axis is Axis.PAN else cfg.servo.tilt_center_offset
         for w in (w for w in writes if w.axis is axis):
-            assert abs(w.angle) <= limits[axis] + TOL, "angle outside the Calibrated_Range"
+            low, high = ranges[axis]
+            assert low - TOL <= w.angle <= high + TOL, "angle outside the Calibrated_Range"
             assert abs(w.angle - prev_angle) <= step_deg + TOL, "step larger than glide_step"
             assert w.t - prev_t >= interval_s - TOL, "steps closer than glide_interval"
             servo = to_servo_angle(axis, w.angle, cfg.servo)
@@ -436,7 +447,8 @@ def _check_step_gaze_targets(cfg: Config, data: st.DataObject) -> None:
             pan, tilt = action.pan_deg, action.tilt_deg
             assert math.isfinite(pan) and math.isfinite(tilt), f"non-finite target {action!r}"
             assert -pan_limit - TOL <= pan <= pan_limit + TOL, f"pan outside range: {action!r}"
-            assert -tilt_limit - TOL <= tilt <= tilt_limit + TOL, f"tilt outside range: {action!r}"
+            low, high = _ranges(cfg)[Axis.TILT]
+            assert low - TOL <= tilt <= high + TOL, f"tilt outside range: {action!r}"
     for kind in sorted(kinds):
         event(f"GazeTarget kind: {kind}")
 

@@ -43,6 +43,8 @@ GLOSSARY_DEFAULTS: dict[str, object] = {
         "tilt_center_offset": 0,
         "pan_limit": 30,
         "tilt_limit": 20,
+        "tilt_up_limit": None,
+        "tilt_down_limit": None,
         "pan_invert": False,
         "tilt_invert": False,
         "glide_step_deg": 2,

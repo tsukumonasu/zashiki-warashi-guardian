@@ -21,6 +21,8 @@ pan_center_offset = 0             # calibrated center (degrees); abs(offset) + l
 tilt_center_offset = 0
 pan_limit = 30                    # travel from center: 0 < pan_limit <= 60 (larger is rejected)
 tilt_limit = 20                   # 0 < tilt_limit <= 30 (camera ribbon and leads run through the neck)
+tilt_up_limit = 20                # upward travel only: 0 < value <= tilt_limit (remove the line to use tilt_limit)
+tilt_down_limit = 20              # downward travel only: 0 < value <= tilt_limit (remove the line to use tilt_limit)
 pan_invert = false                # set per mounting: flips the sign if the servo is mounted the other way
 tilt_invert = false               # set per mounting
 glide_step_deg = 2                # largest step between commanded angles: 0 < value <= 2

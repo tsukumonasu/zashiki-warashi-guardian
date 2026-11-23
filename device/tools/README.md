@@ -59,7 +59,7 @@ python3 tools/warashi_gaze.py move    # type "<pan> <tilt>" in degrees from the 
 ```
 Run it from `~/warashi/device`. Unlike the scripts above, it uses the agent's `ServoAdapter` and
 glide planner, so it **does** apply `config.toml`: center offsets, `pan_invert` / `tilt_invert`,
-the `pan_limit` / `tilt_limit` clamp, at most 2° per 30 ms, and detach after the move. It needs
+the `pan_limit` / `tilt_limit` clamp (and the optional `tilt_up_limit` / `tilt_down_limit`), at most 2° per 30 ms, and detach after the move. It needs
 `motion_enabled = true`, otherwise the moves are only logged. Center the head by hand first: the
 first step jumps to the first commanded angle. Positive pan is the doll's right, positive tilt is up.
 ## check_cloud.py: cloud link check (no hardware needed)

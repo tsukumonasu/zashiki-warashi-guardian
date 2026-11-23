@@ -435,7 +435,7 @@ def check_accepted(
             servo = cfg.servo
             assert isinstance(action, GazeTarget), repr(action)
             assert action.pan_deg == _clamp(pan, -servo.pan_limit, servo.pan_limit)
-            assert action.tilt_deg == _clamp(tilt, -servo.tilt_limit, servo.tilt_limit)
+            assert action.tilt_deg == _clamp(tilt, -servo.tilt_down, servo.tilt_up)
             assert action.motion_id not in point.motion_ids, "the Motion_Id must be new"
         case Lantern(level=level, fade_ms=fade_ms):
             expected = LanternFade(

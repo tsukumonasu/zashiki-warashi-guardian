@@ -47,7 +47,8 @@ def clamp(value: float, lo: float, hi: float) -> float:
 
 
 def clamp_gaze(target: tuple[float, float], cfg: Config) -> tuple[float, float]:
-    """Clamp a (pan, tilt) pair to the Calibrated_Range ``±pan_limit`` / ``±tilt_limit``.
+    """Clamp a (pan, tilt) pair to the Calibrated_Range: ``±pan_limit``, and tilt from
+    ``-tilt_down`` to ``+tilt_up`` (both default to ``tilt_limit``).
 
     Every ``GazeTarget`` the State_Machine emits goes through this function (R5.7), and the
     Glide_Planner applies it again before planning (R14.1), so a bug in one layer cannot
@@ -56,7 +57,7 @@ def clamp_gaze(target: tuple[float, float], cfg: Config) -> tuple[float, float]:
     s = cfg.servo
     return (
         clamp(target[0], -s.pan_limit, s.pan_limit),
-        clamp(target[1], -s.tilt_limit, s.tilt_limit),
+        clamp(target[1], -s.tilt_down, s.tilt_up),
     )
 
 
@@ -171,7 +172,7 @@ def plan_glide(
         start=origin,
         goal=goal,
         pan=_axis_steps(origin[0], goal[0], s.glide_step_deg, -s.pan_limit, s.pan_limit),
-        tilt=_axis_steps(origin[1], goal[1], s.glide_step_deg, -s.tilt_limit, s.tilt_limit),
+        tilt=_axis_steps(origin[1], goal[1], s.glide_step_deg, -s.tilt_down, s.tilt_up),
         interval_s=s.glide_interval_ms / 1000,
     )
 

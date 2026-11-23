@@ -52,11 +52,11 @@ AXES = (Axis.PAN, Axis.TILT)
 # --------------------------------------------------------------------------------------------
 
 
-def _in_range(limit: float) -> st.SearchStrategy[float]:
-    """A start angle inside [-limit, limit], with the edges and center drawn often."""
+def _in_range(low: float, high: float) -> st.SearchStrategy[float]:
+    """A start angle inside [low, high], with the edges and center drawn often."""
     return st.one_of(
-        st.floats(min_value=-limit, max_value=limit, **FINITE),
-        st.sampled_from([-limit, 0.0, limit]),
+        st.floats(min_value=low, max_value=high, **FINITE),
+        st.sampled_from([low, 0.0, high]),
     )
 
 
@@ -71,7 +71,8 @@ def _finite_targets(limit: float) -> st.SearchStrategy[float]:
 
 
 def _starts(cfg: Config) -> st.SearchStrategy[tuple[float, float]]:
-    return st.tuples(_in_range(cfg.servo.pan_limit), _in_range(cfg.servo.tilt_limit))
+    s = cfg.servo
+    return st.tuples(_in_range(-s.pan_limit, s.pan_limit), _in_range(-s.tilt_down, s.tilt_up))
 
 
 def _targets(cfg: Config) -> st.SearchStrategy[tuple[float, float]]:

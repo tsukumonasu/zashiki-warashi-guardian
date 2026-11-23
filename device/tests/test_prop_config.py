@@ -81,6 +81,9 @@ GLOSSARY: dict[str, Rule] = {
     "servo.tilt_center_offset": Rule("number", 0),
     "servo.pan_limit": _pos(30, 60),
     "servo.tilt_limit": _pos(20, 30),
+    # Optional: omitted means tilt_limit. Upper bound tilt_limit: cross-key rule.
+    "servo.tilt_up_limit": Rule("number", None, 0, 30, lo_open=True),
+    "servo.tilt_down_limit": Rule("number", None, 0, 30, lo_open=True),
     "servo.pan_invert": Rule("bool", False),
     "servo.tilt_invert": Rule("bool", False),
     "servo.glide_step_deg": _pos(2, 2),
@@ -209,6 +212,19 @@ RANGE_CROSS_RULES: tuple[tuple[tuple[str, ...], Callable[[Mapping[str, Any]], bo
         ("servo.tilt_center_offset", "servo.tilt_limit"),
         lambda v: abs(v["servo.tilt_center_offset"]) + v["servo.tilt_limit"] <= 90,
     ),
+    (
+        ("servo.tilt_up_limit", "servo.tilt_limit"),
+        lambda v: (
+            v["servo.tilt_up_limit"] is None or v["servo.tilt_up_limit"] <= v["servo.tilt_limit"]
+        ),
+    ),
+    (
+        ("servo.tilt_down_limit", "servo.tilt_limit"),
+        lambda v: (
+            v["servo.tilt_down_limit"] is None
+            or v["servo.tilt_down_limit"] <= v["servo.tilt_limit"]
+        ),
+    ),
     (("servo.nod_deg", "servo.tilt_limit"), lambda v: v["servo.nod_deg"] <= v["servo.tilt_limit"]),
     (
         ("camera.scan_attempts_max", "camera.scan_pan_positions_deg"),
@@ -253,7 +269,7 @@ TIMING_RULES: tuple[tuple[tuple[str, ...], Callable[[Mapping[str, Any]], bool]],
 def _stored(kind: str, v: object) -> object:
     """The value the oracle expects in the Config for a raw TOML value."""
     if kind == "number":
-        return float(v)  # type: ignore[arg-type]
+        return None if v is None else float(v)  # type: ignore[arg-type]
     if kind in ("number_list", "str_list"):
         return tuple(float(x) if kind == "number_list" else x for x in v)  # type: ignore[attr-defined]
     return v
@@ -665,6 +681,8 @@ def _mentions(message: str, name: str) -> bool:
 
 def _same(expected: object, actual: object, kind: str) -> bool:
     if kind == "number":
+        if expected is None or actual is None:  # an omitted optional key stays None
+            return expected is None and actual is None
         return math.isclose(float(actual), expected, rel_tol=0, abs_tol=TOLERANCE)  # type: ignore[arg-type]
     if kind == "number_list":
         return len(actual) == len(expected) and all(  # type: ignore[arg-type]

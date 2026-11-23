@@ -123,6 +123,10 @@ def _drawn_configs(draw: st.DrawFn, motion_enabled: bool | None) -> Config:
         tilt_center_offset=draw(_closed_floats(-tilt_span, tilt_span)),
         pan_limit=pan_limit,
         tilt_limit=tilt_limit,
+        # Optional per-direction travel (None means tilt_limit), so the asymmetric range is
+        # exercised by every property that draws a Config.
+        tilt_up_limit=draw(st.none() | _pos_floats(tilt_limit)),
+        tilt_down_limit=draw(st.none() | _pos_floats(tilt_limit)),
         pan_invert=draw(st.booleans()),
         tilt_invert=draw(st.booleans()),
         glide_step_deg=glide_step_deg,
@@ -272,8 +276,11 @@ def as_mapping(cfg: Config) -> dict[str, dict[str, object]]:
         if f.name == "aws":
             continue
         section = getattr(cfg, f.name)
+        # TOML has no null: a None field is written by leaving the key out.
         mapping[f.name] = {
-            k.name: _toml_value(getattr(section, k.name)) for k in dataclasses.fields(section)
+            k.name: _toml_value(getattr(section, k.name))
+            for k in dataclasses.fields(section)
+            if getattr(section, k.name) is not None
         }
     if cfg.aws != AwsConfig():
         mapping["aws"] = dataclasses.asdict(cfg.aws)

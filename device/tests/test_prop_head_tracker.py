@@ -66,8 +66,8 @@ def _expected_ref(
     cx, cy = _center_ref(face)
     pan = snap_pan + (cx - 0.5) * cfg.camera.camera_hfov_deg
     tilt = snap_tilt + (0.5 - cy) * cfg.camera.camera_vfov_deg
-    pan_limit, tilt_limit = cfg.servo.pan_limit, cfg.servo.tilt_limit
-    return _clamp_ref(pan, -pan_limit, pan_limit), _clamp_ref(tilt, -tilt_limit, tilt_limit)
+    s = cfg.servo
+    return _clamp_ref(pan, -s.pan_limit, s.pan_limit), _clamp_ref(tilt, -s.tilt_down, s.tilt_up)
 
 
 # --------------------------------------------------------------------------------------------
@@ -145,16 +145,16 @@ def _cases(draw: st.DrawFn) -> Case:
 def test_head_tracker(case: Case) -> None:
     """**Validates: Requirements 5.1, 5.2, 5.3, 5.7, 29.12**"""
     cfg = case.cfg
-    pan_limit, tilt_limit = cfg.servo.pan_limit, cfg.servo.tilt_limit
+    pan_limit, down, up = cfg.servo.pan_limit, cfg.servo.tilt_down, cfg.servo.tilt_up
     p = _clamp_ref(case.snap_pan, -pan_limit, pan_limit)
-    q = _clamp_ref(case.snap_tilt, -tilt_limit, tilt_limit)
+    q = _clamp_ref(case.snap_tilt, -down, up)
     cx, cy = _center_ref(case.face)
 
     gp, gt = head_target(case.face, case.snap_pan, case.snap_tilt, cfg)
 
     # Inside the Calibrated_Range (R5.3, R5.7).
     assert -pan_limit - TOL <= gp <= pan_limit + TOL, (gp, pan_limit)
-    assert -tilt_limit - TOL <= gt <= tilt_limit + TOL, (gt, tilt_limit)
+    assert -down - TOL <= gt <= up + TOL, (gt, down, up)
 
     # A centered face gives the Clamped snapshot angles (R5.2, R5.3).
     if cx == 0.5 and cy == 0.5:
