@@ -19,6 +19,7 @@ fields, one `state.changed` reason and three HTTP routes; `v` stays 1. The `remo
 doll refused a command; it adds one optional response field and one HTTP route, so `v` stays 1.
 The `remote-mode` change (rows M1 to M5) adds the State `remote`, the `mode.set` value `remote`
 and a `status.report` after every reconnect; `v` stays 1.
+The `remote-report` change (row M6) adds one more trigger for `status.report`; `v` stays 1.
 From now on, change this
 file first and keep code and tests in all three parts in sync with it.
 
@@ -294,13 +295,17 @@ Remote control (`remote-mode`, M1 to M4):
   config, default 120 s) without an accepted command, enters `cooldown`: the head returns to
   center, the servos detach and the lantern fades out, as at the end of every visit. A
   `mode.set` ending gives `encounter.ended.reason` `manual`; the idle end gives `cooldown`.
+- **M1a Starting during a visit.** `mode.set` `remote` always takes over a visit (`waking`,
+  `seeking`, `gazing`, `greeting`, `warning`, `uncertain`) or a `cooldown`; only `conversing`
+  refuses it with `command_rejected_state`. *Reason:* one rule instead of a doll that sometimes
+  yields and sometimes does not. The lantern is lit again if a cooldown had faded it.
 - **M4 Dashboard.** The real-doll page starts and ends remote control. The virtual doll does not
   model it and answers `mode.set` `remote` with `command_rejected_state`.
 
 ## Status (device → cloud)
 | `type` | `data` | When |
 |---|---|---|
-| `status.report` | `{ "state": State, "mode": "guard" \| "sleep", "panDeg": number, "tiltDeg": number, "lantern": number, "cameraActive": boolean, "micActive": boolean, "motionEnabled": boolean, "uptimeSec": int, "agentVersion": string }` | On each state change, on each change of `cameraActive`, on the first tick after start, on each `cloud.connected` (M5), and every `status_interval_s` (default 60 s). |
+| `status.report` | `{ "state": State, "mode": "guard" \| "sleep", "panDeg": number, "tiltDeg": number, "lantern": number, "cameraActive": boolean, "micActive": boolean, "motionEnabled": boolean, "uptimeSec": int, "agentVersion": string }` | On each state change, on each change of `cameraActive`, on the first tick after start, on each `cloud.connected` (M5), after each accepted `gaze` or `lantern` command and each change of `mode` (M6), and every `status_interval_s` (default 60 s). |
 | `status.offline` | `{}` | Published by the broker as the last will when the device disconnects. |
 
 Notes on the status fields:
@@ -317,6 +322,10 @@ Notes on the status fields:
   never its `ts`. AWS does not guarantee the order of will messages across reconnects; a later
   `status.report` therefore overrides an earlier offline mark. *Reason:* avoids a false "offline"
   after a quick reconnect.
+- **M6 Report after a command.** The device sends a `status.report` right after it accepts a `gaze`
+  or `lantern` command, and right after the Mode changes. *Reason:* a remote command changes the
+  head, the lantern or the Mode without any State change, and the dashboard showed the old values
+  for up to `status_interval_s`.
 - **M5 Reconnect.** The device sends a `status.report` on each `cloud.connected`. *Reason:* the
   broker publishes the last will on every unexpected disconnect, and without a fresh report the
   dashboard showed the doll offline for up to `status_interval_s` after a reconnect of two seconds.

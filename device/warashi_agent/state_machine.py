@@ -681,7 +681,20 @@ def finalize(
     camera_changed = (camera is None) is not (prev.camera is None)
     # A reconnect follows a broker last will, so the dashboard needs a fresh report (M5).
     reconnected = isinstance(ctx.event, CloudConnected)
-    report = state_changed or camera_changed or first_tick or interval_due or reconnected
+    # A remote command changes what the dashboard shows (head, lantern, mode) without any State
+    # change, so the doll reports right after it (M6).
+    command_applied = (
+        isinstance(ctx.event, Gaze | Lantern)
+        and any(isinstance(a, GazeTarget | LanternFade) for a in ctx.actions)
+    ) or nxt.mode is not prev.mode
+    report = (
+        state_changed
+        or camera_changed
+        or first_tick
+        or interval_due
+        or reconnected
+        or command_applied
+    )
 
     updates: dict[str, object] = {}
     if is_tick and nxt.photo is not None and ctx.now >= nxt.photo.deadline:

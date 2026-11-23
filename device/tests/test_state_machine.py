@@ -3081,7 +3081,8 @@ def test_a_manual_gaze_is_clamped_and_keeps_the_state_and_deadlines(
         GazeTarget(pan_deg=expected[0], tilt_deg=expected[1], motion_id=CMD_MOTION_ID),
     )
     # The phase still waits for its own Motion_Id with its own deadlines.
-    assert nxt == dataclasses.replace(ms, gaze=expected, servos_released=False)
+    # An accepted command is reported at once (remote-mode M6).
+    assert nxt == dataclasses.replace(ms, gaze=expected, servos_released=False, last_status_at=at)
 
 
 @pytest.mark.parametrize(
@@ -3108,7 +3109,7 @@ def test_a_manual_lantern_is_clamped_and_keeps_the_state_and_deadlines(
     nxt, actions = step(ms, lantern_cmd(level, fade_ms), at)
 
     assert without_status(actions) == (expected,)
-    assert nxt == dataclasses.replace(ms, lantern_level=expected.level)
+    assert nxt == dataclasses.replace(ms, lantern_level=expected.level, last_status_at=at)
 
 
 def test_a_manual_gaze_in_waking_is_used_by_the_first_snapshot() -> None:
@@ -3225,7 +3226,9 @@ def test_mode_set_in_sleeping_or_cooldown_or_repeating_the_mode_only_records_it(
     nxt, actions = step(ms, mode_cmd(mode), at)
 
     assert without_status(actions) == ()
-    assert nxt == dataclasses.replace(ms, mode=mode)
+    # A changed Mode is reported at once (remote-mode M6); a repeated one is not.
+    reported = at if ms.mode is not mode else ms.last_status_at
+    assert nxt == dataclasses.replace(ms, mode=mode, last_status_at=reported)
 
 
 @pytest.mark.parametrize(
@@ -3253,7 +3256,7 @@ def test_mode_guard_starts_no_encounter_until_a_later_pir_rising() -> None:
 
     ms, actions = step(ms, mode_cmd(Mode.GUARD), NOW)
     assert without_status(actions) == ()
-    assert ms == base_state(pir_high=True)
+    assert ms == dataclasses.replace(base_state(pir_high=True), last_status_at=NOW)
 
     ms, actions = step(ms, Tick(uid=UID_A), NOW + 0.1)
     assert presences(actions) == []

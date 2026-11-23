@@ -332,8 +332,15 @@ def check_status(
         due = rec.now >= at
         ambiguous = abs(rec.now - at) <= TOL
     reconnected = isinstance(rec.event, CloudConnected)  # remote-mode M5
-    required = state_changed or camera_changed or first_tick or due or reconnected
-    if not (ambiguous and not (state_changed or camera_changed or first_tick or reconnected)):
+    # remote-mode M6: an accepted gaze or lantern command, or a Mode change, is reported at once.
+    moved = isinstance(rec.event, Gaze | Lantern) and any(
+        isinstance(a, GazeTarget | LanternFade) for a in rec.actions
+    )
+    applied = moved or rec.before.mode is not rec.after.mode
+    required = state_changed or camera_changed or first_tick or due or reconnected or applied
+    if not (
+        ambiguous and not (state_changed or camera_changed or first_tick or reconnected or applied)
+    ):
         assert bool(statuses) is required, (
             f"PublishStatus {'missing' if required else 'unexpected'} at {rec.now}"
             f" on {type(rec.event).__name__} (state_changed={state_changed},"
