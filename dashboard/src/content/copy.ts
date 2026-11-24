@@ -266,7 +266,9 @@ export const EN = {
     talk: "Talk",
     talkReal: "Talk through the real doll",
     stop: "Stop",
-    starting: "Connecting…",
+    starting: "Connecting… Wait until “Microphone on” appears.",
+    speakNow: "Now. Speak to the doll in Japanese. She waits until you say something.",
+    speakNowReal: "Now. Speak to the doll herself, within about 1 meter. She waits until you say something.",
     ending: "Ending the conversation…",
     micOn: "Microphone on",
     watching: "The real doll is listening. This page only shows the subtitles.",
@@ -346,7 +348,7 @@ export const EN = {
     heading: "Help",
     intro:
       "A doll that guards the house: she wakes when someone comes near, lights her lantern and turns " +
-      "slowly to see who it is. Everything below works in this browser, without the real doll.",
+      "slowly to see who it is. Most of this page works in this browser, without the real doll and without an account.",
     sections: [
       {
         title: "Try it in two minutes",
@@ -358,19 +360,71 @@ export const EN = {
         ],
       },
       {
-        title: "Sign in (optional)",
+        title: "About the Zashiki-Warashi",
         items: [
-          "Sign in adds the Extra features switch: the same visits run through the real cloud (face search and speech).",
-          "The demo account is a guest in someone's home. It cannot move the real doll, manage faces or see real snapshots.",
+          "A zashiki-warashi is a child spirit from Japanese folklore. She lives in a room of an old house, protects it and brings good fortune to the people who live there.",
+          "Legend says she is seen mostly by children, and that a house she leaves loses its luck. Here, the spirit lives in a traditional-style doll.",
+          "When someone approaches, she wakes, lights her lantern and slowly turns her head to look at them. Slow turning is part of her character.",
+          "She decides who it is: a family member gets a warm greeting in Japanese and a small nod. A stranger gets a silent stare, an eerie whisper or a nursery rhyme, and the family is notified.",
+          "If she sees no face, is unsure, or loses the network, she asks a cautious “Is someone there?” and never freezes.",
+          "She is a guardian art piece, not an alarm product. She is spooky but friendly: no threats and no violence.",
+          "Inside the doll are a Raspberry Pi, a motion sensor, a camera, two small servos for the head and a lantern light. Face recognition and speech run in the cloud.",
         ],
       },
       {
-        title: "Talk to the doll",
+        title: "Without signing in (guest)",
         items: [
-          "Press Talk and allow the microphone when the browser asks.",
-          "Speak first, in Japanese. The doll waits quietly until you say something, for example 「こんにちは」.",
-          "Your voice goes to Amazon Bedrock in Tokyo and is not stored. Subtitles appear while you talk.",
-          "A conversation ends after a quiet moment or a time limit. There is a small number of conversations per day.",
+          "You can run the web simulation: a virtual doll in your browser that follows the same flow and messages as the real one. It never uses your real camera or microphone.",
+          "You can play the four visit scenarios, read every line with its subtitle, mute the sound and switch the language.",
+          "Today's diary shows the visits you simulated. They disappear when you close the page.",
+          "You cannot talk to the doll, use the Extra features switch, see real visits, control the real doll or manage faces. Those controls are shown locked.",
+        ],
+      },
+      {
+        title: "After signing in (demo account)",
+        items: [
+          "The demo account is a guest in someone's home, so it is read-only for everything real.",
+          "Extra features: the same visits run through the real cloud (face search and speech) instead of the bundled answers.",
+          "Talk: you can have a short voice conversation with the virtual doll, a few times per day.",
+          "Today's diary can list real visits with illustrations instead of photos, unless the owner has hidden them. Remote control lets you watch the real doll's state.",
+          "It cannot move the real doll, make her speak, take photos, manage faces or see real snapshots.",
+        ],
+      },
+      {
+        title: "After signing in (family)",
+        items: [
+          "Family members see everything about their own doll: real visits with their snapshots (deleted after a few days), and the doll's current state, head angle and lantern.",
+          "Remote control: look left or right, set the lantern brightness, make her say one of her cached lines, pause guarding and set it back.",
+          "Take a photo: she wakes, lights her lantern, takes one picture and goes back to waiting. Only the family can see it.",
+          "Make the doll speak: type a Japanese line (up to 60 characters) and she says it aloud, even when she is waiting. She speaks to whoever is near her, so do not type names or private details.",
+          "Talk through the real doll: a voice conversation using the doll's own microphone and speaker. See “How to talk to the doll”.",
+          "Residents: register your own face with a consent notice, add more photos, and delete a face at any time. A registered face is how she knows family from strangers.",
+          "You are notified when she meets a stranger.",
+        ],
+      },
+      {
+        title: "Remote control of the real doll",
+        items: [
+          "Open Remote control from the menu and sign in as family. The page shows whether the doll is online, her state, the mode, head angle and lantern.",
+          "While she waits quietly she cannot move. Press “Start remote control” to wake her, then use the controls.",
+          "Remote control ends by itself after two minutes without a command, or when you press “Set back to guard mode”. She then returns her head to center and fades the lantern.",
+          "After you send a command, the page says it was sent and then whether the doll accepted it. If she is busy or talking, she refuses, and the page tells you to try again in a moment.",
+          "An offline doll does not store commands, so nothing plays later.",
+          "The camera and microphone indicator in the header always shows when the real doll is looking or listening.",
+        ],
+      },
+      {
+        title: "How to talk to the doll",
+        items: [
+          "Talking is for signed-in users. A guest sees “Sign in to talk to the doll.”",
+          "Web simulation: press “Talk” and allow the microphone when the browser asks. The button changes to “Connecting…”. Wait until “Microphone on” appears. That is the moment to speak.",
+          "The doll does not speak first. She waits quietly until you say something in Japanese, for example 「こんにちは」. Her answer appears as subtitles, and you can speak again when she finishes.",
+          "Real doll (family only): open Remote control and press “Talk through the real doll”. This page only shows subtitles. Speak to the doll herself, within about 1 meter, once the header shows “Microphone on”.",
+          "The real doll can also offer a conversation by herself. When she recognizes a family member, she says her greeting first, and starts listening only after the greeting ends. Wait for it to finish, then speak.",
+          "If nobody speaks for about 15 seconds, the conversation ends. It also ends after 3 minutes, when you press Stop, when you close the page, or when the doll sees someone she does not know.",
+          "Each account can start only a limited number of conversations per day. The number left is shown next to the button.",
+          "Your voice goes to Amazon Bedrock in Tokyo and is not stored.",
+          "If the button is disabled, the reason is written under it: signed out, offline, switched off, or today's time used up.",
         ],
       },
       {
@@ -384,7 +438,9 @@ export const EN = {
         title: "Privacy",
         items: [
           "The header always shows whether the real doll's camera or microphone is in use.",
-          "Snapshots stay in the owner's AWS account and expire within days. Names are never shown to strangers.",
+          "Snapshots stay in the owner's AWS account and expire within days. Names are never shown or spoken to a stranger.",
+          "The doll does not record continuous video or audio.",
+          "Faces are registered only by the family themselves, with consent, and can be deleted.",
         ],
       },
       {

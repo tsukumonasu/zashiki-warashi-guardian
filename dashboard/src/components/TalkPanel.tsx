@@ -137,6 +137,11 @@ export function TalkPanel({
             </p>
           )}
           {watchOnly && <p role="status">{COPY.talk.watching}</p>}
+          {state === "listening" && subtitle === null && (
+            <p role="status" data-testid="talk-speak-now">
+              {watchOnly ? COPY.talk.speakNowReal : COPY.talk.speakNow}
+            </p>
+          )}
           {state === "starting" && <p role="status">{COPY.talk.starting}</p>}
           {state === "ending" && <p role="status">{COPY.talk.ending}</p>}
           <button type="button" className="button" disabled={state === "ending"} onClick={session.stop}>
