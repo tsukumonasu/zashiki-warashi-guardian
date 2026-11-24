@@ -1,5 +1,7 @@
 /*
  * Virtual doll styles (design: "Virtual doll and accessibility").
+ * Drawn after the real doll: white papier-mache face, painted eyes, black yarn hair, red
+ * plum-blossom kimono, a dark room lit by the andon. Quiet folk horror, no gore.
  * Head, eyes and glow have separate transitions. Nothing here loops: the doll only moves when
  * the state changes. Under Reduced_Motion (data-reduced="true", also set from the media query
  * by the hook) the head and eyes jump and the lantern changes within 100 ms.
@@ -11,21 +13,52 @@
   height: auto;
 }
 
-.doll__wall { fill: var(--color-night-raised); }
-.doll__shoji-frame { stroke: var(--color-night-line); stroke-width: 2; fill: none; }
-.doll__window { fill: var(--color-night); stroke: var(--color-night-line); stroke-width: 3; }
-.doll__moon { fill: var(--color-paper-dim); opacity: 0.8; }
-.doll__tatami { fill: #2b2a3d; }
-.doll__tatami-line { stroke: var(--color-night-line); stroke-width: 1.5; }
-
-.doll__kimono { fill: var(--color-ink); stroke: var(--color-night-line); stroke-width: 2; }
-.doll__obi { fill: var(--color-andon); opacity: 0.85; }
-.doll__collar { fill: none; stroke: var(--color-washi); stroke-width: 4; }
-
-.doll__head-shape { fill: var(--color-washi); stroke: var(--color-ink-soft); stroke-width: 2; }
-.doll__hair { fill: var(--color-ink); }
-.doll__cheek { fill: var(--color-andon); opacity: 0.25; }
-.doll__mouth { fill: none; stroke: var(--color-danger); stroke-width: 3; stroke-linecap: round; }
+.doll__wall { fill:url(#doll-wall-gradient); }
+.doll__pillar { fill:#0a0e20; }
+.doll__window { fill:#0f1530; stroke:#2c3560; stroke-width:3; }
+.doll__moon { fill:#c3c8de; opacity:0.75; }
+.doll__cloud { fill:none; stroke:#2c3560; stroke-width:5; stroke-linecap:round; opacity:0.9; }
+.doll__shoji-frame { fill:none; stroke:#2c3560; stroke-width:2; }
+.doll__tatami { fill:#211f2e; }
+.doll__tatami-line { stroke:#34305a; stroke-width:1.5; }
+.doll__andon-body { fill:#e6dcc5; stroke:#4a443c; stroke-width:2; }
+.doll__andon-frame { stroke:#2a2520; stroke-width:3; fill:none; }
+.doll__andon-rib { stroke:#4a443c; stroke-width:1; opacity:0.6; }
+.doll__floor-shadow { fill:#000; opacity:0.5; }
+.doll__neck { fill:#a89f90; }
+.doll__kimono { fill:#6b1a20; stroke:#2a0b0e; stroke-width:1.5; }
+.doll__kimono-lap { fill:#5a151b; stroke:#2a0b0e; stroke-width:1.5; }
+.doll__fold { fill:none; stroke:#3e0e13; stroke-width:1.4; opacity:0.8; }
+.doll__collar-under { fill:none; stroke:#a83a3a; stroke-width:3; }
+.doll__collar { fill:none; stroke:#e6dfd0; stroke-width:4.5; }
+.doll__obi { fill:#3a2519; stroke:#1d120c; stroke-width:1; }
+.doll__obi-cord { stroke:#b8913f; stroke-width:1.6; }
+.doll__obi-flower { fill:#c9a050; }
+.doll__hand { fill:#e4ddd0; stroke:#8a8070; stroke-width:0.8; }
+.doll__body-shade { fill:url(#doll-body-shade-gradient); }
+.doll__hair { fill:#0f0e12; }
+.doll__head-shape { fill:url(#doll-face-gradient); stroke:#6f675b; stroke-width:1; }
+.doll__lump { fill:none; stroke:#b3aa9a; stroke-width:1.4; stroke-linecap:round; opacity:0.7; }
+.doll__cheek { fill:#d98c8c; opacity:0.22; }
+.doll__brow { fill:none; stroke:#3a342e; stroke-width:1.1; stroke-linecap:round; opacity:0.85; }
+.doll__eye-white { fill:#efe9dc; stroke:#1b1a1f; stroke-width:0.8; }
+.doll__eye-pupil { fill:#111015; }
+.doll__eye-line { fill:none; stroke:#111015; stroke-width:2.2; stroke-linecap:round; }
+.doll__lash { fill:none; stroke:#111015; stroke-width:0.9; stroke-linecap:round; }
+.doll__nose { fill:none; stroke:#8f857a; stroke-width:1; stroke-linecap:round; }
+.doll__mouth { fill:#9a2428; }
+.doll__lens-ring { fill:#3a3634; }
+.doll__lens { fill:#050508; }
+.doll__lens-glint { fill:#7a82a8; opacity:0.6; }
+.doll__face-shade { fill:url(#doll-shade-gradient); }
+.doll__strand { fill:none; stroke:#2c2a33; stroke-width:0.9; stroke-linecap:round; }
+.doll__stray { fill:none; stroke:#0f0e12; stroke-width:1.1; stroke-linecap:round; }
+.doll__vignette { fill:url(#doll-vignette-gradient); }
+.doll__petal { fill:#e3b3ad; opacity:0.75; }
+.doll__blossom-heart { fill:#d4a94f; }
+.doll__eye-line--thin { stroke-width: 1.4; }
+.doll__overlay { pointer-events: none; }
+.doll__grain { filter: url(#doll-grain-filter); opacity: 0.5; }
 
 .doll__head {
   transform-box: fill-box;
@@ -42,13 +75,13 @@
 
 .doll__eye { opacity: 0; transition: opacity 250ms ease-in-out; }
 .doll__eye[data-active="true"] { opacity: 1; }
-.doll__eye-white { fill: #fffaf0; stroke: var(--color-ink); stroke-width: 2; }
-.doll__eye-pupil { fill: var(--color-ink); }
-.doll__eye-lid { fill: var(--color-washi); }
-.doll__eye-line { fill: none; stroke: var(--color-ink); stroke-width: 3; stroke-linecap: round; }
 
-.doll__andon-body { fill: var(--color-washi-shade); stroke: var(--color-ink-soft); stroke-width: 2; }
-.doll__andon-frame { stroke: var(--color-ink-soft); stroke-width: 2; }
+/* The andon lights the right side of the face as it brightens. */
+.doll__face-lit {
+  fill: url(#doll-lit-gradient);
+  opacity: calc(var(--doll-lantern, 0) * 0.9);
+  transition: opacity var(--fade-lantern) ease-in-out;
+}
 .doll__andon-light { fill: var(--color-andon); opacity: var(--doll-lantern, 0); transition: opacity var(--fade-lantern) ease-in-out; }
 .doll__glow {
   fill: url(#doll-glow-gradient);
@@ -64,7 +97,8 @@
 }
 
 .doll[data-reduced="true"] .doll__glow,
-.doll[data-reduced="true"] .doll__andon-light {
+.doll[data-reduced="true"] .doll__andon-light,
+.doll[data-reduced="true"] .doll__face-lit {
   transition: opacity 100ms linear;
 }
 
